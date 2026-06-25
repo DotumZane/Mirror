@@ -651,6 +651,7 @@ This section should be updated at the end of every project task so the notes alw
 - Added `packages/mirror-0.0.2.txz` package.
 - Added basic Unraid Settings page.
 - Added `mirrorctl` command for status, run-once, start, and stop.
+- Confirmed local two-share sync works on Unraid.
 
 ### Current Decisions
 
@@ -853,3 +854,13 @@ Next suggested task:
 - New decisions: Installed Unraid plugin code should rely on PHP/shell for now because those are available on Unraid by default.
 - Open questions: Confirm on Unraid that `Start` launches the daemon and `Run Once` syncs disposable test shares.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and test Start/Run Once again.
+
+#### 2026-06-25 - Local Unraid Share Sync Confirmed
+
+- Task completed: Confirmed the plugin can sync two selected local Unraid shares.
+- Files changed: `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Recorded successful user test that the two selected shares sync.
+- New decisions: The local same-server share sync path is working enough to use for disposable test shares.
+- Open questions: Two-server LAN peer linking is still not implemented.
+- Next suggested task: Add peer/server linking settings and remote share discovery/sync over LAN.
