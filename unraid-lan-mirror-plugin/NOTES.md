@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.1.1
+0.1.2
 ```
 
 Version source of truth:
@@ -410,6 +410,7 @@ Current release status:
 - `0.0.7` removes the runtime Python dependency and uses a PHP runner on Unraid.
 - `0.1.0` adds the first LAN peer prototype over SSH/rsync.
 - `0.1.1` fixes equal-peer delete propagation when deleting from Server B.
+- `0.1.2` adds clearer Local/Remote mirror mode and delete behavior controls.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -627,7 +628,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.1.1.
+- Current version: 0.1.2.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -678,7 +679,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.1.1`.
+- Current version is `0.1.2`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -877,6 +878,16 @@ Next suggested task:
 - New decisions: Equal-peer delete propagation should be symmetric. Server A preferred mode can still restore A to B for B-side deletes.
 - Open questions: Confirm the fix on Unraid using disposable shares.
 - Next suggested task: Push to GitHub, update/install the plugin, and retest deleting from Server B in equal-peer mode.
+
+#### 2026-06-25 - Mirror Mode And Delete Behavior Controls
+
+- Task completed: Added clearer mode and delete behavior controls.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.2.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/default-config.json`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added an explicit Local mirror / Remote LAN mirror toggle and replaced the delete checkbox with a Delete behavior dropdown.
+- New decisions: Delete behavior should be explicit: `Restore missing files` or `Mirror deletes after saving trash`.
+- Open questions: Confirm on Unraid that selecting Equal peers plus Mirror deletes allows deletion from either side.
+- Next suggested task: Push to GitHub, update/install the plugin, select Equal peers plus Mirror deletes, and retest deleting from Server B.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

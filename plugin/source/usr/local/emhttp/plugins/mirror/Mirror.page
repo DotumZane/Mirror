@@ -32,6 +32,7 @@ $defaultConfig = [
   "trash_root" => "/boot/config/plugins/mirror/trash",
   "authority" => "server_a_preferred",
   "delete_propagation" => false,
+  "delete_behavior" => "restore_missing",
   "sync_interval" => 10,
 ];
 $config = $defaultConfig;
@@ -72,6 +73,7 @@ $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
+$deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) : "";
 ?>
 
@@ -171,6 +173,17 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
 .mirror-peer-mode {
   margin-bottom: 12px;
 }
+.mirror-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.mirror-mode-row label {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
 </style>
 
 <div class="mirror-panel">
@@ -212,6 +225,17 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="save-config">
 
+      <div class="mirror-mode-row">
+        <label>
+          <input type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
+          Local mirror
+        </label>
+        <label>
+          <input type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
+          Remote LAN mirror
+        </label>
+      </div>
+
       <div class="mirror-form-grid">
         <div class="mirror-field">
           <label for="server_a_share">Server A share</label>
@@ -222,13 +246,6 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
             <?php endforeach; ?>
           </select>
           <span class="mirror-help">Source path: <?=mirror_value($config["server_a"]["root"])?></span>
-        </div>
-        <div class="mirror-field">
-          <label for="server_b_type">Server B location</label>
-          <select id="server_b_type" name="server_b_type">
-            <option value="local" <?=$serverBType === "local" ? "selected" : ""?>>Same server test share</option>
-            <option value="remote" <?=$serverBType === "remote" ? "selected" : ""?>>LAN peer over SSH</option>
-          </select>
         </div>
         <div class="mirror-field">
           <label for="server_b_share">Server B share</label>
@@ -265,12 +282,16 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
           </select>
         </div>
         <div class="mirror-field">
+          <label for="delete_behavior">Delete behavior</label>
+          <select id="delete_behavior" name="delete_behavior">
+            <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
+            <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after saving trash</option>
+          </select>
+          <span class="mirror-help">Use Mirror deletes for true equal-peer delete behavior.</span>
+        </div>
+        <div class="mirror-field">
           <label for="sync_interval">Daemon scan interval seconds</label>
           <input id="sync_interval" name="sync_interval" type="number" min="1" max="3600" value="<?=mirror_value($config["sync_interval"])?>">
-        </div>
-        <div class="mirror-check">
-          <input id="delete_propagation" name="delete_propagation" type="checkbox" value="1" <?=$config["delete_propagation"] ? "checked" : ""?>>
-          <label for="delete_propagation">Mirror deletes after saving trash</label>
         </div>
       </div>
 

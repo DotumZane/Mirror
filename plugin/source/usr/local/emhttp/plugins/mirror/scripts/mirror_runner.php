@@ -30,8 +30,17 @@ function safe_interval(array $config): int {
 }
 
 function equal_peer_delete_enabled(array $config): bool {
+    $deleteBehavior = (string)($config["delete_behavior"] ?? "");
+    $deletePropagation = $deleteBehavior === "mirror_deletes"
+        || ($deleteBehavior === "" && !empty($config["delete_propagation"]));
     return (($config["authority"] ?? "server_a_preferred") === "equal_peers")
-        && !empty($config["delete_propagation"]);
+        && $deletePropagation;
+}
+
+function delete_mirroring_enabled(array $config): bool {
+    $deleteBehavior = (string)($config["delete_behavior"] ?? "");
+    return $deleteBehavior === "mirror_deletes"
+        || ($deleteBehavior === "" && !empty($config["delete_propagation"]));
 }
 
 function endpoint_is_remote(array $config): bool {
@@ -391,7 +400,7 @@ function sync_once(string $configPath): array {
         } elseif ($b["exists"] && !$a["exists"]) {
             if ($bChanged) {
                 record_conflict($state, $rel, "server_a_deleted_server_b_changed", $aRoot, $bRoot, $summary);
-            } elseif (!empty($config["delete_propagation"])) {
+            } elseif (delete_mirroring_enabled($config)) {
                 delete_file($config, "server-b", $bRoot, $rel, $summary);
                 record_file($state, $rel, $aRoot, $bRoot, "deleted");
             } else {
@@ -472,7 +481,7 @@ function sync_once_remote(string $configPath, array $config): array {
         } elseif ($b["exists"] && !$a["exists"]) {
             if ($bChanged) {
                 record_conflict_states($state, $rel, "server_a_deleted_server_b_changed", $a, $b, $summary);
-            } elseif (!empty($config["delete_propagation"])) {
+            } elseif (delete_mirroring_enabled($config)) {
                 delete_remote_file($config, $configPath, $bRoot, $rel, $summary);
                 record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
             } else {

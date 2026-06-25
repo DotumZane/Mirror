@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.1.1">
+  <!ENTITY version    "0.1.2">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.1.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.2.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "827572fbe355eeb1a418fc462ad711fb">
+  <!ENTITY md5        "da1b40ef369246445ddf50160cb64849">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.1.1
-- Fixes equal-peer delete propagation from Server B to Server A.
-- Keeps delete mirroring gated behind the delete propagation toggle.
+### 0.1.2
+- Adds explicit Local mirror / Remote LAN mirror mode toggle.
+- Adds explicit delete behavior setting for restore vs mirror deletes.
 - Not safe for important shares yet.
   </CHANGES>
 

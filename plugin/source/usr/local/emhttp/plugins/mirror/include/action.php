@@ -36,15 +36,20 @@ $action = $_POST["action"] ?? "status";
 
 if ($action === "save-config") {
     $serverAShare = trim((string)($_POST["server_a_share"] ?? ""));
-    $serverBType = trim((string)($_POST["server_b_type"] ?? "local"));
+    $mirrorMode = trim((string)($_POST["mirror_mode"] ?? ""));
+    $serverBType = $mirrorMode !== "" ? $mirrorMode : trim((string)($_POST["server_b_type"] ?? "local"));
     $serverBShare = trim((string)($_POST["server_b_share"] ?? ""));
     $remoteShare = trim((string)($_POST["remote_share"] ?? ""));
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
     $authority = $_POST["authority"] ?? "server_a_preferred";
+    $deleteBehavior = $_POST["delete_behavior"] ?? "restore_missing";
     $interval = max(1, min(3600, (int)($_POST["sync_interval"] ?? 10)));
-    $deletePropagation = isset($_POST["delete_propagation"]);
+    if (!in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
+        $deleteBehavior = "restore_missing";
+    }
+    $deletePropagation = $deleteBehavior === "mirror_deletes";
     $shares = mirror_current_shares();
 
     $errors = [];
@@ -102,6 +107,7 @@ if ($action === "save-config") {
         "trash_root" => "$configDir/trash",
         "authority" => $authority,
         "delete_propagation" => $deletePropagation,
+        "delete_behavior" => $deleteBehavior,
         "sync_interval" => $interval,
     ];
 

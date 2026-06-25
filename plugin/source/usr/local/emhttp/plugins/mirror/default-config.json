@@ -16,5 +16,6 @@
   "trash_root": "/boot/config/plugins/mirror/trash",
   "authority": "server_a_preferred",
   "delete_propagation": false,
+  "delete_behavior": "restore_missing",
   "sync_interval": 10
 }

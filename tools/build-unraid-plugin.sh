@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Fixes equal-peer delete propagation from Server B to Server A.
-- Keeps delete mirroring gated behind the delete propagation toggle.
+- Adds explicit Local mirror / Remote LAN mirror mode toggle.
+- Adds explicit delete behavior setting for restore vs mirror deletes.
 - Not safe for important shares yet.
   </CHANGES>
 

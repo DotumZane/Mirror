@@ -6,7 +6,7 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `0.1.1`
+Current version: `0.1.2`
 
 ## Test Install On Unraid
 
@@ -42,7 +42,7 @@ The current test page lets you set:
 - Server A share from a dropdown of current shares
 - Server B as either a local share dropdown or a remote LAN peer share
 - Server A preferred or equal peer mode
-- delete mirroring on/off
+- explicit delete behavior: restore missing files or mirror deletes
 - daemon scan interval
 
 ## LAN Peer Prototype
