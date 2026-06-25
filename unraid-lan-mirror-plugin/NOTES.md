@@ -701,3 +701,13 @@ Next suggested task:
 - New decisions: Use `DotumZane/Mirror` as the GitHub repository for this project.
 - Open questions: Push is blocked until GitHub authentication is available in the local shell.
 - Next suggested task: Authenticate GitHub locally, push `main`, then continue with exact sync rules matrix and journal schema.
+
+#### 2026-06-25 - GitHub Push Confirmed
+
+- Task completed: Confirmed the first project files are visible on GitHub.
+- Files changed: `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 1 - Specification.
+- What changed: Verified local `main` is tracking `origin/main` and recorded that the GitHub repository now has the initial files.
+- New decisions: Continue using GitHub Desktop for pushes when shell authentication is unavailable.
+- Open questions: None for repository setup.
+- Next suggested task: Define the exact sync rules matrix and journal schema.
