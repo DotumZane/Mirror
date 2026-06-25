@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.3
+0.0.4
 ```
 
 Version source of truth:
@@ -404,6 +404,7 @@ Current release status:
 - `0.0.1` was the first planning/prototype version.
 - `0.0.2` is the first installable Unraid plugin scaffold.
 - `0.0.3` fixes the Unraid Settings page placement.
+- `0.0.4` moves the Settings tile to the correct User Utilities section.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -621,7 +622,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.3.
+- Current version: 0.0.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: Local prototype only.
@@ -670,7 +671,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.3`.
+- Current version is `0.0.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The sync engine is still a local prototype.
@@ -808,4 +809,14 @@ Next suggested task:
 - What changed: Changed the `.page` header to `Menu="OtherSettings"` with `Type="xmenu"`, matching the User Utilities pattern used by working Unraid plugins, rebuilt the package, and bumped the version to `0.0.3`.
 - New decisions: Use `OtherSettings` for the Settings -> User Utilities tile.
 - Open questions: Confirm on Unraid after upgrade that only the tile appears on the Settings index and the full Mirror page opens after clicking the tile.
+- Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify page placement.
+
+#### 2026-06-25 - User Utilities Placement Fix
+
+- Task completed: Moved the Mirror tile to the intended User Utilities section.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Changed the `.page` header to `Menu="Utilities"`, matching GPU Statistics' page header, rebuilt the package, and bumped the version to `0.0.4`.
+- New decisions: Use `Menu="Utilities"` for the Settings -> User Utilities tile on Unraid 7.3.
+- Open questions: Confirm on Unraid after upgrade that the Mirror tile appears under User Utilities and not System Settings.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify page placement.

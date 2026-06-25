@@ -1,5 +1,4 @@
-Menu="OtherSettings"
-Type="xmenu"
+Menu="Utilities"
 Title="Mirror"
 Tag="sync"
 ---
