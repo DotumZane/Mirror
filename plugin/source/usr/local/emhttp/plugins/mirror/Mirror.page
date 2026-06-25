@@ -173,16 +173,33 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
 .mirror-peer-mode {
   margin-bottom: 12px;
 }
-.mirror-mode-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.mirror-mode-row label {
+.mirror-mode-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
   border: 1px solid var(--border-color, #333);
   border-radius: 6px;
-  padding: 8px 10px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.mirror-mode-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.mirror-mode-switch label {
+  cursor: pointer;
+  padding: 9px 14px;
+  text-align: center;
+  min-width: 150px;
+  user-select: none;
+}
+.mirror-mode-switch input:checked + label {
+  background: #ff6a2a;
+  color: #111;
+  font-weight: 700;
+}
+.mirror-hidden {
+  display: none;
 }
 </style>
 
@@ -225,15 +242,11 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="save-config">
 
-      <div class="mirror-mode-row">
-        <label>
-          <input type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
-          Local mirror
-        </label>
-        <label>
-          <input type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
-          Remote LAN mirror
-        </label>
+      <div class="mirror-mode-switch" role="group" aria-label="Mirror mode">
+        <input id="mirror_mode_local" type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
+        <label for="mirror_mode_local">Local mirror</label>
+        <input id="mirror_mode_remote" type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
+        <label for="mirror_mode_remote">Remote LAN mirror</label>
       </div>
 
       <div class="mirror-form-grid">
@@ -247,7 +260,7 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
           </select>
           <span class="mirror-help">Source path: <?=mirror_value($config["server_a"]["root"])?></span>
         </div>
-        <div class="mirror-field">
+        <div class="mirror-field mirror-local-only">
           <label for="server_b_share">Server B share</label>
           <select id="server_b_share" name="server_b_share" <?=$shares ? "" : "disabled"?>>
             <option value="">Select a share</option>
@@ -257,20 +270,19 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
           </select>
           <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
         </div>
-        <div class="mirror-field">
+        <div class="mirror-field mirror-remote-only">
           <label for="remote_share">Remote peer share name</label>
           <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
-          <span class="mirror-help">Used only when Server B location is LAN peer.</span>
         </div>
-        <div class="mirror-field">
+        <div class="mirror-field mirror-remote-only">
           <label for="peer_host">Peer host or IP</label>
           <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($config["server_b"]["host"] ?? "")?>">
         </div>
-        <div class="mirror-field">
+        <div class="mirror-field mirror-remote-only">
           <label for="peer_user">Peer SSH user</label>
           <input id="peer_user" name="peer_user" type="text" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
         </div>
-        <div class="mirror-field">
+        <div class="mirror-field mirror-remote-only">
           <label for="peer_port">Peer SSH port</label>
           <input id="peer_port" name="peer_port" type="number" min="1" max="65535" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
         </div>
@@ -301,7 +313,7 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
     </form>
   </div>
 
-  <div class="mirror-section">
+  <div class="mirror-section mirror-remote-only">
     <h3>LAN Peer SSH Key</h3>
     <p>
       Install this plugin on both servers. On server A, generate a key here,
@@ -343,3 +355,27 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
     <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
   </div>
 </div>
+
+<script>
+(function () {
+  function selectedMode() {
+    var selected = document.querySelector('input[name="mirror_mode"]:checked');
+    return selected ? selected.value : 'local';
+  }
+
+  function syncModeVisibility() {
+    var remote = selectedMode() === 'remote';
+    document.querySelectorAll('.mirror-remote-only').forEach(function (node) {
+      node.classList.toggle('mirror-hidden', !remote);
+    });
+    document.querySelectorAll('.mirror-local-only').forEach(function (node) {
+      node.classList.toggle('mirror-hidden', remote);
+    });
+  }
+
+  document.querySelectorAll('input[name="mirror_mode"]').forEach(function (input) {
+    input.addEventListener('change', syncModeVisibility);
+  });
+  syncModeVisibility();
+})();
+</script>

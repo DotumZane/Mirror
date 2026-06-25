@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds explicit Local mirror / Remote LAN mirror mode toggle.
-- Adds explicit delete behavior setting for restore vs mirror deletes.
+- Converts Local/Remote mirror mode to a segmented switch.
+- Hides remote peer SSH fields while Local mirror is selected.
 - Not safe for important shares yet.
   </CHANGES>
 
