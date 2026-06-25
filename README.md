@@ -6,7 +6,7 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `0.2.1`
+Current version: `0.2.2`
 
 ## Test Install On Unraid
 
@@ -23,6 +23,12 @@ Paste this URL:
 
 ```text
 https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg
+```
+
+If Unraid reports an older/same version after a fresh push, use a cache-busted install URL:
+
+```text
+https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg?mirror_cache_bust=1
 ```
 
 Or install from an Unraid terminal:

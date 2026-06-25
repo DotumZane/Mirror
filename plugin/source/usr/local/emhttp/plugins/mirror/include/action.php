@@ -299,9 +299,10 @@ if ($action === "update-plugin") {
         mirror_redirect();
     }
     $localPlugin = "/tmp/mirror-latest.plg";
-    [$downloaded, $downloadMessage] = mirror_download_plugin($pluginUrl, $localPlugin);
+    $downloadUrl = $pluginUrl . "?mirror_cache_bust=" . rawurlencode((string)time());
+    [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
     if (!$downloaded) {
-        mirror_write_action("Plugin update command failed:\nCould not download plugin manifest from $pluginUrl.\n$downloadMessage");
+        mirror_write_action("Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage");
         mirror_redirect();
     }
     if ($pluginCli !== null) {
@@ -314,6 +315,7 @@ if ($action === "update-plugin") {
     exec($cmd, $output, $code);
     $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
         . "\nManifest: $pluginUrl"
+        . "\nDownload URL: $downloadUrl"
         . "\nLocal file: $localPlugin"
         . "\nCommand: $runner"
         . "\n" . implode("\n", $output);

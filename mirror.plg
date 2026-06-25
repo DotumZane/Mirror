@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.2.1">
+  <!ENTITY version    "0.2.2">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.2.1.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.2.2.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "7fe5beb148a7dc72db73ce86feefc827">
+  <!ENTITY md5        "067e1cbeb703986aa38bb86f3103575d">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.2.1
-- Fixes the update button for Unraid builds that use the plugin CLI instead of installplg.
-- Keeps the local manifest download before running the update command.
+### 0.2.2
+- Adds cache busting when the update button downloads the GitHub manifest.
+- Keeps using Unraid's plugin CLI when installplg is unavailable.
 - Not safe for important shares yet.
   </CHANGES>
 
