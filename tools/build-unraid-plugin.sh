@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Converts Local/Remote mirror mode to a segmented switch.
-- Hides remote peer SSH fields while Local mirror is selected.
+- Shows the configured trash path on the settings page.
+- Restarts the daemon automatically after saving settings when it was running.
 - Not safe for important shares yet.
   </CHANGES>
 

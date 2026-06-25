@@ -74,6 +74,7 @@ $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
+$trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) : "";
 ?>
 
@@ -343,6 +344,20 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
         <button type="submit" name="action" value="stop">Stop</button>
       </div>
     </form>
+  </div>
+
+  <div class="mirror-section">
+    <h3>Trash</h3>
+    <div class="mirror-grid">
+      <div class="mirror-stat">
+        <strong>Trash path</strong>
+        <?=mirror_value($trashRoot)?>
+      </div>
+    </div>
+    <p>
+      Overwritten and deleted files are copied here before the plugin changes
+      them. Remote peer trash is stored on the peer at the same plugin path.
+    </p>
   </div>
 
   <div class="mirror-section">

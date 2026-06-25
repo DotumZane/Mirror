@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.1.3
+0.1.4
 ```
 
 Version source of truth:
@@ -412,6 +412,7 @@ Current release status:
 - `0.1.1` fixes equal-peer delete propagation when deleting from Server B.
 - `0.1.2` adds clearer Local/Remote mirror mode and delete behavior controls.
 - `0.1.3` changes Local/Remote mode to a switch and hides remote-only fields in local mode.
+- `0.1.4` shows trash path and restarts a running daemon after settings save.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -629,7 +630,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.1.3.
+- Current version: 0.1.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -680,7 +681,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.1.3`.
+- Current version is `0.1.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -899,6 +900,16 @@ Next suggested task:
 - New decisions: Remote-only fields should stay hidden unless Remote LAN mirror mode is active.
 - Open questions: Confirm the visibility toggle works in Unraid's web UI.
 - Next suggested task: Push to GitHub, update/install the plugin, and verify Local mode only shows local settings.
+
+#### 2026-06-25 - Trash Path And Save Restart
+
+- Task completed: Made trash location visible and save settings restart the daemon when needed.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a Trash section that shows the configured trash path and added automatic daemon restart after Save Settings if the daemon was already running.
+- New decisions: Saving settings should not start a stopped daemon, but should restart a running daemon so changes take effect.
+- Open questions: Confirm on Unraid that save/restart reports cleanly in the action message.
+- Next suggested task: Push to GitHub, update/install the plugin, and verify trash path display plus save restart behavior.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

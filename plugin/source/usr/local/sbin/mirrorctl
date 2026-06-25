@@ -69,8 +69,27 @@ case "${1:-status}" in
       echo "Mirror daemon already stopped"
     fi
     ;;
+  restart)
+    ensure_config
+    was_running=0
+    if is_running; then
+      was_running=1
+      kill "$(cat "$PID")"
+      rm -f "$PID"
+      echo "Mirror daemon stopped"
+    fi
+    interval="$(sync_interval)"
+    cd "$EMHTTP_DIR"
+    nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
+    echo "$!" > "$PID"
+    if [ "$was_running" -eq 1 ]; then
+      echo "Mirror daemon restarted with pid $(cat "$PID") at ${interval}s interval"
+    else
+      echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
+    fi
+    ;;
   *)
-    echo "Usage: mirrorctl {status|run-once|start|stop|test-peer}" >&2
+    echo "Usage: mirrorctl {status|run-once|start|stop|restart|test-peer}" >&2
     exit 2
     ;;
 esac

@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.1.3">
+  <!ENTITY version    "0.1.4">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.3.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.4.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "ba5cdda196a114d8a406913293206793">
+  <!ENTITY md5        "ae37bb510252431d8c1902c86b9aaa82">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.1.3
-- Converts Local/Remote mirror mode to a segmented switch.
-- Hides remote peer SSH fields while Local mirror is selected.
+### 0.1.4
+- Shows the configured trash path on the settings page.
+- Restarts the daemon automatically after saving settings when it was running.
 - Not safe for important shares yet.
   </CHANGES>
 

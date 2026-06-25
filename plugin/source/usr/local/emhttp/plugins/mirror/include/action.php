@@ -5,6 +5,16 @@ $configFile = "$configDir/config.json";
 $actionFile = "$configDir/last-action.txt";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
+$pidFile = "/var/run/$plugin.pid";
+
+function mirror_daemon_running() {
+    global $pidFile;
+    if (!is_file($pidFile)) {
+        return false;
+    }
+    $pid = (int)trim((string)file_get_contents($pidFile));
+    return $pid > 0 && posix_kill($pid, 0);
+}
 
 function mirror_redirect() {
     $target = $_SERVER["HTTP_REFERER"] ?? "/Settings/Mirror";
@@ -35,6 +45,7 @@ function mirror_current_shares() {
 $action = $_POST["action"] ?? "status";
 
 if ($action === "save-config") {
+    $wasRunning = mirror_daemon_running();
     $serverAShare = trim((string)($_POST["server_a_share"] ?? ""));
     $mirrorMode = trim((string)($_POST["mirror_mode"] ?? ""));
     $serverBType = $mirrorMode !== "" ? $mirrorMode : trim((string)($_POST["server_b_type"] ?? "local"));
@@ -118,7 +129,15 @@ if ($action === "save-config") {
         $configFile,
         json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
     );
-    mirror_write_action("Settings saved.");
+    $message = "Settings saved.";
+    if ($wasRunning) {
+        exec("/usr/local/sbin/mirrorctl restart 2>&1", $output, $code);
+        $message .= "\n" . ($code === 0 ? "Daemon restarted." : "Daemon restart failed:");
+        if ($output) {
+            $message .= "\n" . implode("\n", $output);
+        }
+    }
+    mirror_write_action($message);
     mirror_redirect();
 }
 
