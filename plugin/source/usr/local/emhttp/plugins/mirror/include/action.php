@@ -8,6 +8,7 @@ $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
 $rootSshDir = "/root/.ssh";
 $authorizedKeysFile = "$rootSshDir/authorized_keys";
+$pluginUrl = "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg";
 
 function mirror_daemon_running() {
     global $pidFile;
@@ -238,6 +239,16 @@ if ($action === "accept-peer-key") {
     }
     chmod($authorizedKeysFile, 0600);
     mirror_write_action("Peer key accepted into /root/.ssh/authorized_keys.");
+    mirror_redirect();
+}
+
+if ($action === "update-plugin") {
+    global $pluginUrl;
+    $cmd = "installplg " . escapeshellarg($pluginUrl) . " 2>&1";
+    exec($cmd, $output, $code);
+    $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
+        . "\n" . implode("\n", $output);
+    mirror_write_action($message);
     mirror_redirect();
 }
 

@@ -236,6 +236,18 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     Early test build. Use disposable test shares only.
   </div>
 
+  <div class="mirror-section">
+    <h3>Plugin Update</h3>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="update-plugin">
+      <div class="mirror-actions">
+        <button type="submit">Update Plugin</button>
+      </div>
+    </form>
+    <span class="mirror-help">Updates from the GitHub main branch install URL.</span>
+  </div>
+
   <?php if (!$shares): ?>
     <div class="mirror-warning">
       No user shares were found under /mnt/user. Create two disposable test

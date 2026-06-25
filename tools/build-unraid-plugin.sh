@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Preserves Local/Remote switch state after key actions.
-- Keeps Generate SSH Key and Accept Peer Key from snapping back to Local mode.
+- Adds Update Plugin button to the settings page.
+- Runs installplg against the GitHub main branch plugin URL.
 - Not safe for important shares yet.
   </CHANGES>
 
