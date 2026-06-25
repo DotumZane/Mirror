@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds first LAN peer prototype over SSH/rsync.
-- Adds SSH key generation, peer test action, and remote Server B settings.
+- Fixes equal-peer delete propagation from Server B to Server A.
+- Keeps delete mirroring gated behind the delete propagation toggle.
 - Not safe for important shares yet.
   </CHANGES>
 

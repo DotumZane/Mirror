@@ -30,6 +30,20 @@ class MirrorEngineTests(unittest.TestCase):
         engine = MirrorEngine(config)
         return temp, root, engine
 
+    def make_equal_peer_engine(self):
+        temp = TemporaryDirectory()
+        root = Path(temp.name)
+        raw = {
+            "server_a": {"name": "a", "root": "a"},
+            "server_b": {"name": "b", "root": "b"},
+            "state_db": "state/mirror.sqlite3",
+            "trash_root": "trash",
+            "authority": "equal_peers",
+            "delete_propagation": True,
+        }
+        engine = MirrorEngine(MirrorConfig.from_dict(raw, root))
+        return temp, root, engine
+
     def test_copies_new_file_from_a_to_b(self):
         temp, root, engine = self.make_engine()
         self.addCleanup(temp.cleanup)
@@ -98,6 +112,18 @@ class MirrorEngineTests(unittest.TestCase):
 
         self.assertEqual(summary.conflicts, 0)
         self.assertEqual(summary.unchanged, 1)
+
+    def test_equal_peers_delete_from_b_deletes_a_when_enabled(self):
+        temp, root, engine = self.make_equal_peer_engine()
+        self.addCleanup(temp.cleanup)
+        (root / "a" / "gone.txt").write_text("base", encoding="utf-8")
+        engine.sync_once()
+
+        (root / "b" / "gone.txt").unlink()
+        summary = engine.sync_once()
+
+        self.assertEqual(summary.deleted, 1)
+        self.assertFalse((root / "a" / "gone.txt").exists())
 
 
 if __name__ == "__main__":

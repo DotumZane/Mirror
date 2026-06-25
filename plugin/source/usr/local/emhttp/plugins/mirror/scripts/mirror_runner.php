@@ -29,6 +29,11 @@ function safe_interval(array $config): int {
     return max(1, min(3600, (int)($config["sync_interval"] ?? 10)));
 }
 
+function equal_peer_delete_enabled(array $config): bool {
+    return (($config["authority"] ?? "server_a_preferred") === "equal_peers")
+        && !empty($config["delete_propagation"]);
+}
+
 function endpoint_is_remote(array $config): bool {
     return (($config["server_b"]["type"] ?? "local") === "remote");
 }
@@ -376,8 +381,13 @@ function sync_once(string $configPath): array {
                 record_conflict($state, $rel, "state_mismatch_without_change", $aRoot, $bRoot, $summary);
             }
         } elseif ($a["exists"] && !$b["exists"]) {
-            copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
-            record_file($state, $rel, $aRoot, $bRoot, "synced");
+            if (!$aChanged && equal_peer_delete_enabled($config)) {
+                delete_file($config, "server-a", $aRoot, $rel, $summary);
+                record_file($state, $rel, $aRoot, $bRoot, "deleted");
+            } else {
+                copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+                record_file($state, $rel, $aRoot, $bRoot, "synced");
+            }
         } elseif ($b["exists"] && !$a["exists"]) {
             if ($bChanged) {
                 record_conflict($state, $rel, "server_a_deleted_server_b_changed", $aRoot, $bRoot, $summary);
@@ -452,8 +462,13 @@ function sync_once_remote(string $configPath, array $config): array {
                 record_conflict_states($state, $rel, "state_mismatch_without_change", $a, $b, $summary);
             }
         } elseif ($a["exists"] && !$b["exists"]) {
-            copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
-            record_file_states($state, $rel, $a, $a, "synced");
+            if (!$aChanged && equal_peer_delete_enabled($config)) {
+                delete_file($config, "server-a", $aRoot, $rel, $summary);
+                record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
+            } else {
+                copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
+                record_file_states($state, $rel, $a, $a, "synced");
+            }
         } elseif ($b["exists"] && !$a["exists"]) {
             if ($bChanged) {
                 record_conflict_states($state, $rel, "server_a_deleted_server_b_changed", $a, $b, $summary);
