@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Bumps the test build past Unraid's string-style 0.1.x version comparison.
-- Carries forward the local manifest update fix.
+- Fixes the update button for Unraid builds that use the plugin CLI instead of installplg.
+- Keeps the local manifest download before running the update command.
 - Not safe for important shares yet.
   </CHANGES>
 

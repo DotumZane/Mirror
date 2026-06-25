@@ -289,9 +289,13 @@ if ($action === "accept-peer-key") {
 
 if ($action === "update-plugin") {
     global $pluginUrl;
+    $pluginCli = mirror_find_executable(["/usr/local/sbin/plugin", "/usr/sbin/plugin", "/sbin/plugin", "/usr/local/bin/plugin", "/usr/bin/plugin"]);
     $installplg = mirror_find_executable(["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"]);
-    if ($installplg === null) {
-        mirror_write_action("Plugin update command failed:\ninstallplg was not found in expected Unraid paths.");
+    if ($pluginCli === null && $installplg === null) {
+        mirror_write_action(
+            "Plugin update command failed:\n"
+            . "Neither Unraid's plugin CLI nor installplg was found in expected paths."
+        );
         mirror_redirect();
     }
     $localPlugin = "/tmp/mirror-latest.plg";
@@ -300,11 +304,18 @@ if ($action === "update-plugin") {
         mirror_write_action("Plugin update command failed:\nCould not download plugin manifest from $pluginUrl.\n$downloadMessage");
         mirror_redirect();
     }
-    $cmd = escapeshellarg($installplg) . " " . escapeshellarg($localPlugin) . " 2>&1";
+    if ($pluginCli !== null) {
+        $cmd = escapeshellarg($pluginCli) . " install " . escapeshellarg($localPlugin) . " 2>&1";
+        $runner = "$pluginCli install";
+    } else {
+        $cmd = escapeshellarg($installplg) . " " . escapeshellarg($localPlugin) . " 2>&1";
+        $runner = $installplg;
+    }
     exec($cmd, $output, $code);
     $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
         . "\nManifest: $pluginUrl"
         . "\nLocal file: $localPlugin"
+        . "\nCommand: $runner"
         . "\n" . implode("\n", $output);
     mirror_write_action($message);
     mirror_redirect();
