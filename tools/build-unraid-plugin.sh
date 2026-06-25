@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Fixes Update Plugin button when installplg is not in the web PATH.
-- Uses known Unraid installplg paths before running update.
+- Fixes Update Plugin button by downloading the manifest to /tmp first.
+- Runs installplg against the local mirror-latest.plg file.
 - Not safe for important shares yet.
   </CHANGES>
 

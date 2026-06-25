@@ -45,6 +45,51 @@ function mirror_current_shares() {
     return $shares;
 }
 
+function mirror_find_executable($candidates) {
+    foreach ($candidates as $candidate) {
+        if (is_executable($candidate)) {
+            return $candidate;
+        }
+    }
+    return null;
+}
+
+function mirror_download_plugin($url, $target) {
+    @unlink($target);
+    $downloadOutput = [];
+    $downloadCode = 1;
+
+    $curl = mirror_find_executable(["/usr/bin/curl", "/bin/curl"]);
+    if ($curl !== null) {
+        $cmd = escapeshellarg($curl) . " -fsSL -o " . escapeshellarg($target) . " " . escapeshellarg($url) . " 2>&1";
+        exec($cmd, $downloadOutput, $downloadCode);
+    } else {
+        $wget = mirror_find_executable(["/usr/bin/wget", "/bin/wget"]);
+        if ($wget !== null) {
+            $cmd = escapeshellarg($wget) . " -q -O " . escapeshellarg($target) . " " . escapeshellarg($url) . " 2>&1";
+            exec($cmd, $downloadOutput, $downloadCode);
+        } else {
+            $contents = @file_get_contents($url);
+            if ($contents !== false) {
+                $downloadCode = @file_put_contents($target, $contents) === false ? 1 : 0;
+            } else {
+                $downloadOutput[] = "curl, wget, and PHP URL download all failed.";
+            }
+        }
+    }
+
+    if ($downloadCode !== 0 || !is_file($target) || filesize($target) < 100) {
+        return [false, trim(implode("\n", $downloadOutput))];
+    }
+
+    $head = (string)file_get_contents($target, false, null, 0, 4096);
+    if (stripos($head, "<!DOCTYPE PLUGIN") === false && stripos($head, "<PLUGIN") === false) {
+        return [false, "Downloaded file does not look like an Unraid plugin manifest."];
+    }
+
+    return [true, trim(implode("\n", $downloadOutput))];
+}
+
 function mirror_existing_config() {
     global $configFile;
     $default = [
@@ -244,20 +289,22 @@ if ($action === "accept-peer-key") {
 
 if ($action === "update-plugin") {
     global $pluginUrl;
-    $installplg = null;
-    foreach (["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"] as $candidate) {
-        if (is_executable($candidate)) {
-            $installplg = $candidate;
-            break;
-        }
-    }
+    $installplg = mirror_find_executable(["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"]);
     if ($installplg === null) {
         mirror_write_action("Plugin update command failed:\ninstallplg was not found in expected Unraid paths.");
         mirror_redirect();
     }
-    $cmd = escapeshellarg($installplg) . " " . escapeshellarg($pluginUrl) . " 2>&1";
+    $localPlugin = "/tmp/mirror-latest.plg";
+    [$downloaded, $downloadMessage] = mirror_download_plugin($pluginUrl, $localPlugin);
+    if (!$downloaded) {
+        mirror_write_action("Plugin update command failed:\nCould not download plugin manifest from $pluginUrl.\n$downloadMessage");
+        mirror_redirect();
+    }
+    $cmd = escapeshellarg($installplg) . " " . escapeshellarg($localPlugin) . " 2>&1";
     exec($cmd, $output, $code);
     $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
+        . "\nManifest: $pluginUrl"
+        . "\nLocal file: $localPlugin"
         . "\n" . implode("\n", $output);
     mirror_write_action($message);
     mirror_redirect();
