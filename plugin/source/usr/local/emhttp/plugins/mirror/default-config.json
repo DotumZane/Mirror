@@ -5,7 +5,12 @@
   },
   "server_b": {
     "name": "server-b",
-    "root": "/mnt/user/mirror-test-b"
+    "type": "local",
+    "root": "/mnt/user/mirror-test-b",
+    "share": "mirror-test-b",
+    "host": "",
+    "user": "root",
+    "port": 22
   },
   "state_db": "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root": "/boot/config/plugins/mirror/trash",

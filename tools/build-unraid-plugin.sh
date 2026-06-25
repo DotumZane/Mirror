@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Removes runtime python3 dependency on Unraid.
-- Adds PHP mirror runner for run-once and daemon mode.
+- Adds first LAN peer prototype over SSH/rsync.
+- Adds SSH key generation, peer test action, and remote Server B settings.
 - Not safe for important shares yet.
   </CHANGES>
 

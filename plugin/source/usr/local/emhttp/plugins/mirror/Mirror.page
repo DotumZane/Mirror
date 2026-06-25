@@ -9,6 +9,7 @@ $configFile = "/boot/config/plugins/$plugin/config.json";
 $pidFile = "/var/run/$plugin.pid";
 $logFile = "/var/log/$plugin.log";
 $actionFile = "/boot/config/plugins/$plugin/last-action.txt";
+$publicKeyFile = "/boot/config/plugins/$plugin/ssh/mirror_ed25519.pub";
 
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
@@ -18,7 +19,15 @@ $lastAction = is_file($actionFile) ? trim(file_get_contents($actionFile)) : "";
 
 $defaultConfig = [
   "server_a" => ["name" => "server-a", "root" => "/mnt/user/mirror-test-a"],
-  "server_b" => ["name" => "server-b", "root" => "/mnt/user/mirror-test-b"],
+  "server_b" => [
+    "name" => "server-b",
+    "type" => "local",
+    "root" => "/mnt/user/mirror-test-b",
+    "share" => "mirror-test-b",
+    "host" => "",
+    "user" => "root",
+    "port" => 22,
+  ],
   "state_db" => "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root" => "/boot/config/plugins/mirror/trash",
   "authority" => "server_a_preferred",
@@ -62,6 +71,8 @@ function mirror_current_shares() {
 $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
+$serverBType = $config["server_b"]["type"] ?? "local";
+$publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) : "";
 ?>
 
 <style>
@@ -103,6 +114,12 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 .mirror-field select {
   box-sizing: border-box;
   width: 100%;
+}
+.mirror-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 72px;
+  font-family: monospace;
 }
 .mirror-help {
   display: block;
@@ -150,6 +167,9 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 }
 .mirror-code {
   max-height: 260px;
+}
+.mirror-peer-mode {
+  margin-bottom: 12px;
 }
 </style>
 
@@ -204,6 +224,13 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
           <span class="mirror-help">Source path: <?=mirror_value($config["server_a"]["root"])?></span>
         </div>
         <div class="mirror-field">
+          <label for="server_b_type">Server B location</label>
+          <select id="server_b_type" name="server_b_type">
+            <option value="local" <?=$serverBType === "local" ? "selected" : ""?>>Same server test share</option>
+            <option value="remote" <?=$serverBType === "remote" ? "selected" : ""?>>LAN peer over SSH</option>
+          </select>
+        </div>
+        <div class="mirror-field">
           <label for="server_b_share">Server B share</label>
           <select id="server_b_share" name="server_b_share" <?=$shares ? "" : "disabled"?>>
             <option value="">Select a share</option>
@@ -212,6 +239,23 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
             <?php endforeach; ?>
           </select>
           <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
+        </div>
+        <div class="mirror-field">
+          <label for="remote_share">Remote peer share name</label>
+          <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
+          <span class="mirror-help">Used only when Server B location is LAN peer.</span>
+        </div>
+        <div class="mirror-field">
+          <label for="peer_host">Peer host or IP</label>
+          <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($config["server_b"]["host"] ?? "")?>">
+        </div>
+        <div class="mirror-field">
+          <label for="peer_user">Peer SSH user</label>
+          <input id="peer_user" name="peer_user" type="text" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
+        </div>
+        <div class="mirror-field">
+          <label for="peer_port">Peer SSH port</label>
+          <input id="peer_port" name="peer_port" type="number" min="1" max="65535" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
         </div>
         <div class="mirror-field">
           <label for="authority">Authority rule</label>
@@ -234,6 +278,25 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
         <input type="submit" value="Save Settings" <?=$shares ? "" : "disabled"?>>
       </div>
     </form>
+  </div>
+
+  <div class="mirror-section">
+    <h3>LAN Peer SSH Key</h3>
+    <p>
+      Install this plugin on both servers. On server A, generate a key here,
+      then add the public key to server B for the SSH user above.
+    </p>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <div class="mirror-actions">
+        <button type="submit" name="action" value="generate-key">Generate SSH Key</button>
+        <button type="submit" name="action" value="test-peer">Test Peer</button>
+      </div>
+    </form>
+    <div class="mirror-field">
+      <label for="public_key">Public key to add on peer</label>
+      <textarea id="public_key" readonly><?=mirror_value($publicKey ?: "No key generated yet.")?></textarea>
+    </div>
   </div>
 
   <div class="mirror-section">

@@ -42,6 +42,11 @@ case "${1:-status}" in
     cd "$EMHTTP_DIR"
     "$PHP_BIN" "$RUNNER" run-once --config "$CONFIG" | tee -a "$LOG"
     ;;
+  test-peer)
+    ensure_config
+    cd "$EMHTTP_DIR"
+    "$PHP_BIN" "$RUNNER" test-peer --config "$CONFIG" | tee -a "$LOG"
+    ;;
   start)
     ensure_config
     if is_running; then
@@ -65,7 +70,7 @@ case "${1:-status}" in
     fi
     ;;
   *)
-    echo "Usage: mirrorctl {status|run-once|start|stop}" >&2
+    echo "Usage: mirrorctl {status|run-once|start|stop|test-peer}" >&2
     exit 2
     ;;
 esac

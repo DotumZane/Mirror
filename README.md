@@ -6,7 +6,7 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `0.0.7`
+Current version: `0.1.0`
 
 ## Test Install On Unraid
 
@@ -40,10 +40,17 @@ Settings -> User Utilities -> Mirror
 The current test page lets you set:
 
 - Server A share from a dropdown of current shares
-- Server B share from a dropdown of current shares
+- Server B as either a local share dropdown or a remote LAN peer share
 - Server A preferred or equal peer mode
 - delete mirroring on/off
 - daemon scan interval
+
+## LAN Peer Prototype
+
+Version `0.1.0` adds the first LAN peer prototype. Install the plugin on both
+Unraid servers, then use the Mirror page to generate/show the SSH public key on
+server A. Add that public key to server B's SSH authorized keys, configure the
+peer host/user/port and remote share name, then use **Test Peer** before syncing.
 
 ## Local Prototype
 

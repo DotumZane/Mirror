@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.7
+0.1.0
 ```
 
 Version source of truth:
@@ -387,10 +387,10 @@ Version source of truth:
 Version meaning:
 
 - `0.0.x`: planning notes, scaffolding, and very early prototypes.
-- `0.1.0`: first local folder sync prototype.
-- `0.2.0`: first two-peer LAN prototype.
-- `0.3.0`: first installable Unraid plugin package.
-- `0.4.0`: first UI-managed test build.
+- `0.1.0`: first two-peer LAN prototype.
+- `0.2.0`: remote share discovery and improved peer setup.
+- `0.3.0`: safer conflict/trash management for peer sync.
+- `0.4.0`: first broader UI-managed test build.
 - `1.0.0`: first version considered safe enough for careful real-world use.
 
 Bump rules:
@@ -408,6 +408,7 @@ Current release status:
 - `0.0.5` replaces the raw config display with a form-based settings page.
 - `0.0.6` changes share paths to dropdowns populated from current `/mnt/user` shares.
 - `0.0.7` removes the runtime Python dependency and uses a PHP runner on Unraid.
+- `0.1.0` adds the first LAN peer prototype over SSH/rsync.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -623,13 +624,13 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Current Status
 
-- Status: Planning/specification.
-- Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.7.
+- Status: Two-server LAN prototype.
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- Current version: 0.1.0.
 - Code started: Yes.
 - Plugin package started: Yes.
-- Daemon started: Local prototype only.
-- UI started: Basic Unraid Settings page.
+- Daemon started: PHP-based Unraid prototype.
+- UI started: Basic Unraid Settings page with peer settings.
 
 ### Completed So Far
 
@@ -652,6 +653,7 @@ This section should be updated at the end of every project task so the notes alw
 - Added basic Unraid Settings page.
 - Added `mirrorctl` command for status, run-once, start, and stop.
 - Confirmed local two-share sync works on Unraid.
+- Added first LAN peer settings and SSH/rsync prototype.
 
 ### Current Decisions
 
@@ -675,17 +677,17 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.7`.
+- Current version is `0.1.0`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
-- The sync engine is still a local prototype.
-- The prototype daemon uses Python for now because it runs in the current workspace.
-- The current Unraid plugin is installable as a test scaffold, but it is not production-safe.
+- The Python sync engine remains for local development tests only.
+- The installed Unraid plugin uses shell/PHP and does not require Python.
+- The current Unraid plugin is installable as a LAN peer prototype, but it is not production-safe.
 - The first install URL is `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`.
 
 ### Next Suggested Task
 
-- Turn the high-level behavior into an exact sync rules matrix and journal schema.
+- Push to GitHub, install/update on both Unraid servers, generate/copy SSH key, test peer, and run a disposable remote share sync.
 
 ### Tracker Update Template
 
@@ -855,6 +857,16 @@ Next suggested task:
 - Open questions: Confirm on Unraid that `Start` launches the daemon and `Run Once` syncs disposable test shares.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and test Start/Run Once again.
 
+#### 2026-06-25 - LAN Peer Prototype Added
+
+- Task completed: Added first two-server LAN peer prototype.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.0.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/default-config.json`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added LAN peer settings, SSH key generation, peer test action, remote Server B config, SSH-based remote scan, and rsync copy support in both directions.
+- New decisions: First peer implementation uses SSH and rsync because they are native tools for LAN Unraid-to-Unraid transfer.
+- Open questions: Confirm remote scan works on the peer Unraid version and add remote share dropdown/discovery after basic connection is proven.
+- Next suggested task: Push to GitHub, install/update on both Unraid servers, generate/copy SSH key, test peer, and run a disposable remote share sync.
+
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
 - Task completed: Confirmed the plugin can sync two selected local Unraid shares.
@@ -862,5 +874,5 @@ Next suggested task:
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
 - What changed: Recorded successful user test that the two selected shares sync.
 - New decisions: The local same-server share sync path is working enough to use for disposable test shares.
-- Open questions: Two-server LAN peer linking is still not implemented.
-- Next suggested task: Add peer/server linking settings and remote share discovery/sync over LAN.
+- Open questions: Superseded by the first LAN peer prototype in `0.1.0`.
+- Next suggested task: Test the LAN peer prototype on two disposable shares.

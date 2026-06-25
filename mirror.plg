@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.0.7">
+  <!ENTITY version    "0.1.0">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.7.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.0.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "ce9e0f610afd9fa33a41f569176c12da">
+  <!ENTITY md5        "aa0630e3799db47e08157461591f7e98">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.0.7
-- Removes runtime python3 dependency on Unraid.
-- Adds PHP mirror runner for run-once and daemon mode.
+### 0.1.0
+- Adds first LAN peer prototype over SSH/rsync.
+- Adds SSH key generation, peer test action, and remote Server B settings.
 - Not safe for important shares yet.
   </CHANGES>
 
