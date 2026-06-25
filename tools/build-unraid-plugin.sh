@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds Update Plugin button to the settings page.
-- Runs installplg against the GitHub main branch plugin URL.
+- Keeps remote-only actions in Remote LAN mirror mode.
+- Fixes Accept Peer Key switching the page back to Local mode.
 - Not safe for important shares yet.
   </CHANGES>
 
