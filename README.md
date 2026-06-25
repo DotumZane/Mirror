@@ -6,7 +6,36 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `0.0.1`
+Current version: `0.0.2`
+
+## Test Install On Unraid
+
+This is the first installable scaffold. It is still an early test build and
+should only be used with disposable test shares.
+
+Install from the Unraid web UI:
+
+```text
+Plugins -> Install Plugin
+```
+
+Paste this URL:
+
+```text
+https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg
+```
+
+Or install from an Unraid terminal:
+
+```sh
+installplg https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg
+```
+
+After install, open:
+
+```text
+Settings -> User Utilities -> Mirror
+```
 
 ## Local Prototype
 

@@ -1,0 +1,93 @@
+Menu="Settings:User Utilities"
+Title="Mirror"
+Tag="sync"
+---
+<?php
+$plugin = "mirror";
+$versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
+$configFile = "/boot/config/plugins/$plugin/config.json";
+$pidFile = "/var/run/$plugin.pid";
+$logFile = "/var/log/$plugin.log";
+
+$version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
+$installed = is_file("/usr/local/sbin/mirrorctl");
+$running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
+$config = is_file($configFile) ? file_get_contents($configFile) : "";
+$logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFile)) : "";
+?>
+
+<style>
+.mirror-panel {
+  max-width: 980px;
+}
+.mirror-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+.mirror-stat {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 12px;
+}
+.mirror-stat strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.mirror-code {
+  width: 100%;
+  min-height: 180px;
+  font-family: monospace;
+}
+.mirror-log {
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 12px;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 360px;
+}
+</style>
+
+<div class="mirror-panel">
+  <h2>Mirror</h2>
+
+  <div class="mirror-grid">
+    <div class="mirror-stat">
+      <strong>Version</strong>
+      <?=htmlspecialchars($version)?>
+    </div>
+    <div class="mirror-stat">
+      <strong>Install State</strong>
+      <?=$installed ? "Installed" : "Missing mirrorctl"?>
+    </div>
+    <div class="mirror-stat">
+      <strong>Daemon</strong>
+      <?=$running ? "Running" : "Stopped"?>
+    </div>
+  </div>
+
+  <p>
+    This is an early test build. It installs the plugin shell, control command,
+    and prototype daemon code, but it should only be pointed at disposable test
+    shares until the sync engine is hardened.
+  </p>
+
+  <h3>Control</h3>
+  <form method="post" action="/plugins/mirror/include/action.php">
+    <input type="hidden" name="csrf_token" value="<?=htmlspecialchars($var['csrf_token'] ?? '')?>">
+    <input type="submit" name="action" value="status">
+    <input type="submit" name="action" value="run-once">
+    <input type="submit" name="action" value="start">
+    <input type="submit" name="action" value="stop">
+  </form>
+
+  <h3>Config</h3>
+  <textarea class="mirror-code" readonly><?=htmlspecialchars($config)?></textarea>
+
+  <h3>Recent Log</h3>
+  <pre class="mirror-log"><?=htmlspecialchars($logTail ?: "No log entries yet.")?></pre>
+</div>

@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.1
+0.0.2
 ```
 
 Version source of truth:
@@ -382,7 +382,7 @@ Version source of truth:
 - Keep the current project version in the root `VERSION` file.
 - The README should show the current version.
 - Future `.plg` manifests and release artifacts should use the same version number.
-- Git tags should match releases, using the format `v0.0.1`.
+- Git tags should match releases, using the format `vX.Y.Z`, for example `v0.0.2`.
 
 Version meaning:
 
@@ -401,8 +401,9 @@ Bump rules:
 
 Current release status:
 
-- `0.0.1` is a planning/specification version.
-- It is not an installable Unraid plugin yet.
+- `0.0.1` was the first planning/prototype version.
+- `0.0.2` is the first installable Unraid plugin scaffold.
+- It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
 ## Main Components
@@ -618,12 +619,12 @@ This section should be updated at the end of every project task so the notes alw
 ### Current Status
 
 - Status: Planning/specification.
-- Current phase: Phase 2 - Prototype Daemon.
-- Current version: 0.0.1.
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- Current version: 0.0.2.
 - Code started: Yes.
-- Plugin package started: No.
+- Plugin package started: Yes.
 - Daemon started: Local prototype only.
-- UI started: No.
+- UI started: Basic Unraid Settings page.
 
 ### Completed So Far
 
@@ -640,6 +641,11 @@ This section should be updated at the end of every project task so the notes alw
 - Added local two-folder test config.
 - Added SQLite-backed sync journal.
 - Added first unit tests for local sync behavior.
+- Added first installable Unraid plugin scaffold.
+- Added `mirror.plg` installer.
+- Added `packages/mirror-0.0.2.txz` package.
+- Added basic Unraid Settings page.
+- Added `mirrorctl` command for status, run-once, start, and stop.
 
 ### Current Decisions
 
@@ -663,11 +669,13 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.1`.
+- Current version is `0.0.2`.
 - The root `VERSION` file is the source of truth for the current version.
-- Future release tags should use the format `v0.0.1`.
-- The current code is a local prototype only, not an installable Unraid plugin.
-- The prototype uses Python for now because it runs in the current workspace.
+- Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
+- The sync engine is still a local prototype.
+- The prototype daemon uses Python for now because it runs in the current workspace.
+- The current Unraid plugin is installable as a test scaffold, but it is not production-safe.
+- The first install URL is `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`.
 
 ### Next Suggested Task
 
@@ -780,3 +788,13 @@ Next suggested task:
 - New decisions: Use Python for the first local prototype so behavior can be tested immediately in this workspace. Keep real Unraid shares out of scope until the prototype is safer.
 - Open questions: Decide whether the production daemon stays Python or moves to a single compiled binary later.
 - Next suggested task: Expand the sync rules matrix and add tests for delete propagation, trash retention cleanup, and conflict files.
+
+#### 2026-06-25 - Installable Unraid Scaffold Added
+
+- Task completed: Added the first installable Unraid plugin scaffold.
+- Files changed: `.gitignore`, `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.2.txz`, `plugin/source/install/slack-desc`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/README.txt`, `plugin/source/usr/local/emhttp/plugins/mirror/default-config.json`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Added a GitHub-installable `.plg`, Slackware-style `.txz` package, basic Settings page, control command, default config, and build script.
+- New decisions: The first test install will use the raw GitHub `main` URL until release assets are added. The installable scaffold version is `0.0.2` because `0.0.1` was already used for the first prototype.
+- Open questions: Test on Unraid and confirm whether stock Python is available or whether the daemon should be bundled/ported before service start is enabled by default.
+- Next suggested task: Push to GitHub, install on a disposable Unraid test server, and capture install output.

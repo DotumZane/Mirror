@@ -1,0 +1,66 @@
+<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE PLUGIN [
+  <!ENTITY name       "mirror">
+  <!ENTITY author     "DotumZane">
+  <!ENTITY version    "0.0.2">
+  <!ENTITY plugin     "/boot/config/plugins/&name;">
+  <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.2.txz">
+  <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
+  <!ENTITY md5        "bfb9b62f8a597c7961f0f2721ee00c0d">
+]>
+<PLUGIN name="&name;" author="&author;" version="&version;"
+        launch="Settings/Mirror" pluginURL="&pluginURL;"
+        min="6.12.0" support="https://github.com/DotumZane/Mirror">
+  <CHANGES>
+### 0.0.2
+- First installable test scaffold.
+- Adds Settings page, mirrorctl command, and local prototype daemon files.
+- Not safe for important shares yet.
+  </CHANGES>
+
+  <FILE Run="/bin/bash">
+    <INLINE>
+      mkdir -p &plugin;
+      find &plugin; -maxdepth 1 -type f -name '&name;-*.txz' ! -name '&name;-&version;.txz' -delete 2>/dev/null || true
+    </INLINE>
+  </FILE>
+
+  <FILE Name="/boot/config/plugins/&name;/&name;-&version;.txz" Run="upgradepkg --install-new">
+    <URL>&packageURL;</URL>
+    <MD5>&md5;</MD5>
+  </FILE>
+
+  <FILE Run="/bin/bash">
+    <INLINE>
+      mkdir -p &plugin;
+      chmod +x /usr/local/sbin/mirrorctl 2>/dev/null || true;
+      if [ ! -f &plugin;/config.json ]; then
+        cp &emhttp;/default-config.json &plugin;/config.json;
+      fi;
+      if [ -f &emhttp;/Mirror.page ] &amp;&amp; [ -x /usr/local/sbin/mirrorctl ]; then
+        echo "";
+        echo "===================================================================";
+        echo "  Mirror &version; installed successfully.";
+        echo "";
+        echo "  Open it at: Settings - User Utilities - Mirror";
+        echo "  This is an early test build. Use disposable test shares only.";
+        echo "===================================================================";
+        echo "";
+      else
+        echo "Mirror install failed: expected files are missing.";
+        exit 1;
+      fi;
+    </INLINE>
+  </FILE>
+
+  <FILE Run="/bin/bash" Method="remove">
+    <INLINE>
+      /usr/local/sbin/mirrorctl stop 2>/dev/null || true;
+      removepkg &name;-&version; 2>/dev/null || true;
+      rm -rf &emhttp;;
+      rm -f /usr/local/sbin/mirrorctl;
+      echo "Mirror uninstalled. Persistent config remains at &plugin;.";
+    </INLINE>
+  </FILE>
+</PLUGIN>

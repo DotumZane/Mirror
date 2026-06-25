@@ -1,0 +1,11 @@
+mirror: mirror
+mirror:
+mirror: Unraid LAN mirror plugin prototype.
+mirror:
+mirror: This package installs the early Mirror plugin scaffold,
+mirror: settings page, control command, and prototype daemon code.
+mirror:
+mirror: Do not use this early build on important shares.
+mirror:
+mirror:
+mirror:

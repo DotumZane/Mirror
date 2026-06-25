@@ -1,0 +1,64 @@
+#!/bin/bash
+set -euo pipefail
+
+PLUGIN="mirror"
+EMHTTP_DIR="/usr/local/emhttp/plugins/${PLUGIN}"
+BOOT_DIR="/boot/config/plugins/${PLUGIN}"
+CONFIG="${BOOT_DIR}/config.json"
+LOG="/var/log/${PLUGIN}.log"
+PID="/var/run/${PLUGIN}.pid"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+ensure_config() {
+  mkdir -p "$BOOT_DIR"
+  if [ ! -f "$CONFIG" ]; then
+    cp "${EMHTTP_DIR}/default-config.json" "$CONFIG"
+  fi
+}
+
+is_running() {
+  [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null
+}
+
+case "${1:-status}" in
+  status)
+    ensure_config
+    if is_running; then
+      echo "Mirror daemon running with pid $(cat "$PID")"
+    else
+      echo "Mirror daemon stopped"
+    fi
+    echo "Config: $CONFIG"
+    echo "Log: $LOG"
+    ;;
+  run-once)
+    ensure_config
+    cd "$EMHTTP_DIR"
+    "$PYTHON_BIN" -m mirror_app run-once --config "$CONFIG" | tee -a "$LOG"
+    ;;
+  start)
+    ensure_config
+    if is_running; then
+      echo "Mirror daemon already running with pid $(cat "$PID")"
+      exit 0
+    fi
+    cd "$EMHTTP_DIR"
+    nohup "$PYTHON_BIN" -m mirror_app daemon --config "$CONFIG" --interval 10 >>"$LOG" 2>&1 &
+    echo "$!" > "$PID"
+    echo "Mirror daemon started with pid $(cat "$PID")"
+    ;;
+  stop)
+    if is_running; then
+      kill "$(cat "$PID")"
+      rm -f "$PID"
+      echo "Mirror daemon stopped"
+    else
+      rm -f "$PID"
+      echo "Mirror daemon already stopped"
+    fi
+    ;;
+  *)
+    echo "Usage: mirrorctl {status|run-once|start|stop}" >&2
+    exit 2
+    ;;
+esac
