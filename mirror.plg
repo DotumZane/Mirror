@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.1.11">
+  <!ENTITY version    "0.1.12">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.11.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.12.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "c381547b3858cb0af4395b321efea3ea">
+  <!ENTITY md5        "ea31e684a6b9c8ae921ae25fd9199817">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.1.11
-- Fixes Update Plugin button by downloading the manifest to /tmp first.
-- Runs installplg against the local mirror-latest.plg file.
+### 0.1.12
+- Repackages the local manifest update fix as a newer plugin version.
+- Lets Unraid accept an update instead of rejecting the same-version build.
 - Not safe for important shares yet.
   </CHANGES>
 

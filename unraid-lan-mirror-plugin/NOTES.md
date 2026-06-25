@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.1.11
+0.1.12
 ```
 
 Version source of truth:
@@ -420,6 +420,7 @@ Current release status:
 - `0.1.9` fixes remote-only actions preserving Local mode by mistake.
 - `0.1.10` fixes the Update Plugin button by using full `installplg` paths.
 - `0.1.11` fixes the Update Plugin button by downloading `mirror.plg` to `/tmp` before running `installplg`.
+- `0.1.12` republishes the update fix as a newer version so Unraid will not reject it as same/older.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -637,7 +638,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.1.11.
+- Current version: 0.1.12.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -688,7 +689,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.1.11`.
+- Current version is `0.1.12`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -987,6 +988,16 @@ Next suggested task:
 - New decisions: Plugin self-update should avoid handing a remote URL directly to the web action; use a local manifest file for clearer Unraid behavior.
 - Open questions: Confirm on Unraid that the Update Plugin button now installs the pushed version without the `installplg is not a plg file` message.
 - Next suggested task: Push to GitHub, update manually once to `0.1.11`, then test the in-page Update Plugin button for the next version.
+
+#### 2026-06-25 - Same-Version Install Blocker Fix
+
+- Task completed: Bumped the plugin package to a newer version after Unraid rejected reinstalling the same-version manifest.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.12.txz`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Rebuilt the same local-manifest update fix as version `0.1.12` so Unraid sees it as newer than the installed package.
+- New decisions: When testing installer/update fixes, always bump the version because Unraid will reject same-version installs as older/same.
+- Open questions: Confirm on Unraid that installing the GitHub URL now updates to `0.1.12`.
+- Next suggested task: Push to GitHub, install/update with the raw `mirror.plg` URL, then confirm the Settings page shows version `0.1.12`.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
