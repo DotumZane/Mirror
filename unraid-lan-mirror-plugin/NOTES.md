@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.1.6
+0.1.7
 ```
 
 Version source of truth:
@@ -415,6 +415,7 @@ Current release status:
 - `0.1.4` shows trash path and restarts a running daemon after settings save.
 - `0.1.5` adds an Accept Peer Key workflow to install a peer public key from the UI.
 - `0.1.6` allows Remote LAN mirror mode to save before all peer details are filled in.
+- `0.1.7` preserves the Local/Remote switch during key actions.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -632,7 +633,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.1.6.
+- Current version: 0.1.7.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -683,7 +684,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.1.6`.
+- Current version is `0.1.7`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -932,6 +933,16 @@ Next suggested task:
 - New decisions: Save Settings should persist the selected mode; peer validation should happen when testing or running the peer connection.
 - Open questions: Confirm on Unraid that the switch stays on Remote after saving.
 - Next suggested task: Push to GitHub, update/install, switch to Remote LAN mirror, save, and confirm it remains selected.
+
+#### 2026-06-25 - Key Action Mode Preservation
+
+- Task completed: Fixed Generate SSH Key and Accept Peer Key switching the page back to Local mode.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.7.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Key-related forms now preserve the current Local/Remote mode and the action handler writes that mode back into config before redirecting.
+- New decisions: Any secondary action from the Remote-only panel should preserve Remote mode.
+- Open questions: Confirm on Unraid that Generate SSH Key no longer snaps the switch back to Local.
+- Next suggested task: Push to GitHub, update/install, switch to Remote, generate key, and verify Remote remains selected.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

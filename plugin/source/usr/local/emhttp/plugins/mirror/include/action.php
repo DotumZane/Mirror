@@ -63,6 +63,27 @@ function mirror_existing_config() {
     return is_array($decoded) ? array_replace_recursive($default, $decoded) : $default;
 }
 
+function mirror_preserve_mode_from_post() {
+    global $configDir, $configFile;
+    $mode = trim((string)($_POST["preserve_mirror_mode"] ?? ""));
+    if (!in_array($mode, ["local", "remote"], true) || !is_file($configFile)) {
+        return;
+    }
+    $config = json_decode((string)file_get_contents($configFile), true);
+    if (!is_array($config)) {
+        return;
+    }
+    $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
+    $config["server_b"]["type"] = $mode;
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    file_put_contents(
+        $configFile,
+        json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
+    );
+}
+
 $action = $_POST["action"] ?? "status";
 
 if ($action === "save-config") {
@@ -170,6 +191,7 @@ if ($action === "save-config") {
 }
 
 if ($action === "generate-key") {
+    mirror_preserve_mode_from_post();
     if (!is_dir($sshDir)) {
         mkdir($sshDir, 0700, true);
     }
@@ -188,6 +210,7 @@ if ($action === "generate-key") {
 }
 
 if ($action === "accept-peer-key") {
+    mirror_preserve_mode_from_post();
     global $rootSshDir, $authorizedKeysFile;
     $key = trim((string)($_POST["peer_public_key"] ?? ""));
     $errors = [];

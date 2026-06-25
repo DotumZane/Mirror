@@ -328,6 +328,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     </p>
     <form method="post" action="/plugins/mirror/include/action.php">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="preserve_mirror_mode" value="<?=mirror_value($serverBType)?>">
       <div class="mirror-actions">
         <button type="submit" name="action" value="generate-key">Generate SSH Key</button>
         <button type="submit" name="action" value="test-peer">Test Peer</button>
@@ -348,6 +349,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <form method="post" action="/plugins/mirror/include/action.php">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="accept-peer-key">
+      <input type="hidden" name="preserve_mirror_mode" value="<?=mirror_value($serverBType)?>">
       <div class="mirror-field">
         <label for="peer_public_key">Peer public key</label>
         <textarea id="peer_public_key" name="peer_public_key" placeholder="ssh-ed25519 AAAA... mirror-plugin@server"></textarea>

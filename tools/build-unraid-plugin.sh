@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Allows Remote LAN mirror mode to be saved before peer details are complete.
-- Keeps the Local/Remote switch from snapping back after saving draft settings.
+- Preserves Local/Remote switch state after key actions.
+- Keeps Generate SSH Key and Accept Peer Key from snapping back to Local mode.
 - Not safe for important shares yet.
   </CHANGES>
 
