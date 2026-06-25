@@ -618,6 +618,7 @@ This section should be updated at the end of every project task so the notes alw
 - Testing should start with local/disposable folders before using real Unraid shares.
 - Test installs should be done from GitHub using an Unraid `.plg` install URL.
 - GitHub Releases should eventually provide the preferred stable test install URL.
+- GitHub repository target: `https://github.com/DotumZane/Mirror`
 
 ### Next Suggested Task
 
@@ -690,3 +691,13 @@ Next suggested task:
 - New decisions: Test installs should use an Unraid `.plg` file hosted through GitHub. GitHub Releases should eventually provide the preferred stable install URL.
 - Open questions: Decide whether early testing should use a raw `main` `.plg` URL or a GitHub Releases `.plg` URL first.
 - Next suggested task: Define the exact sync rules matrix and journal schema.
+
+#### 2026-06-25 - Local Git Repository Prepared
+
+- Task completed: Created the first local commit and configured the GitHub remote.
+- Files changed: `README.md`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 1 - Specification.
+- What changed: Added a GitHub README, committed the project notes, and set `origin` to `https://github.com/DotumZane/Mirror.git`.
+- New decisions: Use `DotumZane/Mirror` as the GitHub repository for this project.
+- Open questions: Push is blocked until GitHub authentication is available in the local shell.
+- Next suggested task: Authenticate GitHub locally, push `main`, then continue with exact sync rules matrix and journal schema.
