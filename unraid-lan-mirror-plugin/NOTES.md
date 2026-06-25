@@ -367,6 +367,44 @@ Test server safety rules:
 - Start with delete propagation disabled or heavily warned until delete behavior is proven.
 - Verify uninstall removes the service and UI cleanly without touching synced data.
 
+## Versioning
+
+Use semantic versioning-style numbers from the beginning.
+
+Current version:
+
+```text
+0.0.1
+```
+
+Version source of truth:
+
+- Keep the current project version in the root `VERSION` file.
+- The README should show the current version.
+- Future `.plg` manifests and release artifacts should use the same version number.
+- Git tags should match releases, using the format `v0.0.1`.
+
+Version meaning:
+
+- `0.0.x`: planning notes, scaffolding, and very early prototypes.
+- `0.1.0`: first local folder sync prototype.
+- `0.2.0`: first two-peer LAN prototype.
+- `0.3.0`: first installable Unraid plugin package.
+- `0.4.0`: first UI-managed test build.
+- `1.0.0`: first version considered safe enough for careful real-world use.
+
+Bump rules:
+
+- Patch bump: docs, notes, small fixes, or internal cleanup.
+- Minor bump: new working feature or testable milestone.
+- Major bump: breaking change after `1.0.0`.
+
+Current release status:
+
+- `0.0.1` is a planning/specification version.
+- It is not an installable Unraid plugin yet.
+- It should not be used on real shares.
+
 ## Main Components
 
 ### Plugin UI
@@ -581,6 +619,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 1 - Specification.
+- Current version: 0.0.1.
 - Code started: No.
 - Plugin package started: No.
 - Daemon started: No.
@@ -619,6 +658,10 @@ This section should be updated at the end of every project task so the notes alw
 - Test installs should be done from GitHub using an Unraid `.plg` install URL.
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
+- Version numbers should be tracked from the beginning.
+- Current version is `0.0.1`.
+- The root `VERSION` file is the source of truth for the current version.
+- Future release tags should use the format `v0.0.1`.
 
 ### Next Suggested Task
 
@@ -710,4 +753,14 @@ Next suggested task:
 - What changed: Verified local `main` is tracking `origin/main` and recorded that the GitHub repository now has the initial files.
 - New decisions: Continue using GitHub Desktop for pushes when shell authentication is unavailable.
 - Open questions: None for repository setup.
+- Next suggested task: Define the exact sync rules matrix and journal schema.
+
+#### 2026-06-25 - Version Tracking Added
+
+- Task completed: Added project version tracking.
+- Files changed: `VERSION`, `README.md`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 1 - Specification.
+- What changed: Added root `VERSION` file, displayed the version in README, added versioning rules to notes, and updated the project tracker.
+- New decisions: Start at version `0.0.1`, use the root `VERSION` file as the source of truth, and use release tags like `v0.0.1`.
+- Open questions: Decide when to tag `v0.0.1` on GitHub.
 - Next suggested task: Define the exact sync rules matrix and journal schema.
