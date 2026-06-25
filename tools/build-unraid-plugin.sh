@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds Accept Peer Key workflow in the plugin UI.
-- Allows installing a peer's ssh-ed25519 key into root authorized_keys.
+- Allows Remote LAN mirror mode to be saved before peer details are complete.
+- Keeps the Local/Remote switch from snapping back after saving draft settings.
 - Not safe for important shares yet.
   </CHANGES>
 

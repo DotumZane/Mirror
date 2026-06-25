@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.1.5">
+  <!ENTITY version    "0.1.6">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.5.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.6.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "b582f1e035f784a1f6a64a498bfc7419">
+  <!ENTITY md5        "d3e5eb2a34ca7e86e0a97b2fcf8141df">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.1.5
-- Adds Accept Peer Key workflow in the plugin UI.
-- Allows installing a peer's ssh-ed25519 key into root authorized_keys.
+### 0.1.6
+- Allows Remote LAN mirror mode to be saved before peer details are complete.
+- Keeps the Local/Remote switch from snapping back after saving draft settings.
 - Not safe for important shares yet.
   </CHANGES>
 

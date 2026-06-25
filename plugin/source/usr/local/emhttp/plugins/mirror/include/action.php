@@ -44,10 +44,30 @@ function mirror_current_shares() {
     return $shares;
 }
 
+function mirror_existing_config() {
+    global $configFile;
+    $default = [
+        "server_b" => [
+            "type" => "local",
+            "root" => "/mnt/user/mirror-test-b",
+            "share" => "mirror-test-b",
+            "host" => "",
+            "user" => "root",
+            "port" => 22,
+        ],
+    ];
+    if (!is_file($configFile)) {
+        return $default;
+    }
+    $decoded = json_decode((string)file_get_contents($configFile), true);
+    return is_array($decoded) ? array_replace_recursive($default, $decoded) : $default;
+}
+
 $action = $_POST["action"] ?? "status";
 
 if ($action === "save-config") {
     $wasRunning = mirror_daemon_running();
+    $existingConfig = mirror_existing_config();
     $serverAShare = trim((string)($_POST["server_a_share"] ?? ""));
     $mirrorMode = trim((string)($_POST["mirror_mode"] ?? ""));
     $serverBType = $mirrorMode !== "" ? $mirrorMode : trim((string)($_POST["server_b_type"] ?? "local"));
@@ -82,16 +102,22 @@ if ($action === "save-config") {
         $serverBRoot = "/mnt/user/" . $serverBShare;
         $serverBConfiguredShare = $serverBShare;
     } else {
-        if ($remoteShare === "" || preg_match("#[\\x00/]+#", $remoteShare)) {
+        if ($remoteShare !== "" && preg_match("#[\\x00/]+#", $remoteShare)) {
             $errors[] = "Remote peer share name must be a single share name, not a path.";
         }
+        if ($remoteShare === "") {
+            $remoteShare = (string)($existingConfig["server_b"]["share"] ?? "");
+        }
         if ($peerHost === "") {
-            $errors[] = "Peer host or IP is required for LAN peer mode.";
+            $peerHost = (string)($existingConfig["server_b"]["host"] ?? "");
+        }
+        if ($peerUser === "") {
+            $peerUser = (string)($existingConfig["server_b"]["user"] ?? "root");
         }
         if ($peerUser === "" || preg_match("#[^A-Za-z0-9_.-]#", $peerUser)) {
             $errors[] = "Peer SSH user contains unsupported characters.";
         }
-        $serverBRoot = "/mnt/user/" . $remoteShare;
+        $serverBRoot = $remoteShare !== "" ? "/mnt/user/" . $remoteShare : (string)($existingConfig["server_b"]["root"] ?? "/mnt/user/");
         $serverBConfiguredShare = $remoteShare;
     }
     if (!in_array($authority, ["server_a_preferred", "equal_peers"], true)) {
