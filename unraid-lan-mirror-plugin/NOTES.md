@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.2
+0.0.3
 ```
 
 Version source of truth:
@@ -403,6 +403,7 @@ Current release status:
 
 - `0.0.1` was the first planning/prototype version.
 - `0.0.2` is the first installable Unraid plugin scaffold.
+- `0.0.3` fixes the Unraid Settings page placement.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -620,7 +621,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.2.
+- Current version: 0.0.3.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: Local prototype only.
@@ -669,7 +670,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.2`.
+- Current version is `0.0.3`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The sync engine is still a local prototype.
@@ -798,3 +799,13 @@ Next suggested task:
 - New decisions: The first test install will use the raw GitHub `main` URL until release assets are added. The installable scaffold version is `0.0.2` because `0.0.1` was already used for the first prototype.
 - Open questions: Test on Unraid and confirm whether stock Python is available or whether the daemon should be bundled/ported before service start is enabled by default.
 - Next suggested task: Push to GitHub, install on a disposable Unraid test server, and capture install output.
+
+#### 2026-06-25 - Settings Placement Fix
+
+- Task completed: Fixed the Mirror page showing inline on the main Settings page.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.3.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Changed the `.page` header to `Menu="OtherSettings"` with `Type="xmenu"`, matching the User Utilities pattern used by working Unraid plugins, rebuilt the package, and bumped the version to `0.0.3`.
+- New decisions: Use `OtherSettings` for the Settings -> User Utilities tile.
+- Open questions: Confirm on Unraid after upgrade that only the tile appears on the Settings index and the full Mirror page opens after clicking the tile.
+- Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify page placement.
