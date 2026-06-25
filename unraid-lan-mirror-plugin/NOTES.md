@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.5
+0.0.6
 ```
 
 Version source of truth:
@@ -406,6 +406,7 @@ Current release status:
 - `0.0.3` fixes the Unraid Settings page placement.
 - `0.0.4` moves the Settings tile to the correct User Utilities section.
 - `0.0.5` replaces the raw config display with a form-based settings page.
+- `0.0.6` changes share paths to dropdowns populated from current `/mnt/user` shares.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -623,7 +624,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.5.
+- Current version: 0.0.6.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: Local prototype only.
@@ -672,7 +673,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.5`.
+- Current version is `0.0.6`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The sync engine is still a local prototype.
@@ -831,3 +832,13 @@ Next suggested task:
 - New decisions: Keep the UI focused on disposable test share setup until the sync engine is safer.
 - Open questions: Confirm the Save Settings and action buttons work on Unraid, since PHP is not installed in the local Mac environment for linting.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and test saving settings with disposable shares.
+
+#### 2026-06-25 - Share Dropdowns Added
+
+- Task completed: Replaced manual share path fields with dropdowns populated from current Unraid shares.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.6.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: The settings page now scans `/mnt/user` for current shares, shows Server A and Server B share dropdowns, and the save action validates selected shares before writing full `/mnt/user/<share>` paths to config.
+- New decisions: For local test mode, users should select shares from dropdowns instead of typing paths.
+- Open questions: Later two-server mode will need local share dropdown plus remote peer share discovery.
+- Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify the dropdowns list current shares.

@@ -18,29 +18,36 @@ function mirror_write_action($message) {
     file_put_contents($actionFile, trim($message));
 }
 
-function mirror_clean_path($path) {
-    $path = trim((string)$path);
-    $path = preg_replace("#/+#", "/", $path);
-    return rtrim($path, "/");
+function mirror_current_shares() {
+    $shares = [];
+    foreach (glob("/mnt/user/*", GLOB_ONLYDIR) ?: [] as $path) {
+        $name = basename($path);
+        if ($name === "" || $name[0] === ".") {
+            continue;
+        }
+        $shares[$name] = true;
+    }
+    return $shares;
 }
 
 $action = $_POST["action"] ?? "status";
 
 if ($action === "save-config") {
-    $serverARoot = mirror_clean_path($_POST["server_a_root"] ?? "");
-    $serverBRoot = mirror_clean_path($_POST["server_b_root"] ?? "");
+    $serverAShare = trim((string)($_POST["server_a_share"] ?? ""));
+    $serverBShare = trim((string)($_POST["server_b_share"] ?? ""));
     $authority = $_POST["authority"] ?? "server_a_preferred";
     $interval = max(1, min(3600, (int)($_POST["sync_interval"] ?? 10)));
     $deletePropagation = isset($_POST["delete_propagation"]);
+    $shares = mirror_current_shares();
 
     $errors = [];
-    foreach (["Server A" => $serverARoot, "Server B" => $serverBRoot] as $label => $path) {
-        if ($path === "" || strpos($path, "/mnt/user/") !== 0) {
-            $errors[] = "$label path must start with /mnt/user/";
+    foreach (["Server A" => $serverAShare, "Server B" => $serverBShare] as $label => $share) {
+        if ($share === "" || !isset($shares[$share])) {
+            $errors[] = "$label share must be selected from current /mnt/user shares.";
         }
     }
-    if ($serverARoot !== "" && $serverARoot === $serverBRoot) {
-        $errors[] = "Server A and Server B paths must be different.";
+    if ($serverAShare !== "" && $serverAShare === $serverBShare) {
+        $errors[] = "Server A and Server B shares must be different.";
     }
     if (!in_array($authority, ["server_a_preferred", "equal_peers"], true)) {
         $authority = "server_a_preferred";
@@ -50,6 +57,9 @@ if ($action === "save-config") {
         mirror_write_action("Settings not saved:\n" . implode("\n", $errors));
         mirror_redirect();
     }
+
+    $serverARoot = "/mnt/user/" . $serverAShare;
+    $serverBRoot = "/mnt/user/" . $serverBShare;
 
     $config = [
         "server_a" => ["name" => "server-a", "root" => $serverARoot],
