@@ -1,0 +1,14 @@
+{
+  "server_a": {
+    "name": "server-a",
+    "root": "../sandbox/server-a"
+  },
+  "server_b": {
+    "name": "server-b",
+    "root": "../sandbox/server-b"
+  },
+  "state_db": "../sandbox/mirror.sqlite3",
+  "trash_root": "../sandbox/trash",
+  "authority": "server_a_preferred",
+  "delete_propagation": false
+}

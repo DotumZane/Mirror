@@ -618,11 +618,11 @@ This section should be updated at the end of every project task so the notes alw
 ### Current Status
 
 - Status: Planning/specification.
-- Current phase: Phase 1 - Specification.
+- Current phase: Phase 2 - Prototype Daemon.
 - Current version: 0.0.1.
-- Code started: No.
+- Code started: Yes.
 - Plugin package started: No.
-- Daemon started: No.
+- Daemon started: Local prototype only.
 - UI started: No.
 
 ### Completed So Far
@@ -636,6 +636,10 @@ This section should be updated at the end of every project task so the notes alw
 - Captured instant, batched, and scheduled sync mode requirements.
 - Captured performance requirement: faster and more efficient than Syncthing for this Unraid-specific use case.
 - Added this project tracker.
+- Started local Python prototype daemon/CLI.
+- Added local two-folder test config.
+- Added SQLite-backed sync journal.
+- Added first unit tests for local sync behavior.
 
 ### Current Decisions
 
@@ -662,6 +666,8 @@ This section should be updated at the end of every project task so the notes alw
 - Current version is `0.0.1`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `v0.0.1`.
+- The current code is a local prototype only, not an installable Unraid plugin.
+- The prototype uses Python for now because it runs in the current workspace.
 
 ### Next Suggested Task
 
@@ -764,3 +770,13 @@ Next suggested task:
 - New decisions: Start at version `0.0.1`, use the root `VERSION` file as the source of truth, and use release tags like `v0.0.1`.
 - Open questions: Decide when to tag `v0.0.1` on GitHub.
 - Next suggested task: Define the exact sync rules matrix and journal schema.
+
+#### 2026-06-25 - Local Prototype Started
+
+- Task completed: Added the first runnable local sync prototype.
+- Files changed: `.gitignore`, `README.md`, `config/dev.local.json`, `mirror_app/__init__.py`, `mirror_app/__main__.py`, `mirror_app/cli.py`, `mirror_app/sync.py`, `sandbox/.gitkeep`, `tests/test_sync.py`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 2 - Prototype Daemon.
+- What changed: Added a Python CLI with `version`, `run-once`, and `daemon` commands; added local two-folder config; added SQLite journal; added trash-before-overwrite/delete support; added first Server A preferred sync rules; added unit tests; verified manual sandbox sync.
+- New decisions: Use Python for the first local prototype so behavior can be tested immediately in this workspace. Keep real Unraid shares out of scope until the prototype is safer.
+- Open questions: Decide whether the production daemon stays Python or moves to a single compiled binary later.
+- Next suggested task: Expand the sync rules matrix and add tests for delete propagation, trash retention cleanup, and conflict files.

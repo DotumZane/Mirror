@@ -1,0 +1,10 @@
+# Local prototype runtime data
+sandbox/*
+!sandbox/.gitkeep
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Local editor/system files
+.DS_Store
