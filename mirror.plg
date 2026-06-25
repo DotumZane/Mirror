@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.0.6">
+  <!ENTITY version    "0.0.7">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.6.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.7.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "d0e0f2fe004955c7530d714403eea38a">
+  <!ENTITY md5        "ce9e0f610afd9fa33a41f569176c12da">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.0.6
-- Adds form-based Mirror settings page.
-- Adds Settings page, mirrorctl command, and local prototype daemon files.
+### 0.0.7
+- Removes runtime python3 dependency on Unraid.
+- Adds PHP mirror runner for run-once and daemon mode.
 - Not safe for important shares yet.
   </CHANGES>
 

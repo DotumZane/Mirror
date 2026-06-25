@@ -7,7 +7,8 @@ BOOT_DIR="/boot/config/plugins/${PLUGIN}"
 CONFIG="${BOOT_DIR}/config.json"
 LOG="/var/log/${PLUGIN}.log"
 PID="/var/run/${PLUGIN}.pid"
-PYTHON_BIN="${PYTHON_BIN:-python3}"
+PHP_BIN="${PHP_BIN:-php}"
+RUNNER="${EMHTTP_DIR}/scripts/mirror_runner.php"
 
 ensure_config() {
   mkdir -p "$BOOT_DIR"
@@ -21,17 +22,7 @@ is_running() {
 }
 
 sync_interval() {
-  "$PYTHON_BIN" - "$CONFIG" <<'PY' 2>/dev/null || echo 10
-import json
-import sys
-
-try:
-    with open(sys.argv[1], "r", encoding="utf-8") as handle:
-        config = json.load(handle)
-    print(max(1, int(config.get("sync_interval", 10))))
-except Exception:
-    print(10)
-PY
+  "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
 case "${1:-status}" in
@@ -44,11 +35,12 @@ case "${1:-status}" in
     fi
     echo "Config: $CONFIG"
     echo "Log: $LOG"
+    echo "Runner: $RUNNER"
     ;;
   run-once)
     ensure_config
     cd "$EMHTTP_DIR"
-    "$PYTHON_BIN" -m mirror_app run-once --config "$CONFIG" | tee -a "$LOG"
+    "$PHP_BIN" "$RUNNER" run-once --config "$CONFIG" | tee -a "$LOG"
     ;;
   start)
     ensure_config
@@ -58,7 +50,7 @@ case "${1:-status}" in
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$PYTHON_BIN" -m mirror_app daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
+    nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
     echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;

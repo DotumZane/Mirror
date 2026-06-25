@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.6
+0.0.7
 ```
 
 Version source of truth:
@@ -407,6 +407,7 @@ Current release status:
 - `0.0.4` moves the Settings tile to the correct User Utilities section.
 - `0.0.5` replaces the raw config display with a form-based settings page.
 - `0.0.6` changes share paths to dropdowns populated from current `/mnt/user` shares.
+- `0.0.7` removes the runtime Python dependency and uses a PHP runner on Unraid.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -624,7 +625,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.6.
+- Current version: 0.0.7.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: Local prototype only.
@@ -673,7 +674,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.6`.
+- Current version is `0.0.7`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The sync engine is still a local prototype.
@@ -842,3 +843,13 @@ Next suggested task:
 - New decisions: For local test mode, users should select shares from dropdowns instead of typing paths.
 - Open questions: Later two-server mode will need local share dropdown plus remote peer share discovery.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify the dropdowns list current shares.
+
+#### 2026-06-25 - Python Dependency Removed From Plugin
+
+- Task completed: Fixed daemon start failure caused by missing `python3` on Unraid.
+- Files changed: `.gitignore`, `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.7.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Added a PHP runner for run-once and daemon mode, changed `mirrorctl` to call PHP instead of Python, and stopped packaging the Python prototype into the Unraid install package.
+- New decisions: Installed Unraid plugin code should rely on PHP/shell for now because those are available on Unraid by default.
+- Open questions: Confirm on Unraid that `Start` launches the daemon and `Run Once` syncs disposable test shares.
+- Next suggested task: Push to GitHub, update/install the plugin on Unraid, and test Start/Run Once again.

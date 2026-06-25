@@ -14,7 +14,6 @@ EMHTTP_DIR="${SOURCE_DIR}/usr/local/emhttp/plugins/${PLUGIN_NAME}"
 mkdir -p "${ROOT}/packages" "${EMHTTP_DIR}"
 
 rm -rf "${EMHTTP_DIR}/mirror_app"
-cp -R "${ROOT}/mirror_app" "${EMHTTP_DIR}/mirror_app"
 cp "${ROOT}/VERSION" "${EMHTTP_DIR}/VERSION"
 
 chmod +x "${SOURCE_DIR}/usr/local/sbin/mirrorctl"
@@ -45,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds form-based Mirror settings page.
-- Adds Settings page, mirrorctl command, and local prototype daemon files.
+- Removes runtime python3 dependency on Unraid.
+- Adds PHP mirror runner for run-once and daemon mode.
 - Not safe for important shares yet.
   </CHANGES>
 
