@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.1.9
+0.1.10
 ```
 
 Version source of truth:
@@ -418,6 +418,7 @@ Current release status:
 - `0.1.7` preserves the Local/Remote switch during key actions.
 - `0.1.8` adds an Update Plugin button to the settings page.
 - `0.1.9` fixes remote-only actions preserving Local mode by mistake.
+- `0.1.10` fixes the Update Plugin button by using full `installplg` paths.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -635,7 +636,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.1.9.
+- Current version: 0.1.10.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -686,7 +687,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.1.9`.
+- Current version is `0.1.10`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -965,6 +966,16 @@ Next suggested task:
 - New decisions: Any action shown only in the remote section should force-preserve Remote LAN mirror mode.
 - Open questions: Confirm on Unraid that Accept Peer Key leaves Remote mode selected.
 - Next suggested task: Push to GitHub, update/install, switch to Remote, accept a key, and verify Remote remains selected.
+
+#### 2026-06-25 - Update Button Path Fix
+
+- Task completed: Fixed Update Plugin button failing because `installplg` was not in the web action PATH.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.1.10.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Update action now searches known Unraid paths for `installplg` and runs the executable by full path.
+- New decisions: Web UI actions should not rely on shell PATH for Unraid system commands.
+- Open questions: Confirm on Unraid that the Update Plugin button now runs successfully.
+- Next suggested task: Push to GitHub, update manually once, then test the in-page Update Plugin button.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

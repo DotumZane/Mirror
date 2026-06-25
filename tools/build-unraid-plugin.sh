@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Keeps remote-only actions in Remote LAN mirror mode.
-- Fixes Accept Peer Key switching the page back to Local mode.
+- Fixes Update Plugin button when installplg is not in the web PATH.
+- Uses known Unraid installplg paths before running update.
 - Not safe for important shares yet.
   </CHANGES>
 

@@ -244,7 +244,18 @@ if ($action === "accept-peer-key") {
 
 if ($action === "update-plugin") {
     global $pluginUrl;
-    $cmd = "installplg " . escapeshellarg($pluginUrl) . " 2>&1";
+    $installplg = null;
+    foreach (["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"] as $candidate) {
+        if (is_executable($candidate)) {
+            $installplg = $candidate;
+            break;
+        }
+    }
+    if ($installplg === null) {
+        mirror_write_action("Plugin update command failed:\ninstallplg was not found in expected Unraid paths.");
+        mirror_redirect();
+    }
+    $cmd = escapeshellarg($installplg) . " " . escapeshellarg($pluginUrl) . " 2>&1";
     exec($cmd, $output, $code);
     $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
         . "\n" . implode("\n", $output);
