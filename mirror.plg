@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.1.4">
+  <!ENTITY version    "0.1.5">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.4.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.1.5.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "ae37bb510252431d8c1902c86b9aaa82">
+  <!ENTITY md5        "b582f1e035f784a1f6a64a498bfc7419">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.1.4
-- Shows the configured trash path on the settings page.
-- Restarts the daemon automatically after saving settings when it was running.
+### 0.1.5
+- Adds Accept Peer Key workflow in the plugin UI.
+- Allows installing a peer's ssh-ed25519 key into root authorized_keys.
 - Not safe for important shares yet.
   </CHANGES>
 

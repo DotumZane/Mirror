@@ -10,6 +10,7 @@ $pidFile = "/var/run/$plugin.pid";
 $logFile = "/var/log/$plugin.log";
 $actionFile = "/boot/config/plugins/$plugin/last-action.txt";
 $publicKeyFile = "/boot/config/plugins/$plugin/ssh/mirror_ed25519.pub";
+$authorizedKeysFile = "/root/.ssh/authorized_keys";
 
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
@@ -76,6 +77,11 @@ $serverBType = $config["server_b"]["type"] ?? "local";
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) : "";
+$acceptedKeyCount = is_file($authorizedKeysFile)
+  ? count(array_filter(file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], function ($line) {
+      return strpos($line, "mirror-plugin@") !== false;
+    }))
+  : 0;
 ?>
 
 <style>
@@ -331,6 +337,27 @@ $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) :
       <label for="public_key">Public key to add on peer</label>
       <textarea id="public_key" readonly><?=mirror_value($publicKey ?: "No key generated yet.")?></textarea>
     </div>
+  </div>
+
+  <div class="mirror-section mirror-remote-only">
+    <h3>Accept Peer Key</h3>
+    <p>
+      On the peer server, paste the other server's public key here to allow SSH
+      access for mirroring.
+    </p>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="accept-peer-key">
+      <div class="mirror-field">
+        <label for="peer_public_key">Peer public key</label>
+        <textarea id="peer_public_key" name="peer_public_key" placeholder="ssh-ed25519 AAAA... mirror-plugin@server"></textarea>
+        <span class="mirror-help">Installed into /root/.ssh/authorized_keys.</span>
+      </div>
+      <div class="mirror-actions">
+        <button type="submit">Accept Peer Key</button>
+      </div>
+    </form>
+    <div class="mirror-help">Accepted Mirror keys on this server: <?=mirror_value($acceptedKeyCount)?></div>
   </div>
 
   <div class="mirror-section">

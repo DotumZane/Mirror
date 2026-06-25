@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Shows the configured trash path on the settings page.
-- Restarts the daemon automatically after saving settings when it was running.
+- Adds Accept Peer Key workflow in the plugin UI.
+- Allows installing a peer's ssh-ed25519 key into root authorized_keys.
 - Not safe for important shares yet.
   </CHANGES>
 

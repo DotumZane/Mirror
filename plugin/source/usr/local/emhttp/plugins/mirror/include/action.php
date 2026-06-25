@@ -6,6 +6,8 @@ $actionFile = "$configDir/last-action.txt";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
+$rootSshDir = "/root/.ssh";
+$authorizedKeysFile = "$rootSshDir/authorized_keys";
 
 function mirror_daemon_running() {
     global $pidFile;
@@ -156,6 +158,37 @@ if ($action === "generate-key") {
     } else {
         mirror_write_action("SSH key already exists.");
     }
+    mirror_redirect();
+}
+
+if ($action === "accept-peer-key") {
+    global $rootSshDir, $authorizedKeysFile;
+    $key = trim((string)($_POST["peer_public_key"] ?? ""));
+    $errors = [];
+    if ($key === "") {
+        $errors[] = "Peer public key is required.";
+    }
+    if (!preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $key)) {
+        $errors[] = "Only ssh-ed25519 public keys are accepted right now.";
+    }
+    if ($errors) {
+        mirror_write_action("Peer key not accepted:\n" . implode("\n", $errors));
+        mirror_redirect();
+    }
+
+    if (!is_dir($rootSshDir)) {
+        mkdir($rootSshDir, 0700, true);
+    }
+    chmod($rootSshDir, 0700);
+    $existing = is_file($authorizedKeysFile)
+        ? file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+        : [];
+    if (!in_array($key, $existing, true)) {
+        $existing[] = $key;
+        file_put_contents($authorizedKeysFile, implode("\n", $existing) . "\n");
+    }
+    chmod($authorizedKeysFile, 0600);
+    mirror_write_action("Peer key accepted into /root/.ssh/authorized_keys.");
     mirror_redirect();
 }
 
