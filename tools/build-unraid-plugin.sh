@@ -45,7 +45,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- First installable test scaffold.
+- Adds form-based Mirror settings page.
 - Adds Settings page, mirrorctl command, and local prototype daemon files.
 - Not safe for important shares yet.
   </CHANGES>

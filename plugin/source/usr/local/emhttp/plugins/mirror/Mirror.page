@@ -8,17 +8,39 @@ $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 $configFile = "/boot/config/plugins/$plugin/config.json";
 $pidFile = "/var/run/$plugin.pid";
 $logFile = "/var/log/$plugin.log";
+$actionFile = "/boot/config/plugins/$plugin/last-action.txt";
 
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
 $running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
-$config = is_file($configFile) ? file_get_contents($configFile) : "";
 $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFile)) : "";
+$lastAction = is_file($actionFile) ? trim(file_get_contents($actionFile)) : "";
+
+$defaultConfig = [
+  "server_a" => ["name" => "server-a", "root" => "/mnt/user/mirror-test-a"],
+  "server_b" => ["name" => "server-b", "root" => "/mnt/user/mirror-test-b"],
+  "state_db" => "/boot/config/plugins/mirror/mirror.sqlite3",
+  "trash_root" => "/boot/config/plugins/mirror/trash",
+  "authority" => "server_a_preferred",
+  "delete_propagation" => false,
+  "sync_interval" => 10,
+];
+$config = $defaultConfig;
+if (is_file($configFile)) {
+  $decoded = json_decode(file_get_contents($configFile), true);
+  if (is_array($decoded)) {
+    $config = array_replace_recursive($defaultConfig, $decoded);
+  }
+}
+
+function mirror_value($value) {
+  return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
+}
 ?>
 
 <style>
 .mirror-panel {
-  max-width: 980px;
+  max-width: 1120px;
 }
 .mirror-grid {
   display: grid;
@@ -26,7 +48,8 @@ $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFil
   gap: 12px;
   margin: 16px 0;
 }
-.mirror-stat {
+.mirror-stat,
+.mirror-section {
   border: 1px solid var(--border-color, #333);
   border-radius: 6px;
   padding: 12px;
@@ -36,19 +59,66 @@ $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFil
   font-size: 14px;
   margin-bottom: 6px;
 }
-.mirror-code {
-  width: 100%;
-  min-height: 180px;
-  font-family: monospace;
+.mirror-section {
+  margin: 16px 0;
 }
-.mirror-log {
+.mirror-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.mirror-field label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.mirror-field input[type="text"],
+.mirror-field input[type="number"],
+.mirror-field select {
+  box-sizing: border-box;
+  width: 100%;
+}
+.mirror-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.mirror-check {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 24px;
+}
+.mirror-warning,
+.mirror-message {
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 12px 0;
+}
+.mirror-warning {
+  border: 1px solid #c9892b;
+  background: rgba(201, 137, 43, 0.12);
+}
+.mirror-message {
+  border: 1px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  white-space: pre-wrap;
+}
+.mirror-log,
+.mirror-code {
   background: rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border-color, #333);
   border-radius: 6px;
   padding: 12px;
   white-space: pre-wrap;
   overflow: auto;
-  max-height: 360px;
+}
+.mirror-log {
+  max-height: 320px;
+}
+.mirror-code {
+  max-height: 260px;
 }
 </style>
 
@@ -58,7 +128,7 @@ $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFil
   <div class="mirror-grid">
     <div class="mirror-stat">
       <strong>Version</strong>
-      <?=htmlspecialchars($version)?>
+      <?=mirror_value($version)?>
     </div>
     <div class="mirror-stat">
       <strong>Install State</strong>
@@ -70,24 +140,72 @@ $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFil
     </div>
   </div>
 
-  <p>
-    This is an early test build. It installs the plugin shell, control command,
-    and prototype daemon code, but it should only be pointed at disposable test
-    shares until the sync engine is hardened.
-  </p>
+  <?php if ($lastAction): ?>
+    <div class="mirror-message"><?=mirror_value($lastAction)?></div>
+  <?php endif; ?>
 
-  <h3>Control</h3>
-  <form method="post" action="/plugins/mirror/include/action.php">
-    <input type="hidden" name="csrf_token" value="<?=htmlspecialchars($var['csrf_token'] ?? '')?>">
-    <input type="submit" name="action" value="status">
-    <input type="submit" name="action" value="run-once">
-    <input type="submit" name="action" value="start">
-    <input type="submit" name="action" value="stop">
-  </form>
+  <div class="mirror-warning">
+    Early test build. Use disposable test shares only.
+  </div>
 
-  <h3>Config</h3>
-  <textarea class="mirror-code" readonly><?=htmlspecialchars($config)?></textarea>
+  <div class="mirror-section">
+    <h3>Share Pair</h3>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="save-config">
 
-  <h3>Recent Log</h3>
-  <pre class="mirror-log"><?=htmlspecialchars($logTail ?: "No log entries yet.")?></pre>
+      <div class="mirror-form-grid">
+        <div class="mirror-field">
+          <label for="server_a_root">Server A test share path</label>
+          <input id="server_a_root" name="server_a_root" type="text" value="<?=mirror_value($config["server_a"]["root"])?>">
+        </div>
+        <div class="mirror-field">
+          <label for="server_b_root">Server B test share path</label>
+          <input id="server_b_root" name="server_b_root" type="text" value="<?=mirror_value($config["server_b"]["root"])?>">
+        </div>
+        <div class="mirror-field">
+          <label for="authority">Authority rule</label>
+          <select id="authority" name="authority">
+            <option value="server_a_preferred" <?=$config["authority"] === "server_a_preferred" ? "selected" : ""?>>Server A preferred</option>
+            <option value="equal_peers" <?=$config["authority"] === "equal_peers" ? "selected" : ""?>>Equal peers</option>
+          </select>
+        </div>
+        <div class="mirror-field">
+          <label for="sync_interval">Daemon scan interval seconds</label>
+          <input id="sync_interval" name="sync_interval" type="number" min="1" max="3600" value="<?=mirror_value($config["sync_interval"])?>">
+        </div>
+        <div class="mirror-check">
+          <input id="delete_propagation" name="delete_propagation" type="checkbox" value="1" <?=$config["delete_propagation"] ? "checked" : ""?>>
+          <label for="delete_propagation">Mirror deletes after saving trash</label>
+        </div>
+      </div>
+
+      <div class="mirror-actions">
+        <input type="submit" value="Save Settings">
+      </div>
+    </form>
+  </div>
+
+  <div class="mirror-section">
+    <h3>Control</h3>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <div class="mirror-actions">
+        <button type="submit" name="action" value="status">Status</button>
+        <button type="submit" name="action" value="run-once">Run Once</button>
+        <button type="submit" name="action" value="start">Start</button>
+        <button type="submit" name="action" value="stop">Stop</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="mirror-section">
+    <h3>Current Config</h3>
+    <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
+  </div>
+
+  <div class="mirror-section">
+    <h3>Recent Log</h3>
+    <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
+  </div>
 </div>

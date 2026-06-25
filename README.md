@@ -6,7 +6,7 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `0.0.4`
+Current version: `0.0.5`
 
 ## Test Install On Unraid
 
@@ -36,6 +36,14 @@ After install, open:
 ```text
 Settings -> User Utilities -> Mirror
 ```
+
+The current test page lets you set:
+
+- Server A test share path
+- Server B test share path
+- Server A preferred or equal peer mode
+- delete mirroring on/off
+- daemon scan interval
 
 ## Local Prototype
 

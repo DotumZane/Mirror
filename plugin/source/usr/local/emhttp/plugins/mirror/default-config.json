@@ -10,5 +10,6 @@
   "state_db": "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root": "/boot/config/plugins/mirror/trash",
   "authority": "server_a_preferred",
-  "delete_propagation": false
+  "delete_propagation": false,
+  "sync_interval": 10
 }

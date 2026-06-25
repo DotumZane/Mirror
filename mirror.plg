@@ -2,19 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.0.4">
+  <!ENTITY version    "0.0.5">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.4.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.0.5.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "a19b37b6bb68e04cd64bfda782b2695c">
+  <!ENTITY md5        "a98775f4a6c9cf909c4db59aa7071a02">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.0.4
-- First installable test scaffold.
+### 0.0.5
+- Adds form-based Mirror settings page.
 - Adds Settings page, mirrorctl command, and local prototype daemon files.
 - Not safe for important shares yet.
   </CHANGES>

@@ -20,6 +20,20 @@ is_running() {
   [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null
 }
 
+sync_interval() {
+  "$PYTHON_BIN" - "$CONFIG" <<'PY' 2>/dev/null || echo 10
+import json
+import sys
+
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as handle:
+        config = json.load(handle)
+    print(max(1, int(config.get("sync_interval", 10))))
+except Exception:
+    print(10)
+PY
+}
+
 case "${1:-status}" in
   status)
     ensure_config
@@ -42,10 +56,11 @@ case "${1:-status}" in
       echo "Mirror daemon already running with pid $(cat "$PID")"
       exit 0
     fi
+    interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$PYTHON_BIN" -m mirror_app daemon --config "$CONFIG" --interval 10 >>"$LOG" 2>&1 &
+    nohup "$PYTHON_BIN" -m mirror_app daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
-    echo "Mirror daemon started with pid $(cat "$PID")"
+    echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;
   stop)
     if is_running; then

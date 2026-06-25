@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.0.4
+0.0.5
 ```
 
 Version source of truth:
@@ -405,6 +405,7 @@ Current release status:
 - `0.0.2` is the first installable Unraid plugin scaffold.
 - `0.0.3` fixes the Unraid Settings page placement.
 - `0.0.4` moves the Settings tile to the correct User Utilities section.
+- `0.0.5` replaces the raw config display with a form-based settings page.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -622,7 +623,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Planning/specification.
 - Current phase: Phase 4 - Unraid Plugin Wrapper.
-- Current version: 0.0.4.
+- Current version: 0.0.5.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: Local prototype only.
@@ -671,7 +672,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.0.4`.
+- Current version is `0.0.5`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The sync engine is still a local prototype.
@@ -820,3 +821,13 @@ Next suggested task:
 - New decisions: Use `Menu="Utilities"` for the Settings -> User Utilities tile on Unraid 7.3.
 - Open questions: Confirm on Unraid after upgrade that the Mirror tile appears under User Utilities and not System Settings.
 - Next suggested task: Push to GitHub, update/install the plugin on Unraid, and verify page placement.
+
+#### 2026-06-25 - Settings UI Improved
+
+- Task completed: Replaced the raw JSON settings panel with a form-based settings page.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.0.5.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/default-config.json`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 4 - Unraid Plugin Wrapper.
+- What changed: Added editable fields for Server A path, Server B path, authority rule, delete mirroring, and daemon scan interval; actions now redirect back to the page and show the last result.
+- New decisions: Keep the UI focused on disposable test share setup until the sync engine is safer.
+- Open questions: Confirm the Save Settings and action buttons work on Unraid, since PHP is not installed in the local Mac environment for linting.
+- Next suggested task: Push to GitHub, update/install the plugin on Unraid, and test saving settings with disposable shares.
