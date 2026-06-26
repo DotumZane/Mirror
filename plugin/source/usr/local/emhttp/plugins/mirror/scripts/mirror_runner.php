@@ -26,7 +26,7 @@ function load_config(string $path): array {
 }
 
 function safe_interval(array $config): int {
-    return max(1, min(3600, (int)($config["sync_interval"] ?? 10)));
+    return max(0, min(3600, (int)($config["sync_interval"] ?? 10)));
 }
 
 function equal_peer_delete_enabled(array $config): bool {

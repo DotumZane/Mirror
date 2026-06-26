@@ -124,6 +124,53 @@ sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
+interval_label() {
+  if [ "${1:-10}" -eq 0 ] 2>/dev/null; then
+    echo "automatic change detection"
+    return
+  fi
+  echo "${1:-10}s interval"
+}
+
+sync_watch_paths() {
+  "$PHP_BIN" -r '
+    $path=$argv[1];
+    $config=is_file($path) ? json_decode((string)file_get_contents($path), true) : [];
+    if (!is_array($config)) {
+      exit;
+    }
+    foreach (["server_a", "server_b"] as $key) {
+      $server=$config[$key] ?? [];
+      $root=(string)($server["root"] ?? "");
+      $type=(string)($server["type"] ?? "local");
+      if ($root !== "" && $type !== "remote" && is_dir($root)) {
+        echo $root . "\n";
+      }
+    }
+  ' "$CONFIG" 2>/dev/null
+}
+
+wait_for_change() {
+  local paths=()
+  mapfile -t paths < <(sync_watch_paths)
+  if [ "${#paths[@]}" -eq 0 ]; then
+    echo "$(timestamp) automatic detection has no local share paths to watch; retrying in 10s"
+    sleep 10
+    return
+  fi
+  if command -v inotifywait >/dev/null 2>&1; then
+    echo "$(timestamp) waiting for automatic file change detection"
+    if inotifywait -qq -r -e close_write,create,delete,move,attrib "${paths[@]}"; then
+      return
+    fi
+    echo "$(timestamp) automatic detection watcher exited unexpectedly; retrying in 10s"
+    sleep 10
+    return
+  fi
+  echo "$(timestamp) automatic detection needs inotifywait; command not found, retrying in 10s"
+  sleep 10
+}
+
 node_role() {
   "$PHP_BIN" -r '$path=$argv[1]; $config=is_file($path) ? json_decode((string)file_get_contents($path), true) : []; echo (is_array($config) ? ($config["node_role"] ?? "master") : "master") . "\n";' "$CONFIG" 2>/dev/null || echo master
 }
@@ -144,6 +191,10 @@ daemon_loop() {
     code="$?"
     if [ "$code" -ne 0 ]; then
       echo "$(timestamp) sync error: run-once exited with code ${code}"
+    fi
+    if [ "$interval" -eq 0 ] 2>/dev/null; then
+      wait_for_change
+      continue
     fi
     sleep "$interval"
   done
@@ -231,7 +282,7 @@ case "${1:-status}" in
       tail -n 20 "$LOG" 2>/dev/null || true
       exit 1
     fi
-    echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
+    echo "Mirror daemon started with pid $(cat "$PID") using $(interval_label "$interval")"
     ;;
   stop)
     stop_daemon
@@ -256,9 +307,9 @@ case "${1:-status}" in
       exit 1
     fi
     if [ "$was_running" -eq 1 ]; then
-      echo "Mirror daemon restarted with pid $(cat "$PID") at ${interval}s interval"
+      echo "Mirror daemon restarted with pid $(cat "$PID") using $(interval_label "$interval")"
     else
-      echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
+      echo "Mirror daemon started with pid $(cat "$PID") using $(interval_label "$interval")"
     fi
     ;;
   pair-start)

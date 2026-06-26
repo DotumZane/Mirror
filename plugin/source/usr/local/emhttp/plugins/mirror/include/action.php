@@ -512,7 +512,7 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
         "delete_propagation" => $deleteBehavior === "mirror_deletes",
         "delete_behavior" => $deleteBehavior,
         "node_role" => (string)($existing["node_role"] ?? "master"),
-        "sync_interval" => max(1, min(3600, (int)($existing["sync_interval"] ?? 10))),
+        "sync_interval" => max(0, min(3600, (int)($existing["sync_interval"] ?? 10))),
     ];
     mirror_write_config($config);
 }
@@ -951,7 +951,7 @@ if ($action === "save-config") {
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
     $authority = $_POST["authority"] ?? "server_a_preferred";
     $deleteBehavior = $_POST["delete_behavior"] ?? "restore_missing";
-    $interval = max(1, min(3600, (int)($_POST["sync_interval"] ?? 10)));
+    $interval = max(0, min(3600, (int)($_POST["sync_interval"] ?? 10)));
     if (!in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
         $deleteBehavior = "restore_missing";
     }
