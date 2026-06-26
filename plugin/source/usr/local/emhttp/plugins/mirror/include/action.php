@@ -676,10 +676,25 @@ if ($action === "invite-peer") {
             "from_host" => mirror_primary_ip(),
             "public_key" => $publicKey,
         ];
+        $hello = mirror_http_json(mirror_remote_url($peerHost, ["action" => "hello", "invite_check" => time()]), 2.0);
+        if (!is_array($hello) || ($hello["service"] ?? "") !== "mirror") {
+            $helloError = is_array($hello) ? (string)($hello["error"] ?? json_encode($hello, JSON_UNESCAPED_SLASHES)) : "no response";
+            throw new RuntimeException("Peer responder did not answer hello before invite: $helloError");
+        }
         $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "invite"]), 4.0, $payload);
         if (!is_array($response) || ($response["status"] ?? "") !== "pending") {
-            $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
-            throw new RuntimeException("Peer did not store the invite request: $peerError");
+            $postError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
+            $response = mirror_http_json(mirror_remote_url($peerHost, [
+                "action" => "invite",
+                "from_name" => $payload["from_name"],
+                "from_host" => $payload["from_host"],
+                "public_key" => $payload["public_key"],
+                "transport" => "query",
+            ]), 4.0);
+            if (!is_array($response) || ($response["status"] ?? "") !== "pending") {
+                $queryError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
+                throw new RuntimeException("Peer did not store the invite request. POST: $postError. Query fallback: $queryError");
+            }
         }
         $peerVersion = (string)($response["version"] ?? "unknown");
         mirror_accept_public_key((string)($response["public_key"] ?? ""));

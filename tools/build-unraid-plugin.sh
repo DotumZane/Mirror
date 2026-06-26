@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Simplifies LAN pairing to direct peer IP invites.
-- Removes automatic peer discovery cards from the main pairing flow.
+- Adds a direct-invite hello check before sending.
+- Falls back to query-parameter invites if JSON POST returns no peer response.
 - Not safe for important shares yet.
   </CHANGES>
 

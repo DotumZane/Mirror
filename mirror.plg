@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.5.7">
+  <!ENTITY version    "0.5.8">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.7.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.8.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "76afa5355bca5b5a6c0956fb97757700">
+  <!ENTITY md5        "c8564682104b57ba52d78b0896abb794">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.5.7
-- Simplifies LAN pairing to direct peer IP invites.
-- Removes automatic peer discovery cards from the main pairing flow.
+### 0.5.8
+- Adds a direct-invite hello check before sending.
+- Falls back to query-parameter invites if JSON POST returns no peer response.
 - Not safe for important shares yet.
   </CHANGES>
 

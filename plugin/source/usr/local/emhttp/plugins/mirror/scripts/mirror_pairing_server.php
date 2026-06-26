@@ -137,7 +137,7 @@ if ($action === "invite") {
     }
     $payload = json_decode((string)file_get_contents("php://input"), true);
     if (!is_array($payload)) {
-        mirror_json_response(["status" => "error", "error" => "Invalid invite payload."], 400);
+        $payload = $_GET;
     }
     $fromHost = trim((string)($payload["from_host"] ?? ($_SERVER["REMOTE_ADDR"] ?? "")));
     $fromName = trim((string)($payload["from_name"] ?? "Mirror peer"));
