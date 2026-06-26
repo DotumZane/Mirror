@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.6.8">
+  <!ENTITY version    "0.6.9">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.8.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.9.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "cabc49652fdb6b0b55999c472aee2270">
+  <!ENTITY md5        "1623153d9efb329b53342630473f0bf1">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.6.8
-- Lets the daemon start without a fragile immediate health gate.
-- Leaves remote sync failures in Recent Log while the daemon retries.
+### 0.6.9
+- Runs the daemon as a shell retry loop around run-once.
+- Keeps the daemon wrapper alive even if PHP sync exits with an error.
 - Not safe for important shares yet.
   </CHANGES>
 

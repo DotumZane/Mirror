@@ -81,7 +81,26 @@ sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
+daemon_loop() {
+  interval="${1:-10}"
+  ensure_config
+  cd "$EMHTTP_DIR"
+  echo "mirror daemon started: interval=${interval}s"
+  set +e
+  while true; do
+    "$PHP_BIN" "$RUNNER" run-once --config "$CONFIG"
+    code="$?"
+    if [ "$code" -ne 0 ]; then
+      echo "$(date -Iseconds) sync error: run-once exited with code ${code}"
+    fi
+    sleep "$interval"
+  done
+}
+
 case "${1:-status}" in
+  daemon-loop)
+    daemon_loop "${2:-10}"
+    ;;
   status)
     ensure_config
     if is_running; then
@@ -116,7 +135,7 @@ case "${1:-status}" in
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
+    nohup "$0" daemon-loop "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
     echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;
@@ -141,7 +160,7 @@ case "${1:-status}" in
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
+    nohup "$0" daemon-loop "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
     if [ "$was_running" -eq 1 ]; then
       echo "Mirror daemon restarted with pid $(cat "$PID") at ${interval}s interval"
