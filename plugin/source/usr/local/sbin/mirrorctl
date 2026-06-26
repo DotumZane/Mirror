@@ -7,6 +7,7 @@ BOOT_DIR="/boot/config/plugins/${PLUGIN}"
 CONFIG="${BOOT_DIR}/config.json"
 LOG="/var/log/${PLUGIN}.log"
 PID="/var/run/${PLUGIN}.pid"
+CONTROL="/usr/local/sbin/mirrorctl"
 PAIR_LOG="/var/log/${PLUGIN}-pairing.log"
 PAIR_PID="/var/run/${PLUGIN}-pairing.pid"
 PAIR_PORT="${MIRROR_PAIR_PORT:-23891}"
@@ -81,17 +82,22 @@ sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
+timestamp() {
+  date "+%Y-%m-%dT%H:%M:%S%z"
+}
+
 daemon_loop() {
   interval="${1:-10}"
+  set +e +u
+  set +o pipefail 2>/dev/null || true
   ensure_config
   cd "$EMHTTP_DIR"
-  echo "mirror daemon started: interval=${interval}s"
-  set +e
+  echo "$(timestamp) mirror daemon loop booting: interval=${interval}s php=${PHP_BIN} runner=${RUNNER} config=${CONFIG}"
   while true; do
     "$PHP_BIN" "$RUNNER" run-once --config "$CONFIG"
     code="$?"
     if [ "$code" -ne 0 ]; then
-      echo "$(date -Iseconds) sync error: run-once exited with code ${code}"
+      echo "$(timestamp) sync error: run-once exited with code ${code}"
     fi
     sleep "$interval"
   done
@@ -135,8 +141,16 @@ case "${1:-status}" in
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$0" daemon-loop "$interval" >>"$LOG" 2>&1 &
+    echo "$(timestamp) start requested: interval=${interval}s control=${CONTROL}" >>"$LOG"
+    nohup "$CONTROL" daemon-loop "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
+    sleep 0.3
+    if ! is_running; then
+      rm -f "$PID"
+      echo "Mirror daemon failed to launch"
+      tail -n 20 "$LOG" 2>/dev/null || true
+      exit 1
+    fi
     echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;
   stop)
@@ -160,8 +174,16 @@ case "${1:-status}" in
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"
-    nohup "$0" daemon-loop "$interval" >>"$LOG" 2>&1 &
+    echo "$(timestamp) restart requested: interval=${interval}s control=${CONTROL}" >>"$LOG"
+    nohup "$CONTROL" daemon-loop "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
+    sleep 0.3
+    if ! is_running; then
+      rm -f "$PID"
+      echo "Mirror daemon failed to launch"
+      tail -n 20 "$LOG" 2>/dev/null || true
+      exit 1
+    fi
     if [ "$was_running" -eq 1 ]; then
       echo "Mirror daemon restarted with pid $(cat "$PID") at ${interval}s interval"
     else

@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Runs the daemon as a shell retry loop around run-once.
-- Keeps the daemon wrapper alive even if PHP sync exits with an error.
+- Starts the daemon loop through an absolute mirrorctl path.
+- Adds daemon startup markers and launch-failure log output.
 - Not safe for important shares yet.
   </CHANGES>
 
