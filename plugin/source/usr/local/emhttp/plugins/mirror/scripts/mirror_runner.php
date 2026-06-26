@@ -47,6 +47,10 @@ function endpoint_is_remote(array $config): bool {
     return (($config["server_b"]["type"] ?? "local") === "remote");
 }
 
+function node_is_managed_remote(array $config): bool {
+    return (($config["node_role"] ?? "master") === "managed_remote");
+}
+
 function ssh_key_path(string $configPath): string {
     return dirname($configPath) . "/ssh/mirror_ed25519";
 }
@@ -210,7 +214,7 @@ function remote_spec(array $config, string $path): string {
 function scan_files(string $root): array {
     $files = [];
     if (!is_dir($root)) {
-        mkdir($root, 0777, true);
+        return $files;
     }
     $iterator = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS)
@@ -235,7 +239,7 @@ function scan_files(string $root): array {
 function scan_remote_files(array $config, string $configPath, string $root): array {
     $ssh = ssh_base_args($config, $configPath);
     $target = ssh_target($config);
-    $script = "mkdir -p " . escapeshellarg($root) . " && find " . escapeshellarg($root) . " -type f -printf '%P\\t%s\\t%T@\\n'";
+    $script = "[ -d " . escapeshellarg($root) . " ] && find " . escapeshellarg($root) . " -type f -printf '%P\\t%s\\t%T@\\n' || true";
     $output = run_command(array_merge($ssh, [$target, $script]));
     $files = [];
     foreach (explode("\n", trim($output)) as $line) {
@@ -441,6 +445,9 @@ function record_conflict_states(array &$state, string $rel, string $reason, arra
 
 function sync_once(string $configPath): array {
     $config = load_config($configPath);
+    if (node_is_managed_remote($config)) {
+        return ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+    }
     if (endpoint_is_remote($config)) {
         return sync_once_remote($configPath, $config);
     }

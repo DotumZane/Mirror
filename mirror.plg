@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.7.6">
+  <!ENTITY version    "0.7.7">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.6.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.7.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "b061ea5f8cd3c4b972664552e0d20af1">
+  <!ENTITY md5        "6d38fa3bfb601410506c2aac17d81551">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.7.6
-- Verifies daemon stop and force-stops lingering daemon processes.
-- Shows remote daemon control output and post-command status.
+### 0.7.7
+- Makes scanning read-only so deleted shares are not recreated.
+- Skips the sync daemon on Managed remote servers.
 - Not safe for important shares yet.
   </CHANGES>
 

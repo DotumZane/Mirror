@@ -119,6 +119,10 @@ sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
+node_role() {
+  "$PHP_BIN" -r '$path=$argv[1]; $config=is_file($path) ? json_decode((string)file_get_contents($path), true) : []; echo (is_array($config) ? ($config["node_role"] ?? "master") : "master") . "\n";' "$CONFIG" 2>/dev/null || echo master
+}
+
 timestamp() {
   date "+%Y-%m-%dT%H:%M:%S%z"
 }
@@ -172,6 +176,10 @@ case "${1:-status}" in
     ;;
   start)
     ensure_config
+    if [ "$(node_role)" = "managed_remote" ]; then
+      echo "Mirror daemon start skipped: this server is Managed remote and waits for the master."
+      exit 0
+    fi
     if is_running; then
       echo "Mirror daemon already running with pid $(cat "$PID")"
       exit 0

@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Verifies daemon stop and force-stops lingering daemon processes.
-- Shows remote daemon control output and post-command status.
+- Makes scanning read-only so deleted shares are not recreated.
+- Skips the sync daemon on Managed remote servers.
 - Not safe for important shares yet.
   </CHANGES>
 
