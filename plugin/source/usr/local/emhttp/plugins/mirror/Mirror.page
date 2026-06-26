@@ -411,6 +411,21 @@ if (!empty($linkedPeer["host"]) && (
 <div class="mirror-panel">
   <h2>Mirror</h2>
 
+  <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
+    <div class="mirror-modal">
+      <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
+    </div>
+  </div>
+
+  <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
+    <a class="<?=mirror_tab_class("status", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("status"))?>"><i class="fa fa-tachometer" aria-hidden="true"></i><span>Status</span></a>
+    <a class="<?=mirror_tab_class("lan", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("lan"))?>"><i class="fa fa-link" aria-hidden="true"></i><span>LAN Setup</span></a>
+    <a class="<?=mirror_tab_class("shares", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("shares"))?>"><i class="fa fa-folder-open" aria-hidden="true"></i><span>Shares</span></a>
+    <a class="<?=mirror_tab_class("config", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("config"))?>"><i class="fa fa-cog" aria-hidden="true"></i><span>Config</span></a>
+    <a class="<?=mirror_tab_class("log", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("log"))?>"><i class="fa fa-list-alt" aria-hidden="true"></i><span>Log</span></a>
+  </div>
+
+  <?php if ($mirrorTab === "status"): ?>
   <div class="mirror-grid">
     <div class="mirror-stat mirror-stat--version">
       <strong>Version</strong>
@@ -464,21 +479,6 @@ if (!empty($linkedPeer["host"]) && (
     Early test build. Use disposable test shares only.
   </div>
 
-  <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
-    <div class="mirror-modal">
-      <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
-    </div>
-  </div>
-
-  <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
-    <a class="<?=mirror_tab_class("status", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("status"))?>"><i class="fa fa-tachometer" aria-hidden="true"></i><span>Status</span></a>
-    <a class="<?=mirror_tab_class("lan", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("lan"))?>"><i class="fa fa-link" aria-hidden="true"></i><span>LAN Setup</span></a>
-    <a class="<?=mirror_tab_class("shares", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("shares"))?>"><i class="fa fa-folder-open" aria-hidden="true"></i><span>Shares</span></a>
-    <a class="<?=mirror_tab_class("config", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("config"))?>"><i class="fa fa-cog" aria-hidden="true"></i><span>Config</span></a>
-    <a class="<?=mirror_tab_class("log", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("log"))?>"><i class="fa fa-list-alt" aria-hidden="true"></i><span>Log</span></a>
-  </div>
-
-  <?php if ($mirrorTab === "status"): ?>
   <div class="mirror-section">
     <h3>Control</h3>
     <?php if ($nodeRole === "managed_remote"): ?>
@@ -829,13 +829,14 @@ function showMirrorClientMessage(message) {
   existing.textContent = message;
 }
 
-function refreshMirrorPanel() {
+function refreshMirrorPanel(url, pushHistory) {
   var panel = document.querySelector(".mirror-panel");
   if (!panel) {
     return Promise.resolve();
   }
+  var targetUrl = url || window.location.href;
   panel.classList.add("is-refreshing");
-  return fetchWithTimeout(window.location.href, {
+  return fetchWithTimeout(targetUrl, {
     cache: "no-store",
     credentials: "same-origin"
   }, 10000)
@@ -847,6 +848,9 @@ function refreshMirrorPanel() {
       var freshPanel = doc.querySelector(".mirror-panel");
       if (freshPanel) {
         panel.innerHTML = freshPanel.innerHTML;
+        if (pushHistory && window.history && window.history.pushState) {
+          window.history.pushState({mirrorTab: true}, "", targetUrl);
+        }
         bindMirrorPage();
       }
     })
@@ -859,6 +863,22 @@ function refreshMirrorPanel() {
 }
 
 function bindMirrorPage() {
+  document.querySelectorAll(".mirror-tabs a").forEach(function (link) {
+    if (link.dataset.mirrorTabBound === "1") {
+      return;
+    }
+    link.dataset.mirrorTabBound = "1";
+    link.addEventListener("click", function (event) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      refreshMirrorPanel(link.href, true).catch(function () {
+        window.location.href = link.href;
+      });
+    });
+  });
+
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');
     return selected ? selected.value : 'local';
@@ -925,9 +945,16 @@ function bindMirrorPage() {
 }
 
 bindMirrorPage();
+window.addEventListener("popstate", function () {
+  refreshMirrorPanel(window.location.href, false).catch(function () {
+    window.location.reload();
+  });
+});
 <?php if ($discoveryStatus === "running"): ?>
 window.setTimeout(function () {
-  window.location.reload();
+  refreshMirrorPanel(window.location.href, false).catch(function () {
+    window.location.reload();
+  });
 }, 3000);
 <?php endif; ?>
 </script>

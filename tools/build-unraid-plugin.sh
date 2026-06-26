@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Changes Mirror tabs from in-page panels to separate tab URLs.
-- Keeps the native-style attached tab strip.
+- Moves status cards and notices into the Status tab.
+- Switches tab links without a full Unraid page flash.
 - Not safe for important shares yet.
   </CHANGES>
 
