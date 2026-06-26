@@ -185,7 +185,8 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   margin-top: 24px;
 }
 .mirror-warning,
-.mirror-message {
+.mirror-message,
+.mirror-client-message {
   border-radius: 6px;
   padding: 10px 12px;
   margin: 12px 0;
@@ -197,6 +198,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 .mirror-message {
   border: 1px solid #3b82f6;
   background: rgba(59, 130, 246, 0.12);
+  white-space: pre-wrap;
+}
+.mirror-client-message {
+  border: 1px solid #c9892b;
+  background: rgba(201, 137, 43, 0.12);
   white-space: pre-wrap;
 }
 .mirror-log,
@@ -393,6 +399,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
           <div class="mirror-peer-card">
             <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>
             <div class="mirror-peer-meta"><?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?></div>
+            <?php if (($peer["version"] ?? "") !== "" && ($peer["version"] ?? "") !== $version): ?>
+              <div class="mirror-warning">
+                This peer is running Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Update both servers to <?=mirror_value($version)?> before pairing.
+              </div>
+            <?php endif; ?>
             <form method="post" action="/plugins/mirror/include/action.php">
               <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
               <input type="hidden" name="action" value="invite-peer">
@@ -627,16 +638,66 @@ function closeMirrorUpdateModal() {
   refreshMirrorPanel();
 }
 
+function fetchWithTimeout(url, options, timeoutMs) {
+  return new Promise(function (resolve, reject) {
+    var finished = false;
+    var timer = window.setTimeout(function () {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      reject(new Error("Request timed out."));
+    }, timeoutMs);
+
+    fetch(url, options)
+      .then(function (response) {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        window.clearTimeout(timer);
+        resolve(response);
+      })
+      .catch(function (error) {
+        if (finished) {
+          return;
+        }
+        finished = true;
+        window.clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
+function showMirrorClientMessage(message) {
+  var panel = document.querySelector(".mirror-panel");
+  if (!panel) {
+    return;
+  }
+  var existing = panel.querySelector(".mirror-client-message");
+  if (!existing) {
+    existing = document.createElement("div");
+    existing.className = "mirror-client-message";
+    var grid = panel.querySelector(".mirror-grid");
+    if (grid && grid.parentNode) {
+      grid.parentNode.insertBefore(existing, grid.nextSibling);
+    } else {
+      panel.insertBefore(existing, panel.firstChild);
+    }
+  }
+  existing.textContent = message;
+}
+
 function refreshMirrorPanel() {
   var panel = document.querySelector(".mirror-panel");
   if (!panel) {
     return Promise.resolve();
   }
   panel.classList.add("is-refreshing");
-  return fetch(window.location.href, {
+  return fetchWithTimeout(window.location.href, {
     cache: "no-store",
     credentials: "same-origin"
-  })
+  }, 10000)
     .then(function (response) {
       return response.text();
     })
@@ -681,26 +742,30 @@ function bindMirrorPage() {
       event.preventDefault();
       var submitter = event.submitter || null;
       var data = new FormData(form);
+      var controls = form.querySelectorAll("button,input[type='submit']");
       if (submitter && submitter.name) {
         data.set(submitter.name, submitter.value);
       }
       data.set("ajax", "1");
-      form.querySelectorAll("button,input[type='submit']").forEach(function (control) {
+      controls.forEach(function (control) {
         control.disabled = true;
       });
-      fetch(form.action, {
+      fetchWithTimeout(form.action, {
         method: "POST",
         body: data,
         credentials: "same-origin",
         headers: {
           "X-Requested-With": "XMLHttpRequest"
         }
-      })
+      }, 20000)
         .then(function () {
           return refreshMirrorPanel();
         })
-        .catch(function () {
-          form.submit();
+        .catch(function (error) {
+          controls.forEach(function (control) {
+            control.disabled = false;
+          });
+          showMirrorClientMessage("Action did not finish in the browser: " + error.message + "\nTry again, or use the Update Plugin button if this server is not on the newest build.");
         });
     });
   });

@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.6
+0.3.7
 ```
 
 Version source of truth:
@@ -435,6 +435,7 @@ Current release status:
 - `0.3.4` splits peer linking from share selection in guided pairing.
 - `0.3.5` keeps Pending Invites visible and adds a check button plus invite ID feedback.
 - `0.3.6` refreshes settings actions in-place and logs received invites on the peer.
+- `0.3.7` prevents stuck disabled AJAX buttons and warns about peer version mismatch.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -652,7 +653,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.6.
+- Current version: 0.3.7.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -703,7 +704,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.6`.
+- Current version is `0.3.7`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1142,6 +1143,16 @@ Next suggested task:
 - New decisions: Settings actions should update the Mirror panel in place whenever possible, while plugin update output should keep using the Unraid-style modal.
 - Open questions: Confirm both servers are updated to the same version before retesting invite/accept; the screenshot showed one peer still on `0.3.2`.
 - Next suggested task: Push to GitHub, update both servers to `0.3.6`, then send one invite and watch the receiving server's Pending Invites area update.
+
+#### 2026-06-25 - AJAX Button Recovery
+
+- Task completed: Fixed Invite and other no-flash actions getting stuck grayed out when the browser request hangs or panel refresh fails.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.7.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: AJAX form submits now have browser-side timeouts, restore disabled buttons on failure, show an inline client-side message instead of staying stuck, and discovered peer cards warn when the peer is on a different Mirror version.
+- New decisions: No-flash page actions must always have an escape path that restores controls.
+- Open questions: Confirm both servers show the same Mirror version before retrying invite/accept.
+- Next suggested task: Push to GitHub, update both servers to `0.3.7`, click Find Mirror Servers, confirm both peer cards show `0.3.7`, then invite one direction.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

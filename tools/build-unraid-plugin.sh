@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Refreshes Mirror settings actions in place without a hard page reload.
-- Logs received pending invites on the peer and improves invite error details.
+- Prevents no-flash settings actions from leaving buttons stuck disabled.
+- Warns when a discovered peer is running a different Mirror version.
 - Not safe for important shares yet.
   </CHANGES>
 
