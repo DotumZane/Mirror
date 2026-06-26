@@ -598,6 +598,47 @@ if ($action === "pair-restart") {
     mirror_redirect();
 }
 
+if ($action === "check-responder") {
+    $installedVersion = is_file($versionFile) ? trim((string)file_get_contents($versionFile)) : "unknown";
+    $response = mirror_http_json(mirror_remote_url("127.0.0.1", ["action" => "hello", "check" => time()]), 1.0);
+    $message = "Local pairing responder check."
+        . "\nInstalled version file: $installedVersion";
+    if (is_array($response) && ($response["service"] ?? "") === "mirror") {
+        $message .= "\nResponder version: " . (string)($response["version"] ?? "unknown")
+            . "\nResponder name: " . (string)($response["name"] ?? "unknown")
+            . "\nResponder host: " . (string)($response["responder_host"] ?? "unknown")
+            . "\nResponder pid: " . (string)($response["responder_pid"] ?? "unknown")
+            . "\nVersion mtime: " . (string)($response["version_mtime"] ?? "unknown")
+            . "\nScript mtime: " . (string)($response["script_mtime"] ?? "unknown");
+        if ((string)($response["version"] ?? "") !== $installedVersion) {
+            $message .= "\nMismatch: restart the pairing responder, then check again.";
+        }
+    } else {
+        $message .= "\nResponder check failed: " . (is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "No response");
+    }
+    mirror_write_action($message);
+    mirror_redirect();
+}
+
+if ($action === "clear-discovery") {
+    global $discoveryFile;
+    $subnet = trim((string)($_POST["scan_subnet"] ?? ""));
+    if ($subnet === "") {
+        $ip = mirror_primary_ip();
+        $subnet = preg_replace('/\.\d+$/', ".0/24", $ip);
+    }
+    mirror_write_json_file($discoveryFile, [
+        "subnet" => $subnet,
+        "direct_host" => "",
+        "deep_scan" => false,
+        "scanned_at" => 0,
+        "scan_status" => "cleared",
+        "peers" => [],
+    ]);
+    mirror_write_action("LAN discovery results cleared. Run Find Mirror Servers again.");
+    mirror_redirect();
+}
+
 if ($action === "save-role") {
     $role = trim((string)($_POST["node_role"] ?? "master"));
     if (!in_array($role, ["master", "managed_remote"], true)) {

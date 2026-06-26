@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds responder identity details to LAN peer discovery.
-- Shows responder PID/host/version mtime on version mismatch.
+- Adds local responder check and clear peer results controls.
+- Helps separate stale discovery cards from live responder mismatches.
 - Not safe for important shares yet.
   </CHANGES>
 

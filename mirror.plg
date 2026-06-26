@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.5.5">
+  <!ENTITY version    "0.5.6">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.5.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.6.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "044750064f21d1d4e82e99d755027946">
+  <!ENTITY md5        "dd8cba7b22314afed1404bb538eaf303">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.5.5
-- Adds responder identity details to LAN peer discovery.
-- Shows responder PID/host/version mtime on version mismatch.
+### 0.5.6
+- Adds local responder check and clear peer results controls.
+- Helps separate stale discovery cards from live responder mismatches.
 - Not safe for important shares yet.
   </CHANGES>
 

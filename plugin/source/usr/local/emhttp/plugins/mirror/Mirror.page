@@ -477,6 +477,21 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <button type="submit">Restart Pairing Responder</button>
       </div>
     </form>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="check-responder">
+      <div class="mirror-actions">
+        <button type="submit">Check Local Responder</button>
+      </div>
+    </form>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="clear-discovery">
+      <input type="hidden" name="scan_subnet" value="<?=mirror_value($discovery["subnet"] ?? $defaultSubnet)?>">
+      <div class="mirror-actions">
+        <button type="submit">Clear Peer Results</button>
+      </div>
+    </form>
     <?php if ($discoveryScannedAt > 0): ?>
       <div class="mirror-help">
         Last scan: <?=mirror_value(mirror_age_label($discoveryScannedAt))?><?=$discoveryStatus ? " (" . mirror_value($discoveryStatus) . ")" : ""?>.
