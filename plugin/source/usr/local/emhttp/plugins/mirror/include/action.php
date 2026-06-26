@@ -365,7 +365,9 @@ $action = $_POST["action"] ?? "status";
 
 if ($action === "scan-peers") {
     global $discoveryFile;
-    exec("/usr/local/sbin/mirrorctl pair-start 2>&1");
+    exec("/usr/local/sbin/mirrorctl pair-restart 2>&1", $pairOutput, $pairCode);
+    usleep(250000);
+    $localCheck = mirror_http_json(mirror_remote_url("127.0.0.1", ["action" => "hello"]), 1.0);
     $subnet = trim((string)($_POST["scan_subnet"] ?? ""));
     $directHost = trim((string)($_POST["direct_host"] ?? ""));
     $deepScan = !empty($_POST["deep_scan"]);
@@ -398,7 +400,17 @@ if ($action === "scan-peers") {
         "scanned_at" => time(),
         "peers" => array_values($found),
     ]);
-    mirror_write_action("LAN scan complete. Found " . count($found) . " Mirror peer" . (count($found) === 1 ? "." : "s."));
+    $message = "LAN scan complete. Found " . count($found) . " Mirror peer" . (count($found) === 1 ? "." : "s.")
+        . "\nPairing responder: " . (($pairCode === 0) ? "started/restarted" : "failed to restart")
+        . "\nLocal responder test: " . ((is_array($localCheck) && ($localCheck["service"] ?? "") === "mirror") ? "ok" : "failed")
+        . "\nHosts checked: " . count($hosts);
+    if ($directHost !== "") {
+        $message .= "\nDirect host: $directHost";
+    }
+    if ($pairOutput) {
+        $message .= "\nResponder output:\n" . implode("\n", $pairOutput);
+    }
+    mirror_write_action($message);
     mirror_redirect();
 }
 

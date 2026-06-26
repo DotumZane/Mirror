@@ -29,6 +29,23 @@ pairing_running() {
   [ -f "$PAIR_PID" ] && kill -0 "$(cat "$PAIR_PID")" 2>/dev/null
 }
 
+pairing_port_busy() {
+  command -v ss >/dev/null 2>&1 && ss -ltn "sport = :${PAIR_PORT}" 2>/dev/null | grep -q ":${PAIR_PORT}"
+}
+
+start_pairing() {
+  cd "$EMHTTP_DIR"
+  nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
+  echo "$!" > "$PAIR_PID"
+  sleep 0.2
+  if ! pairing_running; then
+    rm -f "$PAIR_PID"
+    echo "Mirror pairing responder failed to start on port $PAIR_PORT"
+    tail -n 20 "$PAIR_LOG" 2>/dev/null || true
+    exit 1
+  fi
+}
+
 sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
@@ -107,9 +124,11 @@ case "${1:-status}" in
       echo "Mirror pairing responder already running with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
       exit 0
     fi
-    cd "$EMHTTP_DIR"
-    nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
-    echo "$!" > "$PAIR_PID"
+    if pairing_port_busy; then
+      echo "Mirror pairing responder port $PAIR_PORT is already in use"
+      exit 1
+    fi
+    start_pairing
     echo "Mirror pairing responder started with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
     ;;
   pair-stop)
@@ -126,10 +145,15 @@ case "${1:-status}" in
     if pairing_running; then
       kill "$(cat "$PAIR_PID")"
       rm -f "$PAIR_PID"
+      sleep 0.2
+    elif [ -f "$PAIR_PID" ]; then
+      rm -f "$PAIR_PID"
     fi
-    cd "$EMHTTP_DIR"
-    nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
-    echo "$!" > "$PAIR_PID"
+    if pairing_port_busy; then
+      echo "Mirror pairing responder port $PAIR_PORT is already in use"
+      exit 1
+    fi
+    start_pairing
     echo "Mirror pairing responder restarted with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
     ;;
   *)

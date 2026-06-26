@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds a dedicated LAN pairing responder on TCP port 23891.
-- Adds direct peer IP fallback for guided pairing discovery.
+- Adds diagnostics to Find Mirror Servers and pairing responder startup.
+- Restarts and self-tests the pairing responder before LAN scans.
 - Not safe for important shares yet.
   </CHANGES>
 
