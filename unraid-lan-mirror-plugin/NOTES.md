@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.2
+0.4.3
 ```
 
 Version source of truth:
@@ -442,6 +442,7 @@ Current release status:
 - `0.4.0` clears cached discovery at scan start and labels stale peer cards.
 - `0.4.1` hides stale peer cards from the active list and makes Find Mirror Servers a normal submit.
 - `0.4.2` reports direct-host scan failures and adds a pairing responder restart button.
+- `0.4.3` treats same-version update checks as already current instead of failed.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -659,7 +660,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.2.
+- Current version: 0.4.3.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -710,7 +711,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.2`.
+- Current version is `0.4.3`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1209,6 +1210,16 @@ Next suggested task:
 - New decisions: Pairing troubleshooting needs direct action buttons and exact failure text in the UI, not only hidden log details.
 - Open questions: After updating to `0.4.2`, run Restart Pairing Responder on both servers, then Find Mirror Servers with the direct IP and read the direct-host failure line if no peer appears.
 - Next suggested task: Push to GitHub, update both servers to `0.4.2`, restart pairing responders on both servers, then run a direct-host scan.
+
+#### 2026-06-25 - Same-Version Update Message
+
+- Task completed: Made repeated Update Plugin clicks explain same-version results clearly.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.3.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: The updater now parses the downloaded manifest version before running Unraid's installer. If the downloaded version matches the installed version, the popup reports installed/downloaded versions and says no update was installed instead of calling it a failed plugin command.
+- New decisions: Same-version update checks are not failures; they usually mean the latest commit has not been pushed yet or GitHub has not served the new manifest yet.
+- Open questions: Confirm the next repeated update attempt shows "No update installed" instead of Unraid's "not reinstalling same version" failure.
+- Next suggested task: Push to GitHub, then update both servers to `0.4.3` so future repeated clicks give the clearer message.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

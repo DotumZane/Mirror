@@ -6,6 +6,7 @@ $actionFile = "$configDir/last-action.txt";
 $discoveryFile = "$configDir/discovered-peers.json";
 $pendingInvitesFile = "$configDir/pending-invites.json";
 $peerFile = "$configDir/peer.json";
+$versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
@@ -305,6 +306,20 @@ function mirror_download_plugin($url, $target) {
     }
 
     return [true, trim(implode("\n", $downloadOutput))];
+}
+
+function mirror_plugin_manifest_version($path) {
+    if (!is_file($path)) {
+        return "";
+    }
+    $contents = (string)file_get_contents($path);
+    if (preg_match('/<!ENTITY\s+version\s+"([^"]+)"/', $contents, $matches)) {
+        return trim($matches[1]);
+    }
+    if (preg_match('/<PLUGIN\b[^>]*\sversion="([^"]+)"/', $contents, $matches)) {
+        return trim($matches[1]);
+    }
+    return "";
 }
 
 function mirror_existing_config() {
@@ -766,7 +781,7 @@ if ($action === "accept-peer-key") {
 }
 
 if ($action === "update-plugin") {
-    global $pluginUrl;
+    global $pluginUrl, $versionFile;
     $usePopup = (string)($_POST["popup"] ?? "") === "1";
     $pluginCli = mirror_find_executable(["/usr/local/sbin/plugin", "/usr/sbin/plugin", "/sbin/plugin", "/usr/local/bin/plugin", "/usr/bin/plugin"]);
     $installplg = mirror_find_executable(["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"]);
@@ -784,6 +799,20 @@ if ($action === "update-plugin") {
     [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
     if (!$downloaded) {
         $message = "Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage";
+        if ($usePopup) {
+            mirror_output_window("Plugin Update - Finished", $message);
+        }
+        mirror_write_action($message);
+        mirror_redirect();
+    }
+    $installedVersion = is_file($versionFile) ? trim((string)file_get_contents($versionFile)) : "unknown";
+    $downloadedVersion = mirror_plugin_manifest_version($localPlugin);
+    if ($downloadedVersion !== "" && $installedVersion === $downloadedVersion) {
+        $message = "Plugin update check finished."
+            . "\nInstalled version: $installedVersion"
+            . "\nDownloaded manifest version: $downloadedVersion"
+            . "\nNo update installed because Unraid will not reinstall the same plugin version."
+            . "\nIf you expected a newer build, push the latest commit to GitHub, then try Update Plugin again.";
         if ($usePopup) {
             mirror_output_window("Plugin Update - Finished", $message);
         }

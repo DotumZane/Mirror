@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Reports direct-host scan failures instead of silently hiding them.
-- Adds a Restart Pairing Responder button to LAN Peer Setup.
+- Shows same-version update checks as already current instead of failed.
+- Reports downloaded and installed plugin versions in the update popup.
 - Not safe for important shares yet.
   </CHANGES>
 
