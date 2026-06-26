@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.2.5
+0.3.0
 ```
 
 Version source of truth:
@@ -388,9 +388,10 @@ Version meaning:
 
 - `0.0.x`: planning notes, scaffolding, and very early prototypes.
 - `0.1.0`: first two-peer LAN prototype.
-- `0.2.0`: remote share discovery and improved peer setup.
-- `0.3.0`: safer conflict/trash management for peer sync.
-- `0.4.0`: first broader UI-managed test build.
+- `0.2.0`: first remote peer setup and update flow hardening.
+- `0.3.0`: guided LAN peer discovery and invite/accept setup.
+- `0.4.0`: safer conflict/trash management for peer sync.
+- `0.5.0`: first broader UI-managed test build.
 - `1.0.0`: first version considered safe enough for careful real-world use.
 
 Bump rules:
@@ -427,6 +428,7 @@ Current release status:
 - `0.2.3` moves update command output into a popup window instead of the main settings page.
 - `0.2.4` changes update output to an Unraid-style in-page modal overlay.
 - `0.2.5` fixes duplicate plugin entries caused by installing `/tmp/mirror-latest.plg`.
+- `0.3.0` adds the first guided LAN peer discovery, invite, and accept workflow.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -644,7 +646,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.2.5.
+- Current version: 0.3.0.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -695,7 +697,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.2.5`.
+- Current version is `0.3.0`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1064,6 +1066,16 @@ Next suggested task:
 - New decisions: Temporary plugin manifests must keep the canonical plugin filename so Unraid does not track them as separate installed plugins.
 - Open questions: Confirm on Unraid that updating to `0.2.5` removes the duplicate Mirror entry from the Plugins page.
 - Next suggested task: Push to GitHub, update to `0.2.5`, then refresh the Plugins page and confirm only one Mirror entry remains.
+
+#### 2026-06-25 - Guided LAN Pairing Prototype
+
+- Task completed: Added the first scan, invite, and accept workflow for easier two-server configuration.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.0.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/include/lan.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a LAN Peer Setup section with known-host/deep subnet scan, discovered peer cards, invite form, pending invite list, accept/reject actions, LAN discovery endpoint, invite endpoint, SSH key exchange, and automatic remote config writing.
+- New decisions: Pairing must require manual approval on the invited server; discovery can expose only basic server metadata and share names on trusted LAN.
+- Open questions: Confirm whether Unraid Connect/local access allows `http://peer/plugins/mirror/include/lan.php` between servers, and whether a future build should support HTTPS/custom ports.
+- Next suggested task: Push to GitHub, update both servers to `0.3.0`, run Find Mirror Servers, invite from one server, accept on the other, then test peer connection.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

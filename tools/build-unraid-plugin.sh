@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Fixes duplicate plugin entries caused by installing a temporary mirror-latest.plg.
-- Cleans stale mirror-latest plugin records during install.
+- Adds first guided LAN peer discovery, invite, and accept workflow.
+- Auto-fills remote mirror config and SSH keys after pairing approval.
 - Not safe for important shares yet.
   </CHANGES>
 

@@ -3,6 +3,8 @@ $plugin = "mirror";
 $configDir = "/boot/config/plugins/$plugin";
 $configFile = "$configDir/config.json";
 $actionFile = "$configDir/last-action.txt";
+$discoveryFile = "$configDir/discovered-peers.json";
+$pendingInvitesFile = "$configDir/pending-invites.json";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
@@ -61,6 +63,166 @@ function mirror_current_shares() {
         $shares[$name] = true;
     }
     return $shares;
+}
+
+function mirror_server_name() {
+    $ident = "/boot/config/ident.cfg";
+    if (is_file($ident)) {
+        $contents = (string)file_get_contents($ident);
+        if (preg_match('/^NAME="?(.*?)"?$/m', $contents, $matches)) {
+            $name = trim($matches[1], "\" \t\r\n");
+            if ($name !== "") {
+                return $name;
+            }
+        }
+    }
+    return gethostname() ?: "unraid";
+}
+
+function mirror_primary_ip() {
+    $output = trim((string)shell_exec("ip -o -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if (\$i==\"src\") {print \$(i+1); exit}}'"));
+    if (filter_var($output, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return $output;
+    }
+    $hostIp = gethostbyname(gethostname() ?: "");
+    return filter_var($hostIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? $hostIp : "";
+}
+
+function mirror_is_private_ip($ip) {
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return false;
+    }
+    $long = ip2long($ip);
+    $ranges = [
+        ["10.0.0.0", "10.255.255.255"],
+        ["172.16.0.0", "172.31.255.255"],
+        ["192.168.0.0", "192.168.255.255"],
+    ];
+    foreach ($ranges as [$start, $end]) {
+        if ($long >= ip2long($start) && $long <= ip2long($end)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function mirror_subnet_hosts($subnet) {
+    if (!preg_match('/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.0\/24$/', $subnet, $matches)) {
+        return [];
+    }
+    $octets = array_map("intval", array_slice($matches, 1));
+    foreach ($octets as $octet) {
+        if ($octet < 0 || $octet > 255) {
+            return [];
+        }
+    }
+    $prefix = implode(".", $octets);
+    $hosts = [];
+    for ($i = 1; $i <= 254; $i++) {
+        $hosts[] = "$prefix.$i";
+    }
+    return $hosts;
+}
+
+function mirror_known_lan_hosts($subnet) {
+    $hosts = [];
+    $output = (string)shell_exec("(ip neigh show 2>/dev/null || arp -an 2>/dev/null) | grep -Eo '([0-9]{1,3}\\.){3}[0-9]{1,3}'");
+    foreach (preg_split('/\s+/', trim($output)) as $host) {
+        if (mirror_is_private_ip($host)) {
+            $hosts[$host] = true;
+        }
+    }
+    foreach (mirror_subnet_hosts($subnet) as $host) {
+        if (isset($hosts[$host])) {
+            continue;
+        }
+    }
+    return array_keys($hosts);
+}
+
+function mirror_json_file($path, $default = []) {
+    if (!is_file($path)) {
+        return $default;
+    }
+    $decoded = json_decode((string)file_get_contents($path), true);
+    return is_array($decoded) ? $decoded : $default;
+}
+
+function mirror_write_json_file($path, $data) {
+    if (!is_dir(dirname($path))) {
+        mkdir(dirname($path), 0777, true);
+    }
+    file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+}
+
+function mirror_ensure_key() {
+    global $sshDir, $keyFile;
+    if (!is_dir($sshDir)) {
+        mkdir($sshDir, 0700, true);
+    }
+    if (!is_file($keyFile)) {
+        $cmd = "ssh-keygen -t ed25519 -N '' -f " . escapeshellarg($keyFile) . " -C " . escapeshellarg("mirror-plugin@" . mirror_server_name()) . " 2>&1";
+        exec($cmd, $output, $code);
+        if ($code !== 0) {
+            throw new RuntimeException("SSH key generation failed:\n" . implode("\n", $output));
+        }
+    }
+    chmod($keyFile, 0600);
+    if (is_file($keyFile . ".pub")) {
+        chmod($keyFile . ".pub", 0644);
+    }
+    return trim((string)file_get_contents($keyFile . ".pub"));
+}
+
+function mirror_accept_public_key($key) {
+    global $rootSshDir, $authorizedKeysFile;
+    $key = trim((string)$key);
+    if (!preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $key)) {
+        throw new RuntimeException("Only ssh-ed25519 public keys are accepted right now.");
+    }
+    if (!is_dir($rootSshDir)) {
+        mkdir($rootSshDir, 0700, true);
+    }
+    chmod($rootSshDir, 0700);
+    $existing = is_file($authorizedKeysFile)
+        ? file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+        : [];
+    if (!in_array($key, $existing, true)) {
+        $existing[] = $key;
+        file_put_contents($authorizedKeysFile, implode("\n", $existing) . "\n");
+    }
+    chmod($authorizedKeysFile, 0600);
+}
+
+function mirror_http_json($url, $timeout = 1.2, $payload = null) {
+    $curl = mirror_find_executable(["/usr/bin/curl", "/bin/curl"]);
+    if ($curl === null) {
+        return null;
+    }
+    $cmd = escapeshellarg($curl)
+        . " -fsSL --connect-timeout " . escapeshellarg((string)$timeout)
+        . " --max-time " . escapeshellarg((string)$timeout);
+    $payloadFile = null;
+    if ($payload !== null) {
+        $payloadFile = tempnam("/tmp", "mirror-json-");
+        file_put_contents($payloadFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
+        $cmd .= " -H " . escapeshellarg("Content-Type: application/json")
+            . " --data-binary " . escapeshellarg("@$payloadFile");
+    }
+    $cmd .= " " . escapeshellarg($url) . " 2>/dev/null";
+    exec($cmd, $output, $code);
+    if ($payloadFile !== null) {
+        @unlink($payloadFile);
+    }
+    if ($code !== 0) {
+        return null;
+    }
+    $decoded = json_decode(implode("\n", $output), true);
+    return is_array($decoded) ? $decoded : null;
+}
+
+function mirror_remote_url($host, $query) {
+    return "http://" . $host . "/plugins/mirror/include/lan.php?" . http_build_query($query);
 }
 
 function mirror_find_executable($candidates) {
@@ -127,6 +289,55 @@ function mirror_existing_config() {
     return is_array($decoded) ? array_replace_recursive($default, $decoded) : $default;
 }
 
+function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior) {
+    global $configDir, $configFile;
+    $localShare = trim((string)$localShare);
+    $peerShare = trim((string)$peerShare);
+    $peerHost = trim((string)$peerHost);
+    if ($localShare === "" || $peerShare === "" || $peerHost === "") {
+        throw new RuntimeException("Local share, peer host, and peer share are required.");
+    }
+    $shares = mirror_current_shares();
+    if (!isset($shares[$localShare])) {
+        throw new RuntimeException("Local share must be selected from current /mnt/user shares.");
+    }
+    if (preg_match("#[\\x00/]+#", $peerShare)) {
+        throw new RuntimeException("Peer share must be a single share name, not a path.");
+    }
+    if (!filter_var($peerHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && !preg_match("#^[A-Za-z0-9_.-]+$#", $peerHost)) {
+        throw new RuntimeException("Peer host contains unsupported characters.");
+    }
+    if (!in_array($authority, ["server_a_preferred", "equal_peers"], true)) {
+        $authority = "equal_peers";
+    }
+    if (!in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
+        $deleteBehavior = "mirror_deletes";
+    }
+    $existing = mirror_existing_config();
+    $config = [
+        "server_a" => ["name" => mirror_server_name(), "root" => "/mnt/user/" . $localShare],
+        "server_b" => [
+            "name" => "server-b",
+            "type" => "remote",
+            "root" => "/mnt/user/" . $peerShare,
+            "share" => $peerShare,
+            "host" => $peerHost,
+            "user" => "root",
+            "port" => 22,
+        ],
+        "state_db" => "$configDir/mirror.sqlite3",
+        "trash_root" => "$configDir/trash",
+        "authority" => $authority,
+        "delete_propagation" => $deleteBehavior === "mirror_deletes",
+        "delete_behavior" => $deleteBehavior,
+        "sync_interval" => max(1, min(3600, (int)($existing["sync_interval"] ?? 10))),
+    ];
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+}
+
 function mirror_preserve_mode_from_post() {
     global $configDir, $configFile;
     $mode = trim((string)($_POST["preserve_mirror_mode"] ?? ""));
@@ -149,6 +360,109 @@ function mirror_preserve_mode_from_post() {
 }
 
 $action = $_POST["action"] ?? "status";
+
+if ($action === "scan-peers") {
+    global $discoveryFile;
+    $subnet = trim((string)($_POST["scan_subnet"] ?? ""));
+    $deepScan = !empty($_POST["deep_scan"]);
+    if ($subnet === "") {
+        $ip = mirror_primary_ip();
+        $subnet = preg_replace('/\.\d+$/', ".0/24", $ip);
+    }
+    $hosts = $deepScan ? mirror_subnet_hosts($subnet) : mirror_known_lan_hosts($subnet);
+    $selfIp = mirror_primary_ip();
+    $found = [];
+    foreach ($hosts as $host) {
+        if ($host === "" || $host === $selfIp || !mirror_is_private_ip($host)) {
+            continue;
+        }
+        $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello"]), $deepScan ? 0.35 : 1.0);
+        if (!is_array($peer) || ($peer["service"] ?? "") !== "mirror") {
+            continue;
+        }
+        $peer["host"] = $host;
+        $peer["found_at"] = time();
+        $found[$host] = $peer;
+    }
+    mirror_write_json_file($discoveryFile, [
+        "subnet" => $subnet,
+        "deep_scan" => $deepScan,
+        "scanned_at" => time(),
+        "peers" => array_values($found),
+    ]);
+    mirror_write_action("LAN scan complete. Found " . count($found) . " Mirror peer" . (count($found) === 1 ? "." : "s."));
+    mirror_redirect();
+}
+
+if ($action === "invite-peer") {
+    global $discoveryFile;
+    try {
+        $peerHost = trim((string)($_POST["peer_host"] ?? ""));
+        $localShare = trim((string)($_POST["local_share"] ?? ""));
+        $peerShare = trim((string)($_POST["peer_share"] ?? ""));
+        $authority = (string)($_POST["authority"] ?? "equal_peers");
+        $deleteBehavior = (string)($_POST["delete_behavior"] ?? "mirror_deletes");
+        $publicKey = mirror_ensure_key();
+        $payload = [
+            "action" => "invite",
+            "from_name" => mirror_server_name(),
+            "from_host" => mirror_primary_ip(),
+            "from_share" => $localShare,
+            "public_key" => $publicKey,
+            "authority" => $authority,
+            "delete_behavior" => $deleteBehavior,
+        ];
+        $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "invite"]), 4.0, $payload);
+        if (!is_array($response) || ($response["status"] ?? "") !== "pending") {
+            throw new RuntimeException("Peer did not accept the invite request.");
+        }
+        mirror_accept_public_key((string)($response["public_key"] ?? ""));
+        mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior);
+        mirror_write_action("Invite sent to " . ($response["name"] ?? $peerHost) . ". This server is configured. Accept the pending invite on the peer server to finish pairing.");
+    } catch (Throwable $error) {
+        mirror_write_action("Invite failed:\n" . $error->getMessage());
+    }
+    mirror_redirect();
+}
+
+if ($action === "accept-invite") {
+    global $pendingInvitesFile;
+    try {
+        $inviteId = trim((string)($_POST["invite_id"] ?? ""));
+        $localShare = trim((string)($_POST["local_share"] ?? ""));
+        $pending = mirror_json_file($pendingInvitesFile, ["invites" => []]);
+        $invites = is_array($pending["invites"] ?? null) ? $pending["invites"] : [];
+        if (!isset($invites[$inviteId])) {
+            throw new RuntimeException("Pending invite was not found.");
+        }
+        $invite = $invites[$inviteId];
+        mirror_accept_public_key((string)($invite["public_key"] ?? ""));
+        mirror_configure_remote_peer(
+            $localShare,
+            (string)($invite["from_host"] ?? ""),
+            (string)($invite["from_share"] ?? ""),
+            (string)($invite["authority"] ?? "equal_peers"),
+            (string)($invite["delete_behavior"] ?? "mirror_deletes")
+        );
+        unset($invites[$inviteId]);
+        mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
+        mirror_write_action("Invite accepted. This server is now paired with " . ($invite["from_name"] ?? $invite["from_host"] ?? "peer") . ".");
+    } catch (Throwable $error) {
+        mirror_write_action("Invite accept failed:\n" . $error->getMessage());
+    }
+    mirror_redirect();
+}
+
+if ($action === "reject-invite") {
+    global $pendingInvitesFile;
+    $inviteId = trim((string)($_POST["invite_id"] ?? ""));
+    $pending = mirror_json_file($pendingInvitesFile, ["invites" => []]);
+    $invites = is_array($pending["invites"] ?? null) ? $pending["invites"] : [];
+    unset($invites[$inviteId]);
+    mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
+    mirror_write_action("Invite rejected.");
+    mirror_redirect();
+}
 
 if ($action === "save-config") {
     $wasRunning = mirror_daemon_running();

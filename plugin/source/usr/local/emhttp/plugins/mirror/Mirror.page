@@ -9,6 +9,8 @@ $configFile = "/boot/config/plugins/$plugin/config.json";
 $pidFile = "/var/run/$plugin.pid";
 $logFile = "/var/log/$plugin.log";
 $actionFile = "/boot/config/plugins/$plugin/last-action.txt";
+$discoveryFile = "/boot/config/plugins/$plugin/discovered-peers.json";
+$pendingInvitesFile = "/boot/config/plugins/$plugin/pending-invites.json";
 $publicKeyFile = "/boot/config/plugins/$plugin/ssh/mirror_ed25519.pub";
 $authorizedKeysFile = "/root/.ssh/authorized_keys";
 
@@ -73,12 +75,35 @@ function mirror_current_shares() {
   return array_values($shares);
 }
 
+function mirror_json_file($path, $default = []) {
+  if (!is_file($path)) {
+    return $default;
+  }
+  $decoded = json_decode(file_get_contents($path), true);
+  return is_array($decoded) ? $decoded : $default;
+}
+
+function mirror_primary_ip() {
+  $output = trim((string)shell_exec("ip -o -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if (\$i==\"src\") {print \$(i+1); exit}}'"));
+  if (filter_var($output, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+    return $output;
+  }
+  $hostIp = gethostbyname(gethostname() ?: "");
+  return filter_var($hostIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? $hostIp : "";
+}
+
 $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
+$primaryIp = mirror_primary_ip();
+$defaultSubnet = $primaryIp ? preg_replace('/\.\d+$/', ".0/24", $primaryIp) : "";
+$discovery = mirror_json_file($discoveryFile, ["peers" => [], "subnet" => $defaultSubnet]);
+$discoveredPeers = is_array($discovery["peers"] ?? null) ? $discovery["peers"] : [];
+$pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
+$pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
 $publicKey = is_file($publicKeyFile) ? trim(file_get_contents($publicKeyFile)) : "";
 $acceptedKeyCount = is_file($authorizedKeysFile)
   ? count(array_filter(file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [], function ($line) {
@@ -242,6 +267,23 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   height: 100%;
   width: 100%;
 }
+.mirror-peer-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.mirror-peer-card {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 12px;
+}
+.mirror-peer-card strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.mirror-peer-meta {
+  opacity: 0.76;
+}
 </style>
 
 <div class="mirror-panel">
@@ -295,6 +337,116 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       shares first, then return here.
     </div>
   <?php endif; ?>
+
+  <div class="mirror-section">
+    <h3>LAN Peer Setup</h3>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="scan-peers">
+      <div class="mirror-form-grid">
+        <div class="mirror-field">
+          <label for="scan_subnet">Scan subnet</label>
+          <input id="scan_subnet" name="scan_subnet" type="text" value="<?=mirror_value($discovery["subnet"] ?? $defaultSubnet)?>">
+          <span class="mirror-help">Known LAN hosts are checked first. Use deep scan if the peer is not found.</span>
+        </div>
+        <label class="mirror-check">
+          <input type="checkbox" name="deep_scan" value="1">
+          Deep /24 scan
+        </label>
+      </div>
+      <div class="mirror-actions">
+        <button type="submit">Find Mirror Servers</button>
+      </div>
+    </form>
+
+    <?php if ($discoveredPeers): ?>
+      <div class="mirror-peer-list">
+        <?php foreach ($discoveredPeers as $peer): ?>
+          <?php
+            $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : [];
+            $defaultPeerShare = in_array($serverAShare, $peerShares, true) ? $serverAShare : ($peerShares[0] ?? "");
+          ?>
+          <div class="mirror-peer-card">
+            <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>
+            <div class="mirror-peer-meta"><?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?></div>
+            <form method="post" action="/plugins/mirror/include/action.php">
+              <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+              <input type="hidden" name="action" value="invite-peer">
+              <input type="hidden" name="peer_host" value="<?=mirror_value($peer["host"] ?? "")?>">
+              <div class="mirror-form-grid">
+                <div class="mirror-field">
+                  <label>Local share</label>
+                  <select name="local_share" <?=$shares ? "" : "disabled"?>>
+                    <option value="">Select a share</option>
+                    <?php foreach ($shares as $share): ?>
+                      <option value="<?=mirror_value($share)?>" <?=$share === $serverAShare ? "selected" : ""?>><?=mirror_value($share)?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mirror-field">
+                  <label>Peer share</label>
+                  <select name="peer_share" <?=$peerShares ? "" : "disabled"?>>
+                    <option value="">Select a peer share</option>
+                    <?php foreach ($peerShares as $share): ?>
+                      <option value="<?=mirror_value($share)?>" <?=$share === $defaultPeerShare ? "selected" : ""?>><?=mirror_value($share)?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mirror-field">
+                  <label>Authority rule</label>
+                  <select name="authority">
+                    <option value="equal_peers" selected>Equal peers</option>
+                    <option value="server_a_preferred">Server A preferred</option>
+                  </select>
+                </div>
+                <div class="mirror-field">
+                  <label>Delete behavior</label>
+                  <select name="delete_behavior">
+                    <option value="mirror_deletes" selected>Mirror deletes after saving trash</option>
+                    <option value="restore_missing">Restore missing files</option>
+                  </select>
+                </div>
+              </div>
+              <div class="mirror-actions">
+                <button type="submit" <?=$shares && $peerShares ? "" : "disabled"?>>Invite</button>
+              </div>
+            </form>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+
+    <?php if ($pendingInvites): ?>
+      <h3>Pending Invites</h3>
+      <div class="mirror-peer-list">
+        <?php foreach ($pendingInvites as $invite): ?>
+          <div class="mirror-peer-card">
+            <strong><?=mirror_value($invite["from_name"] ?? "Mirror peer")?></strong>
+            <div class="mirror-peer-meta"><?=mirror_value($invite["from_host"] ?? "")?> wants to mirror share <?=mirror_value($invite["from_share"] ?? "")?></div>
+            <form method="post" action="/plugins/mirror/include/action.php">
+              <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+              <input type="hidden" name="invite_id" value="<?=mirror_value($invite["id"] ?? "")?>">
+              <div class="mirror-form-grid">
+                <div class="mirror-field">
+                  <label>Local share to pair</label>
+                  <select name="local_share" <?=$shares ? "" : "disabled"?>>
+                    <option value="">Select a share</option>
+                    <?php foreach ($shares as $share): ?>
+                      <option value="<?=mirror_value($share)?>" <?=$share === $serverAShare ? "selected" : ""?>><?=mirror_value($share)?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+              </div>
+              <div class="mirror-actions">
+                <button type="submit" name="action" value="accept-invite" <?=$shares ? "" : "disabled"?>>Accept</button>
+                <button type="submit" name="action" value="reject-invite">Reject</button>
+              </div>
+            </form>
+          </div>
+        <?php endforeach; ?>
+      </div>
+    <?php endif; ?>
+  </div>
 
   <div class="mirror-section">
     <h3>Share Pair</h3>
