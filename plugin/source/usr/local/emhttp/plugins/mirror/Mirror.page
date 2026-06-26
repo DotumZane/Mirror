@@ -401,7 +401,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
             <div class="mirror-peer-meta"><?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?></div>
             <?php if (($peer["version"] ?? "") !== "" && ($peer["version"] ?? "") !== $version): ?>
               <div class="mirror-warning">
-                This peer is running Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Update both servers to <?=mirror_value($version)?> before pairing.
+                This peer's pairing responder is reporting Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Restart/update Mirror on that server so the responder reports <?=mirror_value($version)?> before pairing.
               </div>
             <?php endif; ?>
             <form method="post" action="/plugins/mirror/include/action.php">

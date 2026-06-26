@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.3.7">
+  <!ENTITY version    "0.3.8">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.7.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.8.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "7d52a593878fafc1dc5a60ca6ca533a1">
+  <!ENTITY md5        "229dfe2afd59ea510435e1582cad4b22">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.3.7
-- Prevents no-flash settings actions from leaving buttons stuck disabled.
-- Warns when a discovered peer is running a different Mirror version.
+### 0.3.8
+- Restarts the LAN pairing responder after install/update so it cannot serve stale code.
+- Clarifies peer version mismatch warnings.
 - Not safe for important shares yet.
   </CHANGES>
 
@@ -39,7 +39,7 @@
       if [ ! -f &plugin;/config.json ]; then
         cp &emhttp;/default-config.json &plugin;/config.json;
       fi;
-      /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
+      /usr/local/sbin/mirrorctl pair-restart 2>/dev/null || /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
       if [ -f &emhttp;/Mirror.page ] &amp;&amp; [ -x /usr/local/sbin/mirrorctl ]; then
         echo "";
         echo "===================================================================";

@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Prevents no-flash settings actions from leaving buttons stuck disabled.
-- Warns when a discovered peer is running a different Mirror version.
+- Restarts the LAN pairing responder after install/update so it cannot serve stale code.
+- Clarifies peer version mismatch warnings.
 - Not safe for important shares yet.
   </CHANGES>
 
@@ -69,7 +69,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
       if [ ! -f &plugin;/config.json ]; then
         cp &emhttp;/default-config.json &plugin;/config.json;
       fi;
-      /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
+      /usr/local/sbin/mirrorctl pair-restart 2>/dev/null || /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
       if [ -f &emhttp;/Mirror.page ] &amp;&amp; [ -x /usr/local/sbin/mirrorctl ]; then
         echo "";
         echo "===================================================================";
