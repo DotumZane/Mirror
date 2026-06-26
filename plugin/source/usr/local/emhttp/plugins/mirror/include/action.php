@@ -319,7 +319,7 @@ if ($action === "update-plugin") {
         mirror_write_action($message);
         mirror_redirect();
     }
-    $localPlugin = "/tmp/mirror-latest.plg";
+    $localPlugin = "/tmp/mirror.plg";
     $downloadUrl = $pluginUrl . "?mirror_cache_bust=" . rawurlencode((string)time());
     [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
     if (!$downloaded) {

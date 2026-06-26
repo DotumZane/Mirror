@@ -44,14 +44,15 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Opens plugin update output in an Unraid-style modal overlay.
-- Keeps command output off the main settings page.
+- Fixes duplicate plugin entries caused by installing a temporary mirror-latest.plg.
+- Cleans stale mirror-latest plugin records during install.
 - Not safe for important shares yet.
   </CHANGES>
 
   <FILE Run="/bin/bash">
     <INLINE>
       mkdir -p &plugin;
+      rm -f /boot/config/plugins/mirror-latest.plg /var/log/plugins/mirror-latest.plg /tmp/mirror-latest.plg 2>/dev/null || true
       find &plugin; -maxdepth 1 -type f -name '&name;-*.txz' ! -name '&name;-&version;.txz' -delete 2>/dev/null || true
     </INLINE>
   </FILE>

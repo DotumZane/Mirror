@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.2.4
+0.2.5
 ```
 
 Version source of truth:
@@ -426,6 +426,7 @@ Current release status:
 - `0.2.2` adds cache busting to the update button's GitHub manifest download.
 - `0.2.3` moves update command output into a popup window instead of the main settings page.
 - `0.2.4` changes update output to an Unraid-style in-page modal overlay.
+- `0.2.5` fixes duplicate plugin entries caused by installing `/tmp/mirror-latest.plg`.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -643,7 +644,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.2.4.
+- Current version: 0.2.5.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -694,7 +695,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.2.4`.
+- Current version is `0.2.5`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1053,6 +1054,16 @@ Next suggested task:
 - New decisions: Plugin update output should follow the normal Unraid modal pattern rather than opening a separate browser window.
 - Open questions: Confirm on Unraid that `0.2.4` update output visually matches the built-in plugin update dialog.
 - Next suggested task: Push to GitHub and use the existing Update Plugin button to update to `0.2.4`.
+
+#### 2026-06-25 - Duplicate Plugin Entry Fix
+
+- Task completed: Fixed the self-update path creating a second Mirror plugin entry.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.2.5.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: The updater now downloads the manifest to `/tmp/mirror.plg` instead of `/tmp/mirror-latest.plg`, and the installer removes stale `/boot/config/plugins/mirror-latest.plg`, `/var/log/plugins/mirror-latest.plg`, and `/tmp/mirror-latest.plg` files.
+- New decisions: Temporary plugin manifests must keep the canonical plugin filename so Unraid does not track them as separate installed plugins.
+- Open questions: Confirm on Unraid that updating to `0.2.5` removes the duplicate Mirror entry from the Plugins page.
+- Next suggested task: Push to GitHub, update to `0.2.5`, then refresh the Plugins page and confirm only one Mirror entry remains.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

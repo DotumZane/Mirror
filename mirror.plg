@@ -2,26 +2,27 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.2.4">
+  <!ENTITY version    "0.2.5">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.2.4.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.2.5.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "fbee463a62ff00792cfd21e693cea9eb">
+  <!ENTITY md5        "499b71cb5a9231a25e8fe9dec9a4d1f8">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.2.4
-- Opens plugin update output in an Unraid-style modal overlay.
-- Keeps command output off the main settings page.
+### 0.2.5
+- Fixes duplicate plugin entries caused by installing a temporary mirror-latest.plg.
+- Cleans stale mirror-latest plugin records during install.
 - Not safe for important shares yet.
   </CHANGES>
 
   <FILE Run="/bin/bash">
     <INLINE>
       mkdir -p &plugin;
+      rm -f /boot/config/plugins/mirror-latest.plg /var/log/plugins/mirror-latest.plg /tmp/mirror-latest.plg 2>/dev/null || true
       find &plugin; -maxdepth 1 -type f -name '&name;-*.txz' ! -name '&name;-&version;.txz' -delete 2>/dev/null || true
     </INLINE>
   </FILE>
