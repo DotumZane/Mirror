@@ -2,6 +2,7 @@
 $plugin = "mirror";
 $configDir = "/boot/config/plugins/$plugin";
 $pendingInvitesFile = "$configDir/pending-invites.json";
+$actionFile = "$configDir/last-action.txt";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
@@ -74,6 +75,14 @@ function mirror_write_json_file($path, $data) {
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 }
 
+function mirror_write_action($message) {
+    global $configDir, $actionFile;
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    file_put_contents($actionFile, trim($message));
+}
+
 function mirror_private_remote() {
     $ip = $_SERVER["REMOTE_ADDR"] ?? "";
     if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
@@ -130,6 +139,11 @@ if ($action === "invite") {
         "created_at" => time(),
     ];
     mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
+    mirror_write_action(
+        "Pending invite received from $fromName."
+        . "\nPeer host: $fromHost"
+        . "\nOpen LAN Peer Setup and click Accept under Pending Invites."
+    );
     mirror_json_response([
         "status" => "pending",
         "id" => $id,

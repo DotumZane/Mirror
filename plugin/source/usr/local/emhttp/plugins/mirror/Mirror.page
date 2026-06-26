@@ -119,6 +119,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 <style>
 .mirror-panel {
   max-width: 1120px;
+  transition: opacity 0.12s ease;
+}
+.mirror-panel.is-refreshing {
+  opacity: 0.72;
+  pointer-events: none;
 }
 .mirror-grid {
   display: grid;
@@ -619,10 +624,39 @@ function closeMirrorUpdateModal() {
   if (frame) {
     frame.src = "about:blank";
   }
-  window.location.reload();
+  refreshMirrorPanel();
 }
 
-(function () {
+function refreshMirrorPanel() {
+  var panel = document.querySelector(".mirror-panel");
+  if (!panel) {
+    return Promise.resolve();
+  }
+  panel.classList.add("is-refreshing");
+  return fetch(window.location.href, {
+    cache: "no-store",
+    credentials: "same-origin"
+  })
+    .then(function (response) {
+      return response.text();
+    })
+    .then(function (html) {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var freshPanel = doc.querySelector(".mirror-panel");
+      if (freshPanel) {
+        panel.innerHTML = freshPanel.innerHTML;
+        bindMirrorPage();
+      }
+    })
+    .finally(function () {
+      var currentPanel = document.querySelector(".mirror-panel");
+      if (currentPanel) {
+        currentPanel.classList.remove("is-refreshing");
+      }
+    });
+}
+
+function bindMirrorPage() {
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');
     return selected ? selected.value : 'local';
@@ -638,9 +672,48 @@ function closeMirrorUpdateModal() {
     });
   }
 
+  document.querySelectorAll(".mirror-panel form").forEach(function (form) {
+    if (form.dataset.mirrorBound === "1" || form.target === "mirror_update_frame") {
+      return;
+    }
+    form.dataset.mirrorBound = "1";
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var submitter = event.submitter || null;
+      var data = new FormData(form);
+      if (submitter && submitter.name) {
+        data.set(submitter.name, submitter.value);
+      }
+      data.set("ajax", "1");
+      form.querySelectorAll("button,input[type='submit']").forEach(function (control) {
+        control.disabled = true;
+      });
+      fetch(form.action, {
+        method: "POST",
+        body: data,
+        credentials: "same-origin",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+        .then(function () {
+          return refreshMirrorPanel();
+        })
+        .catch(function () {
+          form.submit();
+        });
+    });
+  });
+
   document.querySelectorAll('input[name="mirror_mode"]').forEach(function (input) {
+    if (input.dataset.mirrorModeBound === "1") {
+      return;
+    }
+    input.dataset.mirrorModeBound = "1";
     input.addEventListener('change', syncModeVisibility);
   });
   syncModeVisibility();
-})();
+}
+
+bindMirrorPage();
 </script>

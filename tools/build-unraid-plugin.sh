@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Keeps Pending Invites visible even when empty.
-- Adds Check Pending Invites and clearer invite success details.
+- Refreshes Mirror settings actions in place without a hard page reload.
+- Logs received pending invites on the peer and improves invite error details.
 - Not safe for important shares yet.
   </CHANGES>
 

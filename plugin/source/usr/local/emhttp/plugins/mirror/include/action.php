@@ -23,7 +23,19 @@ function mirror_daemon_running() {
     return $pid > 0 && posix_kill($pid, 0);
 }
 
+function mirror_is_ajax() {
+    return (string)($_POST["ajax"] ?? "") === "1"
+        || strtolower((string)($_SERVER["HTTP_X_REQUESTED_WITH"] ?? "")) === "xmlhttprequest";
+}
+
 function mirror_redirect() {
+    global $actionFile;
+    if (mirror_is_ajax()) {
+        header("Content-Type: application/json; charset=UTF-8");
+        $message = is_file($actionFile) ? trim((string)file_get_contents($actionFile)) : "";
+        echo json_encode(["ok" => true, "message" => $message], JSON_UNESCAPED_SLASHES) . "\n";
+        exit;
+    }
     $target = $_SERVER["HTTP_REFERER"] ?? "/Settings/Mirror";
     header("Location: $target");
     exit;
@@ -201,9 +213,12 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
     if ($curl === null) {
         return null;
     }
+    $bodyFile = tempnam("/tmp", "mirror-body-");
     $cmd = escapeshellarg($curl)
-        . " -sSL --connect-timeout " . escapeshellarg((string)$timeout)
-        . " --max-time " . escapeshellarg((string)$timeout);
+        . " -sS --connect-timeout " . escapeshellarg((string)$timeout)
+        . " --max-time " . escapeshellarg((string)$timeout)
+        . " -o " . escapeshellarg($bodyFile)
+        . " -w " . escapeshellarg("%{http_code}");
     $payloadFile = null;
     if ($payload !== null) {
         $payloadFile = tempnam("/tmp", "mirror-json-");
@@ -211,17 +226,35 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
         $cmd .= " -H " . escapeshellarg("Content-Type: application/json")
             . " --data-binary " . escapeshellarg("@$payloadFile");
     }
-    $cmd .= " " . escapeshellarg($url) . " 2>/dev/null";
+    $cmd .= " " . escapeshellarg($url) . " 2>&1";
     exec($cmd, $output, $code);
     if ($payloadFile !== null) {
         @unlink($payloadFile);
     }
-    $decoded = json_decode(implode("\n", $output), true);
+    $body = is_file($bodyFile) ? (string)file_get_contents($bodyFile) : "";
+    @unlink($bodyFile);
+    $httpCode = trim(end($output) ?: "");
+    $decoded = json_decode($body, true);
     if (is_array($decoded)) {
         $decoded["_curl_code"] = $code;
+        $decoded["_http_code"] = $httpCode;
         return $decoded;
     }
-    return ["status" => "error", "error" => "No JSON response from $url", "_curl_code" => $code];
+    $details = trim($body);
+    if ($details === "") {
+        $details = trim(implode("\n", $output));
+    }
+    if (strlen($details) > 500) {
+        $details = substr($details, 0, 500) . "...";
+    }
+    return [
+        "status" => "error",
+        "error" => "No JSON response from $url"
+            . ($httpCode !== "" ? " (HTTP $httpCode)" : "")
+            . ($details !== "" ? ": $details" : ""),
+        "_curl_code" => $code,
+        "_http_code" => $httpCode,
+    ];
 }
 
 function mirror_remote_url($host, $query) {
@@ -426,6 +459,10 @@ if ($action === "invite-peer") {
     global $discoveryFile;
     try {
         $peerHost = trim((string)($_POST["peer_host"] ?? ""));
+        exec("/usr/local/sbin/mirrorctl pair-start 2>&1", $pairOutput, $pairCode);
+        if ($peerHost === "" || !mirror_is_private_ip($peerHost)) {
+            throw new RuntimeException("Peer host must be a private LAN IP address.");
+        }
         $publicKey = mirror_ensure_key();
         $payload = [
             "action" => "invite",
@@ -438,17 +475,19 @@ if ($action === "invite-peer") {
             $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
             throw new RuntimeException("Peer did not store the invite request: $peerError");
         }
+        $peerVersion = (string)($response["version"] ?? "unknown");
         mirror_accept_public_key((string)($response["public_key"] ?? ""));
         mirror_write_peer_profile([
             "name" => (string)($response["name"] ?? $peerHost),
             "host" => $peerHost,
-            "version" => (string)($response["version"] ?? "unknown"),
+            "version" => $peerVersion,
             "shares" => is_array($response["shares"] ?? null) ? $response["shares"] : [],
             "public_key" => (string)($response["public_key"] ?? ""),
             "status" => "invite_sent",
         ]);
         mirror_write_action(
             "Invite sent to " . ($response["name"] ?? $peerHost) . "."
+            . "\nPeer version: " . $peerVersion
             . "\nPeer link is staged on this server."
             . "\nReceiving host: $peerHost"
             . "\nInvite ID: " . ($response["id"] ?? "unknown")
@@ -456,7 +495,11 @@ if ($action === "invite-peer") {
             . "\nAfter it is accepted, choose shares in Share Pair."
         );
     } catch (Throwable $error) {
-        mirror_write_action("Invite failed:\n" . $error->getMessage());
+        $extra = "";
+        if (!empty($pairOutput)) {
+            $extra = "\nLocal responder check:\n" . implode("\n", $pairOutput);
+        }
+        mirror_write_action("Invite failed:\n" . $error->getMessage() . $extra);
     }
     mirror_redirect();
 }
