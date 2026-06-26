@@ -172,6 +172,12 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   font-size: 14px;
   margin-bottom: 6px;
 }
+.mirror-stat .mirror-actions {
+  margin-top: 10px;
+}
+.mirror-version-value {
+  display: block;
+}
 .mirror-section {
   margin: 16px 0;
 }
@@ -337,7 +343,15 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   <div class="mirror-grid">
     <div class="mirror-stat">
       <strong>Version</strong>
-      <?=mirror_value($version)?>
+      <span class="mirror-version-value"><?=mirror_value($version)?></span>
+      <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="update-plugin">
+        <input type="hidden" name="popup" value="1">
+        <div class="mirror-actions">
+          <button type="submit">Update Plugin</button>
+        </div>
+      </form>
     </div>
     <div class="mirror-stat">
       <strong>Install State</strong>
@@ -394,19 +408,6 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       This server is in Managed remote mode. Pair it from the master server, then control share pairing and sync rules on the master.
     </div>
   <?php endif; ?>
-
-  <div class="mirror-section">
-    <h3>Plugin Update</h3>
-    <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="update-plugin">
-      <input type="hidden" name="popup" value="1">
-      <div class="mirror-actions">
-        <button type="submit">Update Plugin</button>
-      </div>
-    </form>
-    <span class="mirror-help">Updates from the GitHub main branch install URL.</span>
-  </div>
 
   <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
     <div class="mirror-modal">
