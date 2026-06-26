@@ -373,32 +373,32 @@ if (!empty($linkedPeer["host"]) && (
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 10px 0 18px;
+  margin: 0 0 18px;
   padding-left: 0;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #2f2f2f;
 }
 .mirror-tab {
   align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
+  background: #1f1f1f;
+  border: 1px solid #343434;
   border-bottom: 0;
   border-radius: 3px 3px 0 0;
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08);
-  color: rgba(221, 221, 221, 0.42);
+  box-shadow: none;
+  color: rgba(221, 221, 221, 0.45);
   cursor: pointer;
   display: inline-flex;
   font-size: 12px;
   gap: 6px;
   line-height: 1;
-  margin: 0;
-  min-height: 27px;
-  padding: 7px 10px 8px;
+  margin: 0 4px 0 0;
+  min-height: 29px;
+  padding: 8px 11px 8px;
   text-decoration: none;
 }
 .mirror-tab.is-active {
-  background: #1b1818;
-  border-color: #ff6a2a #363636 #1b1818 #ff6a2a;
-  box-shadow: inset 1px 0 0 rgba(255, 106, 42, 0.28);
+  background: #171717;
+  border-color: #ff6a2a #343434 #171717 #ff6a2a;
+  box-shadow: inset 1px 0 0 rgba(255, 106, 42, 0.2);
   color: #ddd;
   font-weight: 700;
   margin-bottom: -1px;
@@ -412,14 +412,12 @@ if (!empty($linkedPeer["host"]) && (
   color: #fff;
 }
 .mirror-tab:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: #242424;
   color: rgba(221, 221, 221, 0.76);
 }
 </style>
 
 <div class="mirror-panel">
-  <h2>Mirror</h2>
-
   <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
     <div class="mirror-modal">
       <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
