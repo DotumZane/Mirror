@@ -634,7 +634,7 @@ if (!empty($linkedPeer["host"]) && (
       </form>
       <span class="mirror-help">Managed remote hides local sync settings. Switch back to Master or factory reset if this server should control share pairing.</span>
     <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <div class="mirror-actions">
         <button type="submit" name="action" value="status">Status</button>

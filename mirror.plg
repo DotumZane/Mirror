@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.7.0">
+  <!ENTITY version    "0.7.1">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.0.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.1.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "35f0e90dc94a31d7df335d77fc0d70ca">
+  <!ENTITY md5        "7707b39ecd6102b4e01ddbf943bb4239">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.7.0
-- Starts the daemon loop through an absolute mirrorctl path.
-- Adds daemon startup markers and launch-failure log output.
+### 0.7.1
+- Uses normal page submit for Control actions.
+- Prevents Start/Stop from getting stuck in the AJAX refresh path.
 - Not safe for important shares yet.
   </CHANGES>
 

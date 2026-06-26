@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Starts the daemon loop through an absolute mirrorctl path.
-- Adds daemon startup markers and launch-failure log output.
+- Uses normal page submit for Control actions.
+- Prevents Start/Stop from getting stuck in the AJAX refresh path.
 - Not safe for important shares yet.
   </CHANGES>
 
