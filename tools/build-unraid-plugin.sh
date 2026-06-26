@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Downloads update manifests through the GitHub API before falling back to raw GitHub.
-- Avoids stale raw branch cache during plugin self-update checks.
+- Restores compact equal-height status boxes.
+- Makes the Version box update button smaller.
 - Not safe for important shares yet.
   </CHANGES>
 

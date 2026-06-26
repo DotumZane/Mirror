@@ -167,13 +167,28 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   border-radius: 6px;
   padding: 12px;
 }
+.mirror-stat {
+  min-height: 48px;
+  position: relative;
+}
 .mirror-stat strong {
   display: block;
   font-size: 14px;
   margin-bottom: 6px;
 }
-.mirror-stat .mirror-actions {
-  margin-top: 10px;
+.mirror-stat--version {
+  padding-right: 128px;
+}
+.mirror-update-compact {
+  bottom: 12px;
+  margin: 0;
+  position: absolute;
+  right: 12px;
+}
+.mirror-update-compact button {
+  font-size: 10px;
+  line-height: 1;
+  padding: 5px 8px;
 }
 .mirror-version-value {
   display: block;
@@ -341,14 +356,14 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   <h2>Mirror</h2>
 
   <div class="mirror-grid">
-    <div class="mirror-stat">
+    <div class="mirror-stat mirror-stat--version">
       <strong>Version</strong>
       <span class="mirror-version-value"><?=mirror_value($version)?></span>
       <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
         <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
         <input type="hidden" name="action" value="update-plugin">
         <input type="hidden" name="popup" value="1">
-        <div class="mirror-actions">
+        <div class="mirror-update-compact">
           <button type="submit">Update Plugin</button>
         </div>
       </form>
