@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Shows same-version update checks as already current instead of failed.
-- Reports downloaded and installed plugin versions in the update popup.
+- Uses normal Unraid submits for LAN pairing actions.
+- Reloads the page to recover if a no-flash action fails in the browser.
 - Not safe for important shares yet.
   </CHANGES>
 

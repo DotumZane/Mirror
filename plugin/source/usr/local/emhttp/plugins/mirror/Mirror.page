@@ -415,7 +415,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <button type="submit">Find Mirror Servers</button>
       </div>
     </form>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="pair-restart">
       <div class="mirror-actions">
@@ -451,7 +451,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
                 This peer's pairing responder is reporting Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Restart/update Mirror on that server so the responder reports <?=mirror_value($version)?> before pairing.
               </div>
             <?php endif; ?>
-            <form method="post" action="/plugins/mirror/include/action.php">
+            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
               <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
               <input type="hidden" name="action" value="invite-peer">
               <input type="hidden" name="peer_host" value="<?=mirror_value($peer["host"] ?? "")?>">
@@ -465,7 +465,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <?php endif; ?>
 
     <h3>Pending Invites</h3>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="check-invites">
       <div class="mirror-actions">
@@ -478,7 +478,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
           <div class="mirror-peer-card">
             <strong><?=mirror_value($invite["from_name"] ?? "Mirror peer")?></strong>
             <div class="mirror-peer-meta"><?=mirror_value($invite["from_host"] ?? "")?> wants to link Mirror for later share setup.</div>
-            <form method="post" action="/plugins/mirror/include/action.php">
+            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
               <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
               <input type="hidden" name="invite_id" value="<?=mirror_value($invite["id"] ?? "")?>">
               <div class="mirror-actions">
@@ -812,7 +812,10 @@ function bindMirrorPage() {
           controls.forEach(function (control) {
             control.disabled = false;
           });
-          showMirrorClientMessage("Action did not finish in the browser: " + error.message + "\nTry again, or use the Update Plugin button if this server is not on the newest build.");
+          showMirrorClientMessage("Action did not finish in the browser: " + error.message + "\nReloading the Mirror panel to recover.");
+          window.setTimeout(function () {
+            window.location.reload();
+          }, 800);
         });
     });
   });

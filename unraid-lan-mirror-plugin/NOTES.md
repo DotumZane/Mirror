@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.3
+0.4.4
 ```
 
 Version source of truth:
@@ -443,6 +443,7 @@ Current release status:
 - `0.4.1` hides stale peer cards from the active list and makes Find Mirror Servers a normal submit.
 - `0.4.2` reports direct-host scan failures and adds a pairing responder restart button.
 - `0.4.3` treats same-version update checks as already current instead of failed.
+- `0.4.4` uses normal Unraid submits for pairing actions and reloads on AJAX failure.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -660,7 +661,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.3.
+- Current version: 0.4.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -711,7 +712,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.3`.
+- Current version is `0.4.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1220,6 +1221,16 @@ Next suggested task:
 - New decisions: Same-version update checks are not failures; they usually mean the latest commit has not been pushed yet or GitHub has not served the new manifest yet.
 - Open questions: Confirm the next repeated update attempt shows "No update installed" instead of Unraid's "not reinstalling same version" failure.
 - Next suggested task: Push to GitHub, then update both servers to `0.4.3` so future repeated clicks give the clearer message.
+
+#### 2026-06-25 - Pairing Form Reliability
+
+- Task completed: Stopped LAN pairing actions from using the flaky no-flash AJAX path.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Find Mirror Servers, Restart Pairing Responder, Invite, Check Pending Invites, Accept, and Reject now use normal Unraid form submits. Any remaining no-flash AJAX action that fails in the browser now reloads the page to recover instead of leaving a yellow warning stuck on the page.
+- New decisions: Pairing actions should prefer reliability over no-flash UI until the plugin has a real background job/status endpoint.
+- Open questions: Confirm the yellow "Load failed" browser warning disappears after updating to `0.4.4`.
+- Next suggested task: Push to GitHub, update both servers to `0.4.4`, then retry Restart Pairing Responder and Find Mirror Servers.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
