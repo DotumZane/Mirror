@@ -7,6 +7,7 @@ $discoveryFile = "$configDir/discovered-peers.json";
 $pendingInvitesFile = "$configDir/pending-invites.json";
 $peerFile = "$configDir/peer.json";
 $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
+$defaultConfigFile = "/usr/local/emhttp/plugins/$plugin/default-config.json";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
@@ -333,6 +334,7 @@ function mirror_existing_config() {
             "user" => "root",
             "port" => 22,
         ],
+        "node_role" => "master",
     ];
     if (!is_file($configFile)) {
         return $default;
@@ -341,8 +343,16 @@ function mirror_existing_config() {
     return is_array($decoded) ? array_replace_recursive($default, $decoded) : $default;
 }
 
-function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior) {
+function mirror_write_config($config) {
     global $configDir, $configFile;
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+}
+
+function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior) {
+    global $configDir;
     $localShare = trim((string)$localShare);
     $peerShare = trim((string)$peerShare);
     $peerHost = trim((string)$peerHost);
@@ -382,12 +392,10 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
         "authority" => $authority,
         "delete_propagation" => $deleteBehavior === "mirror_deletes",
         "delete_behavior" => $deleteBehavior,
+        "node_role" => (string)($existing["node_role"] ?? "master"),
         "sync_interval" => max(1, min(3600, (int)($existing["sync_interval"] ?? 10))),
     ];
-    if (!is_dir($configDir)) {
-        mkdir($configDir, 0777, true);
-    }
-    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    mirror_write_config($config);
 }
 
 function mirror_write_peer_profile($peer) {
@@ -397,7 +405,7 @@ function mirror_write_peer_profile($peer) {
 }
 
 function mirror_preserve_mode_from_post() {
-    global $configDir, $configFile;
+    global $configFile;
     $mode = trim((string)($_POST["preserve_mirror_mode"] ?? ""));
     if (!in_array($mode, ["local", "remote"], true) || !is_file($configFile)) {
         return;
@@ -408,13 +416,7 @@ function mirror_preserve_mode_from_post() {
     }
     $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
     $config["server_b"]["type"] = $mode;
-    if (!is_dir($configDir)) {
-        mkdir($configDir, 0777, true);
-    }
-    file_put_contents(
-        $configFile,
-        json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
-    );
+    mirror_write_config($config);
 }
 
 $action = $_POST["action"] ?? "status";
@@ -502,6 +504,20 @@ if ($action === "pair-restart") {
         $message .= "\n" . implode("\n", $output);
     }
     mirror_write_action($message);
+    mirror_redirect();
+}
+
+if ($action === "save-role") {
+    $role = trim((string)($_POST["node_role"] ?? "master"));
+    if (!in_array($role, ["master", "managed_remote"], true)) {
+        $role = "master";
+    }
+    $config = mirror_existing_config();
+    $config["node_role"] = $role;
+    mirror_write_config($config);
+    mirror_write_action($role === "managed_remote"
+        ? "Server role saved: Managed remote. Configure shares and sync rules from the master server."
+        : "Server role saved: Master. Configure pairing, shares, and sync rules on this server.");
     mirror_redirect();
 }
 
@@ -619,10 +635,7 @@ if ($action === "use-linked-peer") {
     $config["server_b"]["host"] = (string)$peer["host"];
     $config["server_b"]["user"] = "root";
     $config["server_b"]["port"] = 22;
-    if (!is_dir($configDir)) {
-        mkdir($configDir, 0777, true);
-    }
-    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    mirror_write_config($config);
     mirror_write_action("Linked peer applied to Share Pair. Choose local and remote shares, then Save Settings.");
     mirror_redirect();
 }
@@ -630,6 +643,10 @@ if ($action === "use-linked-peer") {
 if ($action === "save-config") {
     $wasRunning = mirror_daemon_running();
     $existingConfig = mirror_existing_config();
+    if (($existingConfig["node_role"] ?? "master") === "managed_remote") {
+        mirror_write_action("Settings not saved. This server is Managed remote; configure share pairing and sync rules from the master server.");
+        mirror_redirect();
+    }
     $serverAShare = trim((string)($_POST["server_a_share"] ?? ""));
     $mirrorMode = trim((string)($_POST["mirror_mode"] ?? ""));
     $serverBType = $mirrorMode !== "" ? $mirrorMode : trim((string)($_POST["server_b_type"] ?? "local"));
@@ -704,6 +721,7 @@ if ($action === "save-config") {
             "user" => $peerUser,
             "port" => $peerPort,
         ],
+        "node_role" => (string)($existingConfig["node_role"] ?? "master"),
         "state_db" => "$configDir/mirror.sqlite3",
         "trash_root" => "$configDir/trash",
         "authority" => $authority,
@@ -715,10 +733,7 @@ if ($action === "save-config") {
     if (!is_dir($configDir)) {
         mkdir($configDir, 0777, true);
     }
-    file_put_contents(
-        $configFile,
-        json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n"
-    );
+    mirror_write_config($config);
     $message = "Settings saved.";
     if ($wasRunning) {
         exec("/usr/local/sbin/mirrorctl restart 2>&1", $output, $code);
@@ -726,6 +741,52 @@ if ($action === "save-config") {
         if ($output) {
             $message .= "\n" . implode("\n", $output);
         }
+    }
+    mirror_write_action($message);
+    mirror_redirect();
+}
+
+if ($action === "factory-reset") {
+    global $configDir, $configFile, $defaultConfigFile, $discoveryFile, $pendingInvitesFile, $peerFile, $sshDir;
+    if (empty($_POST["confirm_factory_reset"])) {
+        mirror_write_action("Factory reset not run. Check Confirm factory reset first.");
+        mirror_redirect();
+    }
+    exec("/usr/local/sbin/mirrorctl stop 2>&1", $stopOutput, $stopCode);
+    exec("/usr/local/sbin/mirrorctl pair-stop 2>&1", $pairOutput, $pairCode);
+    $paths = [
+        $configFile,
+        $discoveryFile,
+        $pendingInvitesFile,
+        $peerFile,
+        "$configDir/mirror.sqlite3",
+        "$configDir/last-action.txt",
+        "/var/log/mirror.log",
+        "/var/log/mirror-pairing.log",
+    ];
+    foreach ($paths as $path) {
+        if (is_file($path)) {
+            @unlink($path);
+        }
+    }
+    foreach (["$configDir/trash", $sshDir] as $dir) {
+        if (is_dir($dir)) {
+            exec("rm -rf " . escapeshellarg($dir) . " 2>&1");
+        }
+    }
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    if (is_file($defaultConfigFile)) {
+        copy($defaultConfigFile, $configFile);
+    }
+    exec("/usr/local/sbin/mirrorctl pair-start 2>&1", $startPairOutput, $startPairCode);
+    $message = "Factory reset complete."
+        . "\nCleared Mirror config, pairing state, scan cache, SSH keys, database, trash, and logs."
+        . "\nUser shares and synced files were not touched.";
+    $outputs = array_merge($stopOutput ?: [], $pairOutput ?: [], $startPairOutput ?: []);
+    if ($outputs) {
+        $message .= "\nCommand output:\n" . implode("\n", $outputs);
     }
     mirror_write_action($message);
     mirror_redirect();

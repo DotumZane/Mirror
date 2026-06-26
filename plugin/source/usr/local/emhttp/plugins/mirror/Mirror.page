@@ -37,6 +37,7 @@ $defaultConfig = [
     "user" => "root",
     "port" => 22,
   ],
+  "node_role" => "master",
   "state_db" => "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root" => "/boot/config/plugins/mirror/trash",
   "authority" => "server_a_preferred",
@@ -114,6 +115,10 @@ $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
+$nodeRole = $config["node_role"] ?? "master";
+if (!in_array($nodeRole, ["master", "managed_remote"], true)) {
+  $nodeRole = "master";
+}
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $primaryIp = mirror_primary_ip();
@@ -350,6 +355,10 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       <strong>Pending Invites</strong>
       <?=mirror_value(count($pendingInvites))?>
     </div>
+    <div class="mirror-stat">
+      <strong>Role</strong>
+      <?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?>
+    </div>
   </div>
 
   <?php if ($lastAction): ?>
@@ -359,6 +368,30 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   <div class="mirror-warning">
     Early test build. Use disposable test shares only.
   </div>
+
+  <div class="mirror-section">
+    <h3>Server Role</h3>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="save-role">
+      <div class="mirror-mode-switch" role="group" aria-label="Server role">
+        <input id="node_role_master" type="radio" name="node_role" value="master" <?=$nodeRole === "master" ? "checked" : ""?>>
+        <label for="node_role_master">Master</label>
+        <input id="node_role_remote" type="radio" name="node_role" value="managed_remote" <?=$nodeRole === "managed_remote" ? "checked" : ""?>>
+        <label for="node_role_remote">Managed remote</label>
+      </div>
+      <span class="mirror-help">Use Master on the server where you choose shares and rules. Use Managed remote on the other server so it only accepts pairing and waits for master-controlled setup.</span>
+      <div class="mirror-actions">
+        <button type="submit">Save Role</button>
+      </div>
+    </form>
+  </div>
+
+  <?php if ($nodeRole === "managed_remote"): ?>
+    <div class="mirror-warning">
+      This server is in Managed remote mode. Pair it from the master server, then control share pairing and sync rules on the master.
+    </div>
+  <?php endif; ?>
 
   <div class="mirror-section">
     <h3>Plugin Update</h3>
@@ -503,6 +536,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 
   <div class="mirror-section">
     <h3>Share Pair</h3>
+    <?php if ($nodeRole === "managed_remote"): ?>
+      <div class="mirror-warning">
+        Share Pair is controlled from the master server while this server is Managed remote.
+      </div>
+    <?php endif; ?>
     <?php if (!empty($linkedPeer["host"])): ?>
       <form method="post" action="/plugins/mirror/include/action.php">
         <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
@@ -583,7 +621,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       </div>
 
       <div class="mirror-actions">
-        <input type="submit" value="Save Settings" <?=$shares ? "" : "disabled"?>>
+        <input type="submit" value="Save Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
       </div>
     </form>
   </div>
@@ -639,6 +677,18 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <button type="submit" name="action" value="run-once">Run Once</button>
         <button type="submit" name="action" value="start">Start</button>
         <button type="submit" name="action" value="stop">Stop</button>
+      </div>
+    </form>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="factory-reset">
+      <label class="mirror-check">
+        <input type="checkbox" name="confirm_factory_reset" value="1">
+        Confirm factory reset
+      </label>
+      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, scan cache, SSH keys, database, trash, and logs. It does not delete user shares or synced files.</span>
+      <div class="mirror-actions">
+        <button type="submit">Factory Reset Plugin</button>
       </div>
     </form>
   </div>

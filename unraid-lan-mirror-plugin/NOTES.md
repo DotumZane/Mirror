@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.6
+0.4.7
 ```
 
 Version source of truth:
@@ -446,6 +446,7 @@ Current release status:
 - `0.4.4` uses normal Unraid submits for pairing actions and reloads on AJAX failure.
 - `0.4.5` auto-refreshes running scans and shortens deep scan timeout.
 - `0.4.6` keeps discovered peers active for 30 minutes instead of hiding them after two.
+- `0.4.7` adds Factory Reset Plugin and Master / Managed remote role mode.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -663,7 +664,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.6.
+- Current version: 0.4.7.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -714,7 +715,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.6`.
+- Current version is `0.4.7`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1253,6 +1254,16 @@ Next suggested task:
 - New decisions: Pairing discovery results should remain usable long enough for a human to read scan output, scroll, and click Invite.
 - Open questions: Confirm the Invite card remains visible after a successful scan.
 - Next suggested task: Push to GitHub, update both servers to `0.4.6`, run Find Mirror Servers, then use the visible Invite button.
+
+#### 2026-06-25 - Factory Reset And Managed Remote Mode
+
+- Task completed: Added a clean reset path and a role setting for master/managed-remote operation.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.7.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/default-config.json`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Control now includes Factory Reset Plugin with confirmation, which stops Mirror, clears plugin config/pairing/scan/key/db/trash/log state, recreates default config, and restarts pairing without touching user shares. The settings page also has a Server Role section with Master and Managed remote modes; managed remotes are blocked from saving share-pair settings locally.
+- New decisions: One server should be able to act as a managed remote so share-pair and sync-rule decisions are made from the master server.
+- Open questions: The next step is to make the master push share-pair settings to a managed remote automatically after pairing.
+- Next suggested task: Push to GitHub, update both servers to `0.4.7`, factory reset both plugins if needed, set one server to Managed remote and the other to Master, then retry pairing from the master.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

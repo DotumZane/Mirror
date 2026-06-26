@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.4.6">
+  <!ENTITY version    "0.4.7">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.6.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.7.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "f3a268525ada67a9136a54ba93ef96d2">
+  <!ENTITY md5        "4cd59e49e1ce2c6bb4cc8232302d5b11">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.4.6
-- Keeps discovered peers active for 30 minutes instead of hiding them after two minutes.
-- Keeps peer age visible on each discovered peer card.
+### 0.4.7
+- Adds Factory Reset Plugin to clear Mirror state without touching shares.
+- Adds Master / Managed remote server role mode.
 - Not safe for important shares yet.
   </CHANGES>
 
