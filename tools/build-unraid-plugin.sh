@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Restores compact equal-height status boxes.
-- Makes the Version box update button smaller.
+- Fixes status boxes at the same compact height.
+- Moves the Version box update button to the top-right.
 - Not safe for important shares yet.
   </CHANGES>
 
