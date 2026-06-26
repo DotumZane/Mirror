@@ -138,6 +138,7 @@ $discoveryDirectHost = (string)($discovery["direct_host"] ?? "");
 $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
 $pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
 $linkedPeer = mirror_json_file($peerFile, []);
+$linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["shares"] : [];
 if (!empty($linkedPeer["host"]) && (
   strpos($lastAction, "Invite sent to ") === 0 ||
   strpos($lastAction, "Invite accepted.") === 0
@@ -540,7 +541,14 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
           <button type="submit">Use Linked Peer</button>
         </div>
       </form>
-      <span class="mirror-help">Fills Remote LAN mirror host with <?=mirror_value($linkedPeer["host"])?>. Then choose shares and save.</span>
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="refresh-peer-shares">
+        <div class="mirror-actions">
+          <button type="submit">Refresh Remote Shares</button>
+        </div>
+      </form>
+      <span class="mirror-help">Fills Remote LAN mirror host with <?=mirror_value($linkedPeer["host"])?>. Remote shares loaded: <?=mirror_value(count($linkedPeerShares))?>.</span>
     <?php endif; ?>
     <form method="post" action="/plugins/mirror/include/action.php">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
@@ -575,8 +583,19 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
           <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
         </div>
         <div class="mirror-field mirror-remote-only">
-          <label for="remote_share">Remote peer share name</label>
-          <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
+          <label for="remote_share">Remote peer share</label>
+          <?php if ($linkedPeerShares): ?>
+            <select id="remote_share" name="remote_share">
+              <option value="">Select a remote share</option>
+              <?php foreach ($linkedPeerShares as $share): ?>
+                <option value="<?=mirror_value($share)?>" <?=$share === ($config["server_b"]["share"] ?? $serverBShare) ? "selected" : ""?>><?=mirror_value($share)?></option>
+              <?php endforeach; ?>
+            </select>
+            <span class="mirror-help">Loaded from <?=mirror_value($linkedPeer["name"] ?? "linked peer")?>.</span>
+          <?php else: ?>
+            <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
+            <span class="mirror-help">Use Refresh Remote Shares after pairing to load a dropdown from the peer.</span>
+          <?php endif; ?>
         </div>
         <div class="mirror-field mirror-remote-only">
           <label for="peer_host">Peer host or IP</label>

@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.6.0">
+  <!ENTITY version    "0.6.1">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.0.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.1.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "fcf1cb217c32ba7d62605868d0046473">
+  <!ENTITY md5        "0331f83ceb397ce3b6222457eafb48c0">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.6.0
-- Hides completed invite/accept detail messages once a peer is linked.
-- Keeps connected peer status visible through the Peer Link tile.
+### 0.6.1
+- Loads remote shares from the linked peer.
+- Uses a dropdown for remote peer share selection when shares are available.
 - Not safe for important shares yet.
   </CHANGES>
 

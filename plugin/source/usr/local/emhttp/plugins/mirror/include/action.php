@@ -795,6 +795,32 @@ if ($action === "use-linked-peer") {
     mirror_redirect();
 }
 
+if ($action === "refresh-peer-shares") {
+    global $peerFile;
+    try {
+        $peer = mirror_json_file($peerFile, []);
+        $peerHost = trim((string)($peer["host"] ?? ""));
+        if ($peerHost === "" || !mirror_is_private_ip($peerHost)) {
+            throw new RuntimeException("No linked private LAN peer was found.");
+        }
+        $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "hello", "shares" => time()]), 3.0);
+        if (!is_array($response) || ($response["service"] ?? "") !== "mirror") {
+            $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
+            throw new RuntimeException("Peer did not return its share list: $peerError");
+        }
+        $shares = is_array($response["shares"] ?? null) ? array_values($response["shares"]) : [];
+        $peer["name"] = (string)($response["name"] ?? ($peer["name"] ?? $peerHost));
+        $peer["version"] = (string)($response["version"] ?? ($peer["version"] ?? "unknown"));
+        $peer["shares"] = $shares;
+        $peer["shares_refreshed_at"] = time();
+        mirror_write_peer_profile($peer);
+        mirror_write_action("Remote shares refreshed from " . ($peer["name"] ?? $peerHost) . ". Found " . count($shares) . " share" . (count($shares) === 1 ? "." : "s."));
+    } catch (Throwable $error) {
+        mirror_write_action("Remote shares not refreshed:\n" . $error->getMessage());
+    }
+    mirror_redirect();
+}
+
 if ($action === "save-config") {
     $wasRunning = mirror_daemon_running();
     $existingConfig = mirror_existing_config();
@@ -838,6 +864,11 @@ if ($action === "save-config") {
     } else {
         if ($remoteShare !== "" && preg_match("#[\\x00/]+#", $remoteShare)) {
             $errors[] = "Remote peer share name must be a single share name, not a path.";
+        }
+        $peer = mirror_json_file($peerFile, []);
+        $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : [];
+        if ($remoteShare !== "" && $peerShares && !in_array($remoteShare, $peerShares, true)) {
+            $errors[] = "Remote peer share must be selected from the linked peer's current shares.";
         }
         if ($remoteShare === "") {
             $remoteShare = (string)($existingConfig["server_b"]["share"] ?? "");

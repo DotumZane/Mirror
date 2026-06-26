@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Hides completed invite/accept detail messages once a peer is linked.
-- Keeps connected peer status visible through the Peer Link tile.
+- Loads remote shares from the linked peer.
+- Uses a dropdown for remote peer share selection when shares are available.
 - Not safe for important shares yet.
   </CHANGES>
 
