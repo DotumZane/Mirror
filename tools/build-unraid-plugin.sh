@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Prevents cached pairing responder hello/version responses.
-- Reports peer responder version mismatches in scan results.
+- Adds responder identity details to LAN peer discovery.
+- Shows responder PID/host/version mtime on version mismatch.
 - Not safe for important shares yet.
   </CHANGES>
 

@@ -549,7 +549,10 @@ if ($action === "scan-peers") {
         $peerVersion = (string)($peer["version"] ?? "");
         $localVersion = is_file($versionFile) ? trim((string)file_get_contents($versionFile)) : "";
         if ($peerVersion !== "" && $localVersion !== "" && $peerVersion !== $localVersion) {
-            $versionMismatches[] = "$host reports $peerVersion; local Mirror is $localVersion";
+            $versionMismatches[] = "$host reports $peerVersion; local Mirror is $localVersion"
+                . "; responder pid " . (string)($peer["responder_pid"] ?? "unknown")
+                . "; responder host " . (string)($peer["responder_host"] ?? "unknown")
+                . "; version mtime " . (string)($peer["version_mtime"] ?? "unknown");
         }
     }
     mirror_write_json_file($discoveryFile, [

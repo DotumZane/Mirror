@@ -43,6 +43,15 @@ function mirror_current_shares() {
     return array_values($shares);
 }
 
+function mirror_primary_ip() {
+    $output = trim((string)shell_exec("ip -o -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if (\$i==\"src\") {print \$(i+1); exit}}'"));
+    if (filter_var($output, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return $output;
+    }
+    $hostIp = gethostbyname(gethostname() ?: "");
+    return filter_var($hostIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? $hostIp : "";
+}
+
 function mirror_ensure_key() {
     global $sshDir, $keyFile;
     if (!is_dir($sshDir)) {
@@ -113,6 +122,11 @@ if ($action === "hello") {
         "service" => "mirror",
         "name" => mirror_server_name(),
         "version" => $version,
+        "responder_pid" => getmypid(),
+        "responder_host" => mirror_primary_ip(),
+        "version_file" => $versionFile,
+        "version_mtime" => is_file($versionFile) ? filemtime($versionFile) : 0,
+        "script_mtime" => filemtime(__FILE__) ?: 0,
         "shares" => mirror_current_shares(),
     ]);
 }
