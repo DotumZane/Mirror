@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Improves guided pairing invite and accept diagnostics.
-- Shows pending invite count and clearer pairing instructions.
+- Splits peer linking from share selection in guided pairing.
+- Adds Use Linked Peer action for later share setup.
 - Not safe for important shares yet.
   </CHANGES>
 

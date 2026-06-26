@@ -115,22 +115,18 @@ if ($action === "invite") {
     }
     $fromHost = trim((string)($payload["from_host"] ?? ($_SERVER["REMOTE_ADDR"] ?? "")));
     $fromName = trim((string)($payload["from_name"] ?? "Mirror peer"));
-    $fromShare = trim((string)($payload["from_share"] ?? ""));
     $publicKey = trim((string)($payload["public_key"] ?? ""));
-    if ($fromHost === "" || $fromShare === "" || !preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $publicKey)) {
-        mirror_json_response(["status" => "error", "error" => "Invite is missing host, share, or public key."], 400);
+    if ($fromHost === "" || !preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $publicKey)) {
+        mirror_json_response(["status" => "error", "error" => "Invite is missing host or public key."], 400);
     }
     $pending = mirror_json_file($pendingInvitesFile, ["invites" => []]);
     $invites = is_array($pending["invites"] ?? null) ? $pending["invites"] : [];
-    $id = hash("sha256", $fromHost . "|" . $fromShare . "|" . $publicKey);
+    $id = hash("sha256", $fromHost . "|" . $publicKey);
     $invites[$id] = [
         "id" => $id,
         "from_name" => $fromName,
         "from_host" => $fromHost,
-        "from_share" => $fromShare,
         "public_key" => $publicKey,
-        "authority" => (string)($payload["authority"] ?? "equal_peers"),
-        "delete_behavior" => (string)($payload["delete_behavior"] ?? "mirror_deletes"),
         "created_at" => time(),
     ];
     mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);

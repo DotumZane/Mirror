@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.3.3">
+  <!ENTITY version    "0.3.4">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.3.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.4.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "c51c5f1cd9d14e4ad3173b08fde95825">
+  <!ENTITY md5        "cfbb2e2507e595a58391380665f4910f">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.3.3
-- Improves guided pairing invite and accept diagnostics.
-- Shows pending invite count and clearer pairing instructions.
+### 0.3.4
+- Splits peer linking from share selection in guided pairing.
+- Adds Use Linked Peer action for later share setup.
 - Not safe for important shares yet.
   </CHANGES>
 

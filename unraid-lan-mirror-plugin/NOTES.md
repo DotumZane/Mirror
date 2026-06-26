@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.3
+0.3.4
 ```
 
 Version source of truth:
@@ -432,6 +432,7 @@ Current release status:
 - `0.3.1` adds a dedicated pairing responder on TCP port `23891` and direct peer IP fallback.
 - `0.3.2` adds scan diagnostics and stronger pairing responder startup checks.
 - `0.3.3` improves invite/accept diagnostics and makes pending invites more visible.
+- `0.3.4` splits peer linking from share selection in guided pairing.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -649,7 +650,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.3.
+- Current version: 0.3.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -700,7 +701,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.3`.
+- Current version is `0.3.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1109,6 +1110,16 @@ Next suggested task:
 - New decisions: Pairing UX should report the next required step after every action.
 - Open questions: Confirm whether pending invites appear after sending one invite from only one server.
 - Next suggested task: Push to GitHub, update both servers to `0.3.3`, invite from one server, then check the peer's Pending Invites count and Accept card.
+
+#### 2026-06-25 - Link First Pairing Flow
+
+- Task completed: Changed guided pairing so Invite/Accept only establishes the peer link, without choosing shares.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_pairing_server.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Discovered peer cards now show only Invite, pending invites show only Accept/Reject, peer trust is stored in `/boot/config/plugins/mirror/peer.json`, and Share Pair gets a Use Linked Peer button that fills the remote host after pairing.
+- New decisions: Pairing/trust and share mapping should be separate steps.
+- Open questions: Confirm the link-first flow feels clearer, then decide whether Share Pair should fetch peer shares live from the linked peer.
+- Next suggested task: Push to GitHub, update both servers to `0.3.4`, invite/accept to establish link, then use Share Pair to choose shares.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

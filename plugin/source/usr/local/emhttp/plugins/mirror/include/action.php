@@ -5,6 +5,7 @@ $configFile = "$configDir/config.json";
 $actionFile = "$configDir/last-action.txt";
 $discoveryFile = "$configDir/discovered-peers.json";
 $pendingInvitesFile = "$configDir/pending-invites.json";
+$peerFile = "$configDir/peer.json";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
 $pidFile = "/var/run/$plugin.pid";
@@ -341,6 +342,12 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
     file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 }
 
+function mirror_write_peer_profile($peer) {
+    global $peerFile;
+    $peer["linked_at"] = time();
+    mirror_write_json_file($peerFile, $peer);
+}
+
 function mirror_preserve_mode_from_post() {
     global $configDir, $configFile;
     $mode = trim((string)($_POST["preserve_mirror_mode"] ?? ""));
@@ -419,19 +426,12 @@ if ($action === "invite-peer") {
     global $discoveryFile;
     try {
         $peerHost = trim((string)($_POST["peer_host"] ?? ""));
-        $localShare = trim((string)($_POST["local_share"] ?? ""));
-        $peerShare = trim((string)($_POST["peer_share"] ?? ""));
-        $authority = (string)($_POST["authority"] ?? "equal_peers");
-        $deleteBehavior = (string)($_POST["delete_behavior"] ?? "mirror_deletes");
         $publicKey = mirror_ensure_key();
         $payload = [
             "action" => "invite",
             "from_name" => mirror_server_name(),
             "from_host" => mirror_primary_ip(),
-            "from_share" => $localShare,
             "public_key" => $publicKey,
-            "authority" => $authority,
-            "delete_behavior" => $deleteBehavior,
         ];
         $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "invite"]), 4.0, $payload);
         if (!is_array($response) || ($response["status"] ?? "") !== "pending") {
@@ -439,11 +439,19 @@ if ($action === "invite-peer") {
             throw new RuntimeException("Peer did not store the invite request: $peerError");
         }
         mirror_accept_public_key((string)($response["public_key"] ?? ""));
-        mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior);
+        mirror_write_peer_profile([
+            "name" => (string)($response["name"] ?? $peerHost),
+            "host" => $peerHost,
+            "version" => (string)($response["version"] ?? "unknown"),
+            "shares" => is_array($response["shares"] ?? null) ? $response["shares"] : [],
+            "public_key" => (string)($response["public_key"] ?? ""),
+            "status" => "invite_sent",
+        ]);
         mirror_write_action(
             "Invite sent to " . ($response["name"] ?? $peerHost) . "."
-            . "\nThis server is configured for remote peer " . $peerHost . "."
+            . "\nPeer link is staged on this server."
             . "\nNow open Mirror on the peer server and click Accept under Pending Invites."
+            . "\nAfter it is accepted, choose shares in Share Pair."
         );
     } catch (Throwable $error) {
         mirror_write_action("Invite failed:\n" . $error->getMessage());
@@ -455,7 +463,6 @@ if ($action === "accept-invite") {
     global $pendingInvitesFile;
     try {
         $inviteId = trim((string)($_POST["invite_id"] ?? ""));
-        $localShare = trim((string)($_POST["local_share"] ?? ""));
         $pending = mirror_json_file($pendingInvitesFile, ["invites" => []]);
         $invites = is_array($pending["invites"] ?? null) ? $pending["invites"] : [];
         if (!isset($invites[$inviteId])) {
@@ -463,21 +470,21 @@ if ($action === "accept-invite") {
         }
         $invite = $invites[$inviteId];
         mirror_accept_public_key((string)($invite["public_key"] ?? ""));
-        mirror_configure_remote_peer(
-            $localShare,
-            (string)($invite["from_host"] ?? ""),
-            (string)($invite["from_share"] ?? ""),
-            (string)($invite["authority"] ?? "equal_peers"),
-            (string)($invite["delete_behavior"] ?? "mirror_deletes")
-        );
+        mirror_write_peer_profile([
+            "name" => (string)($invite["from_name"] ?? $invite["from_host"] ?? "Mirror peer"),
+            "host" => (string)($invite["from_host"] ?? ""),
+            "version" => "unknown",
+            "shares" => [],
+            "public_key" => (string)($invite["public_key"] ?? ""),
+            "status" => "linked",
+        ]);
         unset($invites[$inviteId]);
         mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
         mirror_write_action(
             "Invite accepted."
             . "\nThis server is now paired with " . ($invite["from_name"] ?? $invite["from_host"] ?? "peer") . "."
             . "\nRemote host: " . ($invite["from_host"] ?? "")
-            . "\nRemote share: " . ($invite["from_share"] ?? "")
-            . "\nRun Test Peer on both servers next."
+            . "\nNow choose shares in Share Pair."
         );
     } catch (Throwable $error) {
         mirror_write_action("Invite accept failed:\n" . $error->getMessage());
@@ -493,6 +500,27 @@ if ($action === "reject-invite") {
     unset($invites[$inviteId]);
     mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
     mirror_write_action("Invite rejected.");
+    mirror_redirect();
+}
+
+if ($action === "use-linked-peer") {
+    global $peerFile;
+    $peer = mirror_json_file($peerFile, []);
+    if (empty($peer["host"])) {
+        mirror_write_action("No linked peer found. Invite and accept a peer first.");
+        mirror_redirect();
+    }
+    $config = mirror_existing_config();
+    $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
+    $config["server_b"]["type"] = "remote";
+    $config["server_b"]["host"] = (string)$peer["host"];
+    $config["server_b"]["user"] = "root";
+    $config["server_b"]["port"] = 22;
+    if (!is_dir($configDir)) {
+        mkdir($configDir, 0777, true);
+    }
+    file_put_contents($configFile, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    mirror_write_action("Linked peer applied to Share Pair. Choose local and remote shares, then Save Settings.");
     mirror_redirect();
 }
 
