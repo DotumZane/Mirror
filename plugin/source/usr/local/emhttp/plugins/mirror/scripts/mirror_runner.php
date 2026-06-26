@@ -569,8 +569,13 @@ try {
         $interval = max(1, min(3600, (int)option_value($args, "--interval", "10")));
         echo "mirror daemon started: interval={$interval}s\n";
         while (true) {
-            $summary = sync_once((string)$configPath);
-            echo date("c") . " sync complete: copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}\n";
+            try {
+                $summary = sync_once((string)$configPath);
+                echo date("c") . " sync complete: copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}\n";
+            } catch (Throwable $syncError) {
+                echo date("c") . " sync error: " . $syncError->getMessage() . "\n";
+            }
+            flush();
             sleep($interval);
         }
     }

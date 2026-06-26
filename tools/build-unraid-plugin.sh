@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Auto-creates the internal transfer key when starting remote sync.
-- Reports the daemon log if remote sync exits immediately on start.
+- Keeps the daemon running when a remote sync attempt fails.
+- Logs remote sync errors and retries on the next interval.
 - Not safe for important shares yet.
   </CHANGES>
 
