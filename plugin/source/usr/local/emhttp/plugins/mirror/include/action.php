@@ -452,7 +452,7 @@ if ($action === "scan-peers") {
         if ($host === "" || $host === $selfIp || !mirror_is_private_ip($host)) {
             continue;
         }
-        $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello", "scan" => $scanNonce]), $deepScan ? 0.35 : 1.0);
+        $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello", "scan" => $scanNonce]), $deepScan ? 0.12 : 1.0);
         if (!is_array($peer) || ($peer["service"] ?? "") !== "mirror") {
             if ($host === $directHost) {
                 $misses[] = [
@@ -482,6 +482,8 @@ if ($action === "scan-peers") {
         . "\nHosts checked: " . count($hosts);
     if ($directHost !== "") {
         $message .= "\nDirect host: $directHost";
+    } elseif ($deepScan && count($found) === 0) {
+        $message .= "\nDeep scan found no peers. Enter the other server IP in Peer host or IP and scan again.";
     }
     foreach ($misses as $miss) {
         $message .= "\nDirect host failed: " . $miss["host"] . " - " . $miss["error"];

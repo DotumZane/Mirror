@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Uses normal Unraid submits for LAN pairing actions.
-- Reloads the page to recover if a no-flash action fails in the browser.
+- Auto-refreshes while LAN scans are running.
+- Speeds up deep /24 scan timeout and suggests direct-host scan when no peers are found.
 - Not safe for important shares yet.
   </CHANGES>
 

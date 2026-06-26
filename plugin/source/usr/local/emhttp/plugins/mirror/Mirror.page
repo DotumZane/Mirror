@@ -427,6 +427,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         Last scan: <?=mirror_value(mirror_age_label($discoveryScannedAt))?><?=$discoveryStatus ? " (" . mirror_value($discoveryStatus) . ")" : ""?>.
       </div>
     <?php endif; ?>
+    <?php if ($discoveryStatus === "running"): ?>
+      <div class="mirror-warning">
+        Scan is still running. This page will refresh automatically.
+      </div>
+    <?php endif; ?>
     <?php if ($staleDiscoveredPeers > 0 && !$discoveredPeers): ?>
       <div class="mirror-warning">
         Previous peer results are stale and hidden. Run Find Mirror Servers again to refresh the list.
@@ -831,4 +836,9 @@ function bindMirrorPage() {
 }
 
 bindMirrorPage();
+<?php if ($discoveryStatus === "running"): ?>
+window.setTimeout(function () {
+  window.location.reload();
+}, 3000);
+<?php endif; ?>
 </script>
