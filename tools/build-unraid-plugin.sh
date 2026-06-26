@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Moves Update Plugin into the Version status box.
-- Removes the standalone Plugin Update panel.
+- Downloads update manifests through the GitHub API before falling back to raw GitHub.
+- Avoids stale raw branch cache during plugin self-update checks.
 - Not safe for important shares yet.
   </CHANGES>
 

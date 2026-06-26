@@ -14,6 +14,7 @@ $pidFile = "/var/run/$plugin.pid";
 $rootSshDir = "/root/.ssh";
 $authorizedKeysFile = "$rootSshDir/authorized_keys";
 $pluginUrl = "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg";
+$pluginApiUrl = "https://api.github.com/repos/DotumZane/Mirror/contents/mirror.plg?ref=main";
 $pairingPort = 23891;
 
 function mirror_daemon_running() {
@@ -273,22 +274,30 @@ function mirror_find_executable($candidates) {
     return null;
 }
 
-function mirror_download_plugin($url, $target) {
+function mirror_download_url($url, $target, $headers = []) {
     @unlink($target);
     $downloadOutput = [];
     $downloadCode = 1;
 
     $curl = mirror_find_executable(["/usr/bin/curl", "/bin/curl"]);
     if ($curl !== null) {
-        $cmd = escapeshellarg($curl) . " -fsSL -o " . escapeshellarg($target) . " " . escapeshellarg($url) . " 2>&1";
+        $headerArgs = "";
+        foreach ($headers as $header) {
+            $headerArgs .= " -H " . escapeshellarg($header);
+        }
+        $cmd = escapeshellarg($curl) . " -fsSL" . $headerArgs . " -o " . escapeshellarg($target) . " " . escapeshellarg($url) . " 2>&1";
         exec($cmd, $downloadOutput, $downloadCode);
     } else {
         $wget = mirror_find_executable(["/usr/bin/wget", "/bin/wget"]);
-        if ($wget !== null) {
+        if ($wget !== null && !$headers) {
             $cmd = escapeshellarg($wget) . " -q -O " . escapeshellarg($target) . " " . escapeshellarg($url) . " 2>&1";
             exec($cmd, $downloadOutput, $downloadCode);
         } else {
-            $contents = @file_get_contents($url);
+            $context = null;
+            if ($headers) {
+                $context = stream_context_create(["http" => ["header" => implode("\r\n", $headers)]]);
+            }
+            $contents = @file_get_contents($url, false, $context);
             if ($contents !== false) {
                 $downloadCode = @file_put_contents($target, $contents) === false ? 1 : 0;
             } else {
@@ -297,16 +306,55 @@ function mirror_download_plugin($url, $target) {
         }
     }
 
-    if ($downloadCode !== 0 || !is_file($target) || filesize($target) < 100) {
+    if ($downloadCode !== 0 || !is_file($target) || filesize($target) < 10) {
         return [false, trim(implode("\n", $downloadOutput))];
     }
 
+    return [true, trim(implode("\n", $downloadOutput))];
+}
+
+function mirror_validate_plugin_manifest($target) {
+    if (!is_file($target) || filesize($target) < 100) {
+        return false;
+    }
     $head = (string)file_get_contents($target, false, null, 0, 4096);
-    if (stripos($head, "<!DOCTYPE PLUGIN") === false && stripos($head, "<PLUGIN") === false) {
+    return stripos($head, "<!DOCTYPE PLUGIN") !== false || stripos($head, "<PLUGIN") !== false;
+}
+
+function mirror_download_plugin_from_api($url, $target) {
+    $jsonTarget = $target . ".json";
+    [$downloaded, $message] = mirror_download_url($url, $jsonTarget, [
+        "Accept: application/vnd.github+json",
+        "User-Agent: Mirror-Unraid-Plugin",
+        "Cache-Control: no-cache",
+    ]);
+    if (!$downloaded) {
+        return [false, $message];
+    }
+    $decoded = json_decode((string)file_get_contents($jsonTarget), true);
+    @unlink($jsonTarget);
+    if (!is_array($decoded) || !isset($decoded["content"])) {
+        return [false, "GitHub API response did not include file content."];
+    }
+    $content = base64_decode((string)$decoded["content"], true);
+    if ($content === false || @file_put_contents($target, $content) === false) {
+        return [false, "Could not decode GitHub API file content."];
+    }
+    if (!mirror_validate_plugin_manifest($target)) {
+        return [false, "GitHub API file content does not look like an Unraid plugin manifest."];
+    }
+    return [true, $message];
+}
+
+function mirror_download_plugin($url, $target) {
+    [$downloaded, $message] = mirror_download_url($url, $target);
+    if (!$downloaded) {
+        return [false, $message];
+    }
+    if (!mirror_validate_plugin_manifest($target)) {
         return [false, "Downloaded file does not look like an Unraid plugin manifest."];
     }
-
-    return [true, trim(implode("\n", $downloadOutput))];
+    return [true, $message];
 }
 
 function mirror_plugin_manifest_version($path) {
@@ -844,7 +892,7 @@ if ($action === "accept-peer-key") {
 }
 
 if ($action === "update-plugin") {
-    global $pluginUrl, $versionFile;
+    global $pluginUrl, $pluginApiUrl, $versionFile;
     $usePopup = (string)($_POST["popup"] ?? "") === "1";
     $pluginCli = mirror_find_executable(["/usr/local/sbin/plugin", "/usr/sbin/plugin", "/sbin/plugin", "/usr/local/bin/plugin", "/usr/bin/plugin"]);
     $installplg = mirror_find_executable(["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"]);
@@ -859,9 +907,23 @@ if ($action === "update-plugin") {
     }
     $localPlugin = "/tmp/mirror.plg";
     $downloadUrl = $pluginUrl . "?mirror_cache_bust=" . rawurlencode((string)time());
-    [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
+    $manifestSource = "GitHub API";
+    [$downloaded, $downloadMessage] = mirror_download_plugin_from_api($pluginApiUrl, $localPlugin);
     if (!$downloaded) {
-        $message = "Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage";
+        $apiMessage = $downloadMessage;
+        $manifestSource = "raw GitHub fallback";
+        [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
+        if ($downloadMessage !== "") {
+            $downloadMessage = "GitHub API failed: $apiMessage\nRaw fallback: $downloadMessage";
+        } else {
+            $downloadMessage = "GitHub API failed: $apiMessage\nRaw fallback downloaded the manifest.";
+        }
+    }
+    if (!$downloaded) {
+        $message = "Plugin update command failed:\nCould not download plugin manifest."
+            . "\nAPI URL: $pluginApiUrl"
+            . "\nRaw URL: $downloadUrl"
+            . "\n$downloadMessage";
         if ($usePopup) {
             mirror_output_window("Plugin Update - Finished", $message);
         }
@@ -874,6 +936,7 @@ if ($action === "update-plugin") {
         $message = "Plugin update check finished."
             . "\nInstalled version: $installedVersion"
             . "\nDownloaded manifest version: $downloadedVersion"
+            . "\nManifest source: $manifestSource"
             . "\nNo update installed because Unraid will not reinstall the same plugin version."
             . "\nIf you expected a newer build, push the latest commit to GitHub, then try Update Plugin again.";
         if ($usePopup) {
@@ -892,6 +955,8 @@ if ($action === "update-plugin") {
     exec($cmd, $output, $code);
     $message = ($code === 0 ? "Plugin update command finished." : "Plugin update command failed:")
         . "\nManifest: $pluginUrl"
+        . "\nManifest source: $manifestSource"
+        . "\nAPI URL: $pluginApiUrl"
         . "\nDownload URL: $downloadUrl"
         . "\nLocal file: $localPlugin"
         . "\nCommand: $runner"
