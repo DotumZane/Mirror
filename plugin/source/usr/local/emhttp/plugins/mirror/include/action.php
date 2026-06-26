@@ -33,6 +33,23 @@ function mirror_write_action($message) {
     file_put_contents($actionFile, trim($message));
 }
 
+function mirror_output_window($title, $message) {
+    header("Content-Type: text/html; charset=UTF-8");
+    $safeTitle = htmlspecialchars($title, ENT_QUOTES, "UTF-8");
+    $safeMessage = htmlspecialchars(trim($message), ENT_QUOTES, "UTF-8");
+    echo "<!doctype html><html><head><meta charset=\"utf-8\"><title>$safeTitle</title>";
+    echo "<style>";
+    echo "html,body{margin:0;background:#1f1c1c;color:#ddd;font-family:monospace;font-size:13px;}";
+    echo "header{background:#555;color:#fff;font-family:Arial,sans-serif;font-size:18px;font-weight:700;padding:14px;text-align:center;}";
+    echo "pre{white-space:pre-wrap;margin:0;padding:18px;line-height:1.45;}";
+    echo "footer{padding:12px 18px;border-top:1px solid #444;text-align:center;}";
+    echo "button{border:1px solid #ff6a2a;background:transparent;color:#ff9b6f;font-weight:700;padding:7px 18px;}";
+    echo "</style></head><body>";
+    echo "<header>$safeTitle</header><pre>$safeMessage</pre><footer><button onclick=\"window.close()\">Done</button></footer>";
+    echo "</body></html>";
+    exit;
+}
+
 function mirror_current_shares() {
     $shares = [];
     foreach (glob("/mnt/user/*", GLOB_ONLYDIR) ?: [] as $path) {
@@ -289,20 +306,27 @@ if ($action === "accept-peer-key") {
 
 if ($action === "update-plugin") {
     global $pluginUrl;
+    $usePopup = (string)($_POST["popup"] ?? "") === "1";
     $pluginCli = mirror_find_executable(["/usr/local/sbin/plugin", "/usr/sbin/plugin", "/sbin/plugin", "/usr/local/bin/plugin", "/usr/bin/plugin"]);
     $installplg = mirror_find_executable(["/usr/local/sbin/installplg", "/usr/sbin/installplg", "/sbin/installplg"]);
     if ($pluginCli === null && $installplg === null) {
-        mirror_write_action(
-            "Plugin update command failed:\n"
-            . "Neither Unraid's plugin CLI nor installplg was found in expected paths."
-        );
+        $message = "Plugin update command failed:\n"
+            . "Neither Unraid's plugin CLI nor installplg was found in expected paths.";
+        if ($usePopup) {
+            mirror_output_window("Mirror Plugin Update", $message);
+        }
+        mirror_write_action($message);
         mirror_redirect();
     }
     $localPlugin = "/tmp/mirror-latest.plg";
     $downloadUrl = $pluginUrl . "?mirror_cache_bust=" . rawurlencode((string)time());
     [$downloaded, $downloadMessage] = mirror_download_plugin($downloadUrl, $localPlugin);
     if (!$downloaded) {
-        mirror_write_action("Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage");
+        $message = "Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage";
+        if ($usePopup) {
+            mirror_output_window("Mirror Plugin Update", $message);
+        }
+        mirror_write_action($message);
         mirror_redirect();
     }
     if ($pluginCli !== null) {
@@ -319,6 +343,9 @@ if ($action === "update-plugin") {
         . "\nLocal file: $localPlugin"
         . "\nCommand: $runner"
         . "\n" . implode("\n", $output);
+    if ($usePopup) {
+        mirror_output_window("Mirror Plugin Update", $message);
+    }
     mirror_write_action($message);
     mirror_redirect();
 }

@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds cache busting when the update button downloads the GitHub manifest.
-- Keeps using Unraid's plugin CLI when installplg is unavailable.
+- Opens plugin update output in a command-style popup window.
+- Keeps the settings page clean after update checks.
 - Not safe for important shares yet.
   </CHANGES>
 

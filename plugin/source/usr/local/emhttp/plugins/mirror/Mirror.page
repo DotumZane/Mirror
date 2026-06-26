@@ -17,6 +17,9 @@ $installed = is_file("/usr/local/sbin/mirrorctl");
 $running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
 $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFile)) : "";
 $lastAction = is_file($actionFile) ? trim(file_get_contents($actionFile)) : "";
+if (strpos($lastAction, "Plugin update command ") === 0) {
+  $lastAction = "";
+}
 
 $defaultConfig = [
   "server_a" => ["name" => "server-a", "root" => "/mnt/user/mirror-test-a"],
@@ -238,9 +241,10 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 
   <div class="mirror-section">
     <h3>Plugin Update</h3>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_window" onsubmit="window.open('about:blank','mirror_update_window','width=980,height=720,resizable=yes,scrollbars=yes');">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="update-plugin">
+      <input type="hidden" name="popup" value="1">
       <div class="mirror-actions">
         <button type="submit">Update Plugin</button>
       </div>
