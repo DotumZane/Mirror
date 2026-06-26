@@ -211,6 +211,37 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 .mirror-hidden {
   display: none;
 }
+.mirror-modal-overlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.62);
+  bottom: 0;
+  display: none;
+  justify-content: center;
+  left: 0;
+  padding: 24px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 9999;
+}
+.mirror-modal-overlay.is-open {
+  display: flex;
+}
+.mirror-modal {
+  background: #1f1c1c;
+  border: 1px solid #9a9a9a;
+  border-radius: 6px;
+  box-shadow: 0 18px 80px rgba(0, 0, 0, 0.48);
+  height: min(82vh, 760px);
+  max-width: 1120px;
+  overflow: hidden;
+  width: min(72vw, 1120px);
+}
+.mirror-modal iframe {
+  border: 0;
+  height: 100%;
+  width: 100%;
+}
 </style>
 
 <div class="mirror-panel">
@@ -241,7 +272,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 
   <div class="mirror-section">
     <h3>Plugin Update</h3>
-    <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_window" onsubmit="window.open('about:blank','mirror_update_window','width=980,height=720,resizable=yes,scrollbars=yes');">
+    <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="update-plugin">
       <input type="hidden" name="popup" value="1">
@@ -250,6 +281,12 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       </div>
     </form>
     <span class="mirror-help">Updates from the GitHub main branch install URL.</span>
+  </div>
+
+  <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
+    <div class="mirror-modal">
+      <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
+    </div>
   </div>
 
   <?php if (!$shares): ?>
@@ -417,6 +454,29 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 </div>
 
 <script>
+function openMirrorUpdateModal() {
+  var modal = document.getElementById("mirror_update_modal");
+  var frame = document.getElementById("mirror_update_frame");
+  if (!modal || !frame) {
+    return true;
+  }
+  modal.classList.add("is-open");
+  frame.src = "about:blank";
+  return true;
+}
+
+function closeMirrorUpdateModal() {
+  var modal = document.getElementById("mirror_update_modal");
+  var frame = document.getElementById("mirror_update_frame");
+  if (modal) {
+    modal.classList.remove("is-open");
+  }
+  if (frame) {
+    frame.src = "about:blank";
+  }
+  window.location.reload();
+}
+
 (function () {
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');

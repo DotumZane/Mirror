@@ -39,13 +39,14 @@ function mirror_output_window($title, $message) {
     $safeMessage = htmlspecialchars(trim($message), ENT_QUOTES, "UTF-8");
     echo "<!doctype html><html><head><meta charset=\"utf-8\"><title>$safeTitle</title>";
     echo "<style>";
-    echo "html,body{margin:0;background:#1f1c1c;color:#ddd;font-family:monospace;font-size:13px;}";
-    echo "header{background:#555;color:#fff;font-family:Arial,sans-serif;font-size:18px;font-weight:700;padding:14px;text-align:center;}";
-    echo "pre{white-space:pre-wrap;margin:0;padding:18px;line-height:1.45;}";
-    echo "footer{padding:12px 18px;border-top:1px solid #444;text-align:center;}";
+    echo "html,body{height:100%;margin:0;background:#1f1c1c;color:#ddd;font-family:monospace;font-size:13px;}";
+    echo "body{display:grid;grid-template-rows:auto 1fr auto;}";
+    echo "header{background:#555;color:#fff;font-family:Arial,sans-serif;font-size:18px;font-weight:700;padding:18px;text-align:center;}";
+    echo "pre{white-space:pre-wrap;margin:0;padding:22px;line-height:1.45;overflow:auto;}";
+    echo "footer{padding:14px 18px;text-align:center;}";
     echo "button{border:1px solid #ff6a2a;background:transparent;color:#ff9b6f;font-weight:700;padding:7px 18px;}";
     echo "</style></head><body>";
-    echo "<header>$safeTitle</header><pre>$safeMessage</pre><footer><button onclick=\"window.close()\">Done</button></footer>";
+    echo "<header>$safeTitle</header><pre>$safeMessage</pre><footer><button onclick=\"if(parent&&parent.closeMirrorUpdateModal){parent.closeMirrorUpdateModal();}else{window.close();}\">Done</button></footer>";
     echo "</body></html>";
     exit;
 }
@@ -313,7 +314,7 @@ if ($action === "update-plugin") {
         $message = "Plugin update command failed:\n"
             . "Neither Unraid's plugin CLI nor installplg was found in expected paths.";
         if ($usePopup) {
-            mirror_output_window("Mirror Plugin Update", $message);
+            mirror_output_window("Plugin Update - Finished", $message);
         }
         mirror_write_action($message);
         mirror_redirect();
@@ -324,7 +325,7 @@ if ($action === "update-plugin") {
     if (!$downloaded) {
         $message = "Plugin update command failed:\nCould not download plugin manifest from $downloadUrl.\n$downloadMessage";
         if ($usePopup) {
-            mirror_output_window("Mirror Plugin Update", $message);
+            mirror_output_window("Plugin Update - Finished", $message);
         }
         mirror_write_action($message);
         mirror_redirect();
@@ -344,7 +345,7 @@ if ($action === "update-plugin") {
         . "\nCommand: $runner"
         . "\n" . implode("\n", $output);
     if ($usePopup) {
-        mirror_output_window("Mirror Plugin Update", $message);
+        mirror_output_window("Plugin Update - Finished", $message);
     }
     mirror_write_action($message);
     mirror_redirect();

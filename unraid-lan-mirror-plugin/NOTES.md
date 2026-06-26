@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.2.3
+0.2.4
 ```
 
 Version source of truth:
@@ -425,6 +425,7 @@ Current release status:
 - `0.2.1` fixes the update button by using Unraid's `plugin install` CLI when `installplg` is unavailable.
 - `0.2.2` adds cache busting to the update button's GitHub manifest download.
 - `0.2.3` moves update command output into a popup window instead of the main settings page.
+- `0.2.4` changes update output to an Unraid-style in-page modal overlay.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -642,7 +643,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.2.3.
+- Current version: 0.2.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -693,7 +694,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.2.3`.
+- Current version is `0.2.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1042,6 +1043,16 @@ Next suggested task:
 - New decisions: Long command output should live in a popup/log window; the main page should only show short status messages.
 - Open questions: Confirm on Unraid that update output opens in a popup and the main Mirror settings page stays clean.
 - Next suggested task: Push to GitHub and use the existing `0.2.2` Update Plugin button to update to `0.2.3`.
+
+#### 2026-06-25 - Update Output Modal
+
+- Task completed: Changed update command output from a separate popup window to an Unraid-style modal overlay.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.2.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: The Update Plugin button now opens a centered modal over the Settings page with dimmed background, command output, and a Done button that closes the modal and reloads the page.
+- New decisions: Plugin update output should follow the normal Unraid modal pattern rather than opening a separate browser window.
+- Open questions: Confirm on Unraid that `0.2.4` update output visually matches the built-in plugin update dialog.
+- Next suggested task: Push to GitHub and use the existing Update Plugin button to update to `0.2.4`.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

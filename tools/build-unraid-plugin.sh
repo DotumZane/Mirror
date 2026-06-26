@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Opens plugin update output in a command-style popup window.
-- Keeps the settings page clean after update checks.
+- Opens plugin update output in an Unraid-style modal overlay.
+- Keeps command output off the main settings page.
 - Not safe for important shares yet.
   </CHANGES>
 
