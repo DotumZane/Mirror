@@ -44,7 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Moves the tab strip to the top of the Mirror page and matches Unraid's boxed native tab style.
+- Reduces tab height to better match Unraid's native plugin tab strip.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>

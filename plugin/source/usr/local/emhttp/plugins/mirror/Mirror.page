@@ -387,12 +387,12 @@ if (!empty($linkedPeer["host"]) && (
   color: rgba(221, 221, 221, 0.45);
   cursor: pointer;
   display: inline-flex;
-  font-size: 12px;
-  gap: 6px;
+  font-size: 11px;
+  gap: 5px;
   line-height: 1;
-  margin: 0 4px 0 0;
-  min-height: 29px;
-  padding: 8px 11px 8px;
+  margin: 0 3px 0 0;
+  min-height: 22px;
+  padding: 5px 9px 6px;
   text-decoration: none;
 }
 .mirror-tab.is-active {
@@ -405,7 +405,7 @@ if (!empty($linkedPeer["host"]) && (
 }
 .mirror-tab .fa {
   color: rgba(221, 221, 221, 0.46);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
 }
 .mirror-tab.is-active .fa {
