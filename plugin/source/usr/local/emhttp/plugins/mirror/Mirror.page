@@ -109,6 +109,19 @@ function mirror_primary_ip() {
   return filter_var($hostIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? $hostIp : "";
 }
 
+$mirrorTab = (string)($_GET["tab"] ?? "status");
+if (!in_array($mirrorTab, ["status", "lan", "shares", "config", "log"], true)) {
+  $mirrorTab = "status";
+}
+
+function mirror_tab_url($tab) {
+  return "/Settings/Mirror?tab=" . rawurlencode((string)$tab);
+}
+
+function mirror_tab_class($tab, $activeTab) {
+  return "mirror-tab" . ((string)$tab === (string)$activeTab ? " is-active" : "");
+}
+
 $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
@@ -377,6 +390,7 @@ if (!empty($linkedPeer["host"]) && (
   margin: 0 4px 0 0;
   min-height: 30px;
   padding: 6px 11px;
+  text-decoration: none;
 }
 .mirror-tab.is-active {
   background: #1f1c1c;
@@ -391,12 +405,6 @@ if (!empty($linkedPeer["host"]) && (
 }
 .mirror-tab.is-active .fa {
   color: #fff;
-}
-.mirror-tab-panel {
-  display: none;
-}
-.mirror-tab-panel.is-active {
-  display: block;
 }
 </style>
 
@@ -456,15 +464,21 @@ if (!empty($linkedPeer["host"]) && (
     Early test build. Use disposable test shares only.
   </div>
 
-  <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
-    <button class="mirror-tab is-active" type="button" data-mirror-tab="status"><i class="fa fa-tachometer" aria-hidden="true"></i><span>Status</span></button>
-    <button class="mirror-tab" type="button" data-mirror-tab="lan"><i class="fa fa-link" aria-hidden="true"></i><span>LAN Setup</span></button>
-    <button class="mirror-tab" type="button" data-mirror-tab="shares"><i class="fa fa-folder-open" aria-hidden="true"></i><span>Shares</span></button>
-    <button class="mirror-tab" type="button" data-mirror-tab="config"><i class="fa fa-cog" aria-hidden="true"></i><span>Config</span></button>
-    <button class="mirror-tab" type="button" data-mirror-tab="log"><i class="fa fa-list-alt" aria-hidden="true"></i><span>Log</span></button>
+  <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
+    <div class="mirror-modal">
+      <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
+    </div>
   </div>
 
-  <div class="mirror-tab-panel is-active" data-mirror-tab-panel="status">
+  <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
+    <a class="<?=mirror_tab_class("status", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("status"))?>"><i class="fa fa-tachometer" aria-hidden="true"></i><span>Status</span></a>
+    <a class="<?=mirror_tab_class("lan", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("lan"))?>"><i class="fa fa-link" aria-hidden="true"></i><span>LAN Setup</span></a>
+    <a class="<?=mirror_tab_class("shares", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("shares"))?>"><i class="fa fa-folder-open" aria-hidden="true"></i><span>Shares</span></a>
+    <a class="<?=mirror_tab_class("config", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("config"))?>"><i class="fa fa-cog" aria-hidden="true"></i><span>Config</span></a>
+    <a class="<?=mirror_tab_class("log", $mirrorTab)?>" href="<?=mirror_value(mirror_tab_url("log"))?>"><i class="fa fa-list-alt" aria-hidden="true"></i><span>Log</span></a>
+  </div>
+
+  <?php if ($mirrorTab === "status"): ?>
   <div class="mirror-section">
     <h3>Control</h3>
     <?php if ($nodeRole === "managed_remote"): ?>
@@ -501,9 +515,9 @@ if (!empty($linkedPeer["host"]) && (
       </div>
     </form>
   </div>
-  </div>
+  <?php endif; ?>
 
-  <div class="mirror-tab-panel" data-mirror-tab-panel="lan">
+  <?php if ($mirrorTab === "lan"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Server Role</h3>
@@ -529,12 +543,6 @@ if (!empty($linkedPeer["host"]) && (
       This server is in Managed remote mode. Pair it from the master server, then control share pairing and sync rules on the master.
     </div>
   <?php endif; ?>
-
-  <div id="mirror_update_modal" class="mirror-modal-overlay" role="dialog" aria-modal="true" aria-label="Mirror plugin update">
-    <div class="mirror-modal">
-      <iframe id="mirror_update_frame" name="mirror_update_frame" title="Mirror plugin update output"></iframe>
-    </div>
-  </div>
 
   <?php if (!$shares && $nodeRole !== "managed_remote"): ?>
     <div class="mirror-warning">
@@ -611,9 +619,9 @@ if (!empty($linkedPeer["host"]) && (
       <div class="mirror-help">No pending invites on this server yet. Send an invite from the other server, then refresh or click Check Pending Invites.</div>
     <?php endif; ?>
   </div>
-  </div>
+  <?php endif; ?>
 
-  <div class="mirror-tab-panel" data-mirror-tab-panel="shares">
+  <?php if ($mirrorTab === "shares"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Share Pair</h3>
@@ -712,9 +720,9 @@ if (!empty($linkedPeer["host"]) && (
     </div>
 
   <?php endif; ?>
-  </div>
+  <?php endif; ?>
 
-  <div class="mirror-tab-panel" data-mirror-tab-panel="config">
+  <?php if ($mirrorTab === "config"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Trash</h3>
@@ -735,16 +743,16 @@ if (!empty($linkedPeer["host"]) && (
       <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
     </div>
   <?php endif; ?>
-  </div>
+  <?php endif; ?>
 
-  <div class="mirror-tab-panel" data-mirror-tab-panel="log">
+  <?php if ($mirrorTab === "log"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Recent Log</h3>
       <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
     </div>
   <?php endif; ?>
-  </div>
+  <?php endif; ?>
 </div>
 
 <script>
@@ -851,39 +859,6 @@ function refreshMirrorPanel() {
 }
 
 function bindMirrorPage() {
-  function activateTab(name) {
-    document.querySelectorAll(".mirror-tab").forEach(function (tab) {
-      tab.classList.toggle("is-active", tab.dataset.mirrorTab === name);
-    });
-    document.querySelectorAll(".mirror-tab-panel").forEach(function (panel) {
-      panel.classList.toggle("is-active", panel.dataset.mirrorTabPanel === name);
-    });
-    try {
-      window.localStorage.setItem("mirror_active_tab", name);
-    } catch (error) {
-    }
-  }
-
-  var activeTab = "status";
-  try {
-    activeTab = window.localStorage.getItem("mirror_active_tab") || "status";
-  } catch (error) {
-  }
-  if (!document.querySelector('[data-mirror-tab="' + activeTab + '"]')) {
-    activeTab = "status";
-  }
-  activateTab(activeTab);
-
-  document.querySelectorAll(".mirror-tab").forEach(function (tab) {
-    if (tab.dataset.mirrorTabBound === "1") {
-      return;
-    }
-    tab.dataset.mirrorTabBound = "1";
-    tab.addEventListener("click", function () {
-      activateTab(tab.dataset.mirrorTab || "status");
-    });
-  });
-
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');
     return selected ? selected.value : 'local';

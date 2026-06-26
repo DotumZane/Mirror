@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Restyles the Mirror tabs to match Unraid's native plugin tab strip.
-- Adds compact tab icons and attached active-tab styling.
+- Changes Mirror tabs from in-page panels to separate tab URLs.
+- Keeps the native-style attached tab strip.
 - Not safe for important shares yet.
   </CHANGES>
 
