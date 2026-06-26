@@ -51,6 +51,43 @@ function ssh_key_path(string $configPath): string {
     return dirname($configPath) . "/ssh/mirror_ed25519";
 }
 
+function mirror_server_name(): string {
+    $ident = "/boot/config/ident.cfg";
+    if (is_file($ident)) {
+        $contents = (string)file_get_contents($ident);
+        if (preg_match('/^NAME="?(.*?)"?$/m', $contents, $matches)) {
+            $name = trim($matches[1], "\" \t\r\n");
+            if ($name !== "") {
+                return $name;
+            }
+        }
+    }
+    return gethostname() ?: "unraid";
+}
+
+function ensure_ssh_key(string $configPath): string {
+    $key = ssh_key_path($configPath);
+    $keyDir = dirname($key);
+    if (!is_dir($keyDir) && !mkdir($keyDir, 0700, true) && !is_dir($keyDir)) {
+        throw new RuntimeException("could not create transfer key directory: $keyDir");
+    }
+    if (!is_file($key)) {
+        $cmd = [
+            "ssh-keygen",
+            "-t", "ed25519",
+            "-N", "",
+            "-f", $key,
+            "-C", "mirror-plugin@" . mirror_server_name(),
+        ];
+        run_command($cmd);
+    }
+    chmod($key, 0600);
+    if (is_file($key . ".pub")) {
+        chmod($key . ".pub", 0644);
+    }
+    return $key;
+}
+
 function ssh_target(array $config): string {
     $user = (string)($config["server_b"]["user"] ?? "root");
     $host = (string)($config["server_b"]["host"] ?? "");
@@ -62,10 +99,7 @@ function ssh_target(array $config): string {
 
 function ssh_base_args(array $config, string $configPath): array {
     $port = max(1, min(65535, (int)($config["server_b"]["port"] ?? 22)));
-    $key = ssh_key_path($configPath);
-    if (!is_file($key)) {
-        throw new RuntimeException("SSH key is missing. Generate a key from the Mirror settings page first.");
-    }
+    $key = ensure_ssh_key($configPath);
     return [
         "ssh",
         "-i", $key,

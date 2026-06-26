@@ -81,6 +81,16 @@ sync_interval() {
   "$PHP_BIN" "$RUNNER" interval --config "$CONFIG" 2>/dev/null || echo 10
 }
 
+verify_started() {
+  sleep 0.5
+  if ! is_running; then
+    rm -f "$PID"
+    echo "Mirror daemon failed to stay running"
+    tail -n 30 "$LOG" 2>/dev/null || true
+    exit 1
+  fi
+}
+
 case "${1:-status}" in
   status)
     ensure_config
@@ -118,6 +128,7 @@ case "${1:-status}" in
     cd "$EMHTTP_DIR"
     nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
+    verify_started
     echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;
   stop)
@@ -143,6 +154,7 @@ case "${1:-status}" in
     cd "$EMHTTP_DIR"
     nohup "$PHP_BIN" "$RUNNER" daemon --config "$CONFIG" --interval "$interval" >>"$LOG" 2>&1 &
     echo "$!" > "$PID"
+    verify_started
     if [ "$was_running" -eq 1 ]; then
       echo "Mirror daemon restarted with pid $(cat "$PID") at ${interval}s interval"
     else

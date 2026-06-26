@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Removes the manual SSH key setup sections from the Mirror page.
-- Keeps LAN pairing focused on direct peer invite and remote share selection.
+- Auto-creates the internal transfer key when starting remote sync.
+- Reports the daemon log if remote sync exits immediately on start.
 - Not safe for important shares yet.
   </CHANGES>
 

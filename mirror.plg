@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.6.5">
+  <!ENTITY version    "0.6.6">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.5.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.6.6.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "e45d7b096295a09f98136d67fb54eae4">
+  <!ENTITY md5        "f4e364dffd2dbccdf319087ff5ba7ff5">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.6.5
-- Removes the manual SSH key setup sections from the Mirror page.
-- Keeps LAN pairing focused on direct peer invite and remote share selection.
+### 0.6.6
+- Auto-creates the internal transfer key when starting remote sync.
+- Reports the daemon log if remote sync exits immediately on start.
 - Not safe for important shares yet.
   </CHANGES>
 
