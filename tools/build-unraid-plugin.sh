@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds query fallback for automatic peer SSH setup.
-- Reports peer setup HTTP/body diagnostics when setup response is invalid.
+- Hardens automatic sshd startup on the linked peer.
+- Reports sshd startup command output when peer SSH setup fails.
 - Not safe for important shares yet.
   </CHANGES>
 

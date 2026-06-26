@@ -215,24 +215,48 @@ function mirror_ensure_key() {
     return trim((string)file_get_contents($keyFile . ".pub"));
 }
 
-function mirror_ensure_sshd() {
+function mirror_sshd_running() {
     exec("pgrep -x sshd 2>/dev/null", $pids, $runningCode);
     if ($runningCode === 0 && $pids) {
+        return true;
+    }
+    $listeners = [];
+    exec("(ss -ltn 2>/dev/null || netstat -ltn 2>/dev/null) | grep -E '(^|[[:space:]])[^[:space:]]*:22[[:space:]]' 2>/dev/null", $listeners, $listenCode);
+    return $listenCode === 0 && $listeners;
+}
+
+function mirror_ensure_sshd() {
+    if (mirror_sshd_running()) {
         return "running";
     }
     $output = [];
-    $code = 1;
+    $run = function ($label, $cmd) use (&$output) {
+        $lines = [];
+        exec($cmd . " 2>&1", $lines, $code);
+        $output[] = "$label exit=$code";
+        foreach ($lines as $line) {
+            $output[] = "$label: $line";
+        }
+        usleep(250000);
+        return mirror_sshd_running();
+    };
+    if (is_executable("/usr/bin/ssh-keygen")) {
+        $run("ssh-keygen", "/usr/bin/ssh-keygen -A");
+    }
     if (is_executable("/etc/rc.d/rc.sshd")) {
-        exec("/etc/rc.d/rc.sshd start 2>&1", $output, $code);
-    } elseif (is_executable("/usr/sbin/sshd")) {
-        exec("/usr/sbin/sshd 2>&1", $output, $code);
+        if ($run("rc.sshd", "/etc/rc.d/rc.sshd start")) {
+            return "started";
+        }
     }
-    $check = [];
-    exec("pgrep -x sshd 2>/dev/null", $check, $checkCode);
-    if ($checkCode !== 0 || !$check) {
-        throw new RuntimeException("SSH service did not start:\n" . implode("\n", $output));
+    if (is_executable("/usr/sbin/sshd")) {
+        if ($run("sshd", "/usr/sbin/sshd")) {
+            return "started";
+        }
+        if (is_file("/etc/ssh/sshd_config") && $run("sshd-config", "/usr/sbin/sshd -f /etc/ssh/sshd_config")) {
+            return "started";
+        }
     }
-    return "started";
+    throw new RuntimeException("SSH service did not start:\n" . implode("\n", $output));
 }
 
 function mirror_accept_public_key($key) {
