@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.8
+0.3.9
 ```
 
 Version source of truth:
@@ -437,6 +437,7 @@ Current release status:
 - `0.3.6` refreshes settings actions in-place and logs received invites on the peer.
 - `0.3.7` prevents stuck disabled AJAX buttons and warns about peer version mismatch.
 - `0.3.8` restarts the pairing responder on install/update so it cannot keep serving stale code.
+- `0.3.9` clears stale/orphaned responder processes still owning TCP `23891`.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -654,7 +655,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.8.
+- Current version: 0.3.9.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -705,7 +706,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.8`.
+- Current version is `0.3.9`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1164,6 +1165,16 @@ Next suggested task:
 - New decisions: Any package update that changes pairing code must restart the pairing responder so discovery does not report stale versions.
 - Open questions: Confirm that updating both servers to `0.3.8` makes Find Mirror Servers show the peer responder as `0.3.8`.
 - Next suggested task: Push to GitHub, update both servers to `0.3.8`, click Find Mirror Servers, then retry Invite once both peer cards report `0.3.8`.
+
+#### 2026-06-25 - Orphaned Pairing Responder Cleanup
+
+- Task completed: Fixed stale pairing responders that keep advertising an old version even after plugin update.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.9.txz`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: `mirrorctl pair-stop` and `pair-restart` now kill the recorded responder PID and any process actually listening on TCP `23891`, using `ss` and `fuser` when available, then start a fresh responder.
+- New decisions: The pairing responder port belongs to Mirror, so restart/stop commands are allowed to clear stale owners on that port.
+- Open questions: Confirm that updating both servers to `0.3.9` makes Find Mirror Servers report the peer responder as `0.3.9`.
+- Next suggested task: Push to GitHub, update both servers to `0.3.9`, run Find Mirror Servers, and retry Invite only after both responders report `0.3.9`.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

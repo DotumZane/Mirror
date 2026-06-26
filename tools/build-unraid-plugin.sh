@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Restarts the LAN pairing responder after install/update so it cannot serve stale code.
-- Clarifies peer version mismatch warnings.
+- Clears stale/orphaned pairing responder processes that still own TCP 23891.
+- Restarts the LAN pairing responder after install/update.
 - Not safe for important shares yet.
   </CHANGES>
 

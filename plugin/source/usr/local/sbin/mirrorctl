@@ -33,6 +33,37 @@ pairing_port_busy() {
   command -v ss >/dev/null 2>&1 && ss -ltn "sport = :${PAIR_PORT}" 2>/dev/null | grep -q ":${PAIR_PORT}"
 }
 
+pairing_port_pids() {
+  {
+    if command -v ss >/dev/null 2>&1; then
+      ss -ltnp "sport = :${PAIR_PORT}" 2>/dev/null \
+        | sed -n 's/.*pid=\([0-9][0-9]*\).*/\1/p'
+    fi
+    if command -v fuser >/dev/null 2>&1; then
+      fuser -n tcp "$PAIR_PORT" 2>/dev/null | tr ' ' '\n' | grep -E '^[0-9]+$' || true
+    fi
+  } | sort -u
+}
+
+stop_pairing() {
+  stopped=0
+  if pairing_running; then
+    kill "$(cat "$PAIR_PID")" 2>/dev/null || true
+    stopped=1
+  fi
+  rm -f "$PAIR_PID"
+  for port_pid in $(pairing_port_pids); do
+    kill "$port_pid" 2>/dev/null || true
+    stopped=1
+  done
+  sleep 0.2
+  for port_pid in $(pairing_port_pids); do
+    kill -9 "$port_pid" 2>/dev/null || true
+    stopped=1
+  done
+  [ "$stopped" -eq 1 ]
+}
+
 start_pairing() {
   cd "$EMHTTP_DIR"
   nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
@@ -125,32 +156,23 @@ case "${1:-status}" in
       exit 0
     fi
     if pairing_port_busy; then
-      echo "Mirror pairing responder port $PAIR_PORT is already in use"
+      echo "Mirror pairing responder port $PAIR_PORT is already in use by pid(s): $(pairing_port_pids | tr '\n' ' ')"
       exit 1
     fi
     start_pairing
     echo "Mirror pairing responder started with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
     ;;
   pair-stop)
-    if pairing_running; then
-      kill "$(cat "$PAIR_PID")"
-      rm -f "$PAIR_PID"
+    if stop_pairing; then
       echo "Mirror pairing responder stopped"
     else
-      rm -f "$PAIR_PID"
       echo "Mirror pairing responder already stopped"
     fi
     ;;
   pair-restart)
-    if pairing_running; then
-      kill "$(cat "$PAIR_PID")"
-      rm -f "$PAIR_PID"
-      sleep 0.2
-    elif [ -f "$PAIR_PID" ]; then
-      rm -f "$PAIR_PID"
-    fi
+    stop_pairing || true
     if pairing_port_busy; then
-      echo "Mirror pairing responder port $PAIR_PORT is already in use"
+      echo "Mirror pairing responder port $PAIR_PORT is still in use by pid(s): $(pairing_port_pids | tr '\n' ' ')"
       exit 1
     fi
     start_pairing
