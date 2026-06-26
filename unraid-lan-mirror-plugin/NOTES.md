@@ -726,7 +726,69 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, install/update on both Unraid servers, generate/copy SSH key, test peer, and run a disposable remote share sync.
+- Push to GitHub, update both Unraid servers to `0.4.8`, set one server to Managed remote, confirm the managed page only shows Plugin Update, LAN Peer Setup, and Control, then build master-controlled remote configuration.
+
+### Chat Handoff
+
+Use this section when continuing the project in a new chat.
+
+Current repo state:
+
+- Workspace: `/Users/zane/Documents/Unraid`
+- GitHub repository: `https://github.com/DotumZane/Mirror`
+- Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
+- Current version: `0.4.8`
+- Current branch: `main`
+- Push workflow: User normally pushes from GitHub Desktop.
+- Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
+
+Current product direction:
+
+- Mirror is an Unraid plugin, not Docker.
+- It is still an early LAN-only disposable-share prototype.
+- The goal is two Unraid servers with selected shares mirrored both ways.
+- The user wants true two-way sync, trash/version safety, fast operation, and eventually Tailscale-style remote support.
+- One server should be configurable as Master.
+- The other server can be set as Managed remote.
+- Managed remote should behave like a receiver and should not expose local share-pair settings.
+
+What currently works:
+
+- Plugin installs from `mirror.plg`.
+- Versioned package build exists at `packages/mirror-0.4.8.txz`.
+- Local same-server share sync has been confirmed by the user on disposable shares.
+- Equal-peer delete behavior was fixed in earlier builds.
+- Settings saves restart the daemon when needed.
+- In-page plugin update works through a popup command window.
+- Factory Reset Plugin exists in Control and clears Mirror state without touching user shares.
+- LAN Pair Setup can scan/restart responder/check pending invites.
+- Managed remote view now hides local configuration sections and only shows Plugin Update, LAN Peer Setup, and Control.
+
+Known weak spots / likely next pain:
+
+- Pairing has been unreliable during rapid iteration, especially stale responder state and cached discovery.
+- The managed remote mode is currently a UI/config guardrail, not a full master-pushed configuration system.
+- Master does not yet push selected share pairs, authority rules, delete behavior, or daemon settings to the managed remote.
+- The plugin is not production-safe and should only be pointed at disposable test shares.
+- PHP linting was not available in the Mac workspace during recent commits because local `php` was not installed.
+
+Recommended next implementation:
+
+1. Add a master-to-managed-remote configuration API to the pairing responder.
+2. Let the master send the selected remote share, authority rule, delete behavior, and sync interval to the managed remote after pairing.
+3. Make the managed remote accept that config only from the linked peer.
+4. Add a clear Paired With / Managed By status card on both servers.
+5. Keep Factory Reset as the escape hatch for broken pairing state.
+
+Recommended test flow:
+
+1. Push local commits to GitHub from GitHub Desktop.
+2. On both Unraid servers, update Mirror to `0.4.8`.
+3. Factory reset both plugins if pairing state looks stale.
+4. Set the intended receiver server to Managed remote.
+5. Confirm the managed server only shows Plugin Update, LAN Peer Setup, and Control.
+6. Leave the controlling server as Master.
+7. Build and test the next master-controlled config push using disposable shares only.
 
 ### Tracker Update Template
 
@@ -1285,3 +1347,13 @@ Next suggested task:
 - New decisions: The local same-server share sync path is working enough to use for disposable test shares.
 - Open questions: Superseded by the first LAN peer prototype in `0.1.0`.
 - Next suggested task: Test the LAN peer prototype on two disposable shares.
+
+#### 2026-06-26 - Chat Handoff Added
+
+- Task completed: Added a handoff section so the project can continue cleanly in a new chat.
+- Files changed: `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
+- New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
+- Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.4.8`, verify the Managed remote view, then implement master-pushed remote configuration.
