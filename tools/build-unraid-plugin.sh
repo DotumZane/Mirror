@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Hardens automatic sshd startup on the linked peer.
-- Reports sshd startup command output when peer SSH setup fails.
+- Sends Master Start and Stop to the linked remote.
+- Adds a responder control action for remote daemon start/stop.
 - Not safe for important shares yet.
   </CHANGES>
 

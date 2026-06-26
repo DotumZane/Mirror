@@ -552,6 +552,54 @@ function mirror_apply_linked_peer_to_config($peer) {
     mirror_write_config($config);
 }
 
+function mirror_linked_peer_host() {
+    global $peerFile;
+    $peer = mirror_json_file($peerFile, []);
+    $peerHost = trim((string)($peer["host"] ?? ""));
+    if ($peerHost !== "" && mirror_is_private_ip($peerHost)) {
+        return $peerHost;
+    }
+    $config = mirror_existing_config();
+    $configHost = trim((string)($config["server_b"]["host"] ?? ""));
+    return mirror_is_private_ip($configHost) ? $configHost : "";
+}
+
+function mirror_control_linked_peer($command) {
+    if (!in_array($command, ["start", "stop"], true)) {
+        return "";
+    }
+    $config = mirror_existing_config();
+    if (($config["node_role"] ?? "master") !== "master") {
+        return "";
+    }
+    $peerHost = mirror_linked_peer_host();
+    if ($peerHost === "") {
+        return "\nRemote peer $command skipped: no linked private LAN peer.";
+    }
+    $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "control"]), 4.0, [
+        "command" => $command,
+    ]);
+    if (!is_array($response)) {
+        return "\nRemote peer $command failed: no response.";
+    }
+    $name = (string)($response["name"] ?? $peerHost);
+    $code = (string)($response["code"] ?? "unknown");
+    $output = trim((string)($response["output"] ?? ""));
+    if (($response["status"] ?? "") === "ok") {
+        $message = "\nRemote peer $command sent to $name. Code: $code.";
+    } else {
+        $error = (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES));
+        $message = "\nRemote peer $command failed on $name: $error";
+        if ($code !== "unknown") {
+            $message .= " Code: $code.";
+        }
+    }
+    if ($output !== "") {
+        $message .= "\nRemote output:\n" . $output;
+    }
+    return $message;
+}
+
 $action = $_POST["action"] ?? "status";
 
 if ($action === "scan-peers") {
@@ -1123,6 +1171,8 @@ exec($cmd, $output, $code);
 $message = implode("\n", $output);
 if ($code !== 0) {
     $message = "Command failed:\n" . $message;
+} elseif (in_array($action, ["start", "stop"], true)) {
+    $message .= mirror_control_linked_peer($action);
 }
 mirror_write_action($message);
 mirror_redirect();

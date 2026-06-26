@@ -261,4 +261,28 @@ if ($action === "ensure-ssh") {
     ]);
 }
 
+if ($action === "control") {
+    if (!mirror_private_remote()) {
+        mirror_json_response(["status" => "error", "error" => "Remote control is only accepted from private IPv4 addresses."], 403);
+    }
+    $payload = json_decode((string)file_get_contents("php://input"), true);
+    if (!is_array($payload)) {
+        $payload = $_GET;
+    }
+    $command = trim((string)($payload["command"] ?? ""));
+    if (!in_array($command, ["start", "stop", "status"], true)) {
+        mirror_json_response(["status" => "error", "error" => "Unsupported control command."], 400);
+    }
+    $cmd = "/usr/local/sbin/mirrorctl " . escapeshellarg($command) . " 2>&1";
+    exec($cmd, $output, $code);
+    mirror_json_response([
+        "status" => $code === 0 ? "ok" : "error",
+        "name" => mirror_server_name(),
+        "version" => $version,
+        "command" => $command,
+        "code" => $code,
+        "output" => implode("\n", $output),
+    ], $code === 0 ? 200 : 500);
+}
+
 mirror_json_response(["status" => "error", "error" => "Unknown action."], 404);
