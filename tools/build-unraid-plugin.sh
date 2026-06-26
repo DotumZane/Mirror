@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Keeps the daemon running when a remote sync attempt fails.
-- Logs remote sync errors and retries on the next interval.
+- Lets the daemon start without a fragile immediate health gate.
+- Leaves remote sync failures in Recent Log while the daemon retries.
 - Not safe for important shares yet.
   </CHANGES>
 
