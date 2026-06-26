@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds a direct-invite hello check before sending.
-- Falls back to query-parameter invites if JSON POST returns no peer response.
+- Adds a Peer Link status tile.
+- Shows connected peer state as a success message in LAN Peer Setup.
 - Not safe for important shares yet.
   </CHANGES>
 

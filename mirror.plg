@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.5.8">
+  <!ENTITY version    "0.5.9">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.8.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.5.9.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "c8564682104b57ba52d78b0896abb794">
+  <!ENTITY md5        "b59d210ca34b75c80910e8c472365dd9">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.5.8
-- Adds a direct-invite hello check before sending.
-- Falls back to query-parameter invites if JSON POST returns no peer response.
+### 0.5.9
+- Adds a Peer Link status tile.
+- Shows connected peer state as a success message in LAN Peer Setup.
 - Not safe for important shares yet.
   </CHANGES>
 

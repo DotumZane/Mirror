@@ -239,6 +239,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 }
 .mirror-warning,
 .mirror-message,
+.mirror-success,
 .mirror-client-message {
   border-radius: 6px;
   padding: 10px 12px;
@@ -252,6 +253,10 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
   border: 1px solid #3b82f6;
   background: rgba(59, 130, 246, 0.12);
   white-space: pre-wrap;
+}
+.mirror-success {
+  border: 1px solid #2f9e44;
+  background: rgba(47, 158, 68, 0.14);
 }
 .mirror-client-message {
   border: 1px solid #c9892b;
@@ -383,6 +388,16 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       <?=$pairingRunning ? "Listening on 23891" : "Stopped"?>
     </div>
     <div class="mirror-stat">
+      <strong>Peer Link</strong>
+      <?php if (!empty($linkedPeer["host"])): ?>
+        Connected to <?=mirror_value($linkedPeer["name"] ?? "peer")?>
+      <?php elseif (count($pendingInvites) > 0): ?>
+        Pending invite
+      <?php else: ?>
+        Not linked
+      <?php endif; ?>
+    </div>
+    <div class="mirror-stat">
       <strong>Pending Invites</strong>
       <?=mirror_value(count($pendingInvites))?>
     </div>
@@ -443,8 +458,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <h3>LAN Peer Setup</h3>
     <div class="mirror-help">Enter the other server's LAN IP and send an invite. After the invite is accepted, choose shares in Share Pair.</div>
     <?php if (!empty($linkedPeer["host"])): ?>
-      <div class="mirror-warning">
-        Linked peer: <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
+      <div class="mirror-success">
+        Connected to <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
+        <?php if (!empty($linkedPeer["version"])): ?>
+          <span class="mirror-help">Peer Mirror version: <?=mirror_value($linkedPeer["version"])?></span>
+        <?php endif; ?>
       </div>
     <?php endif; ?>
     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
