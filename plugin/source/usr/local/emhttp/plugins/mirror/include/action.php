@@ -450,6 +450,8 @@ if ($action === "invite-peer") {
         mirror_write_action(
             "Invite sent to " . ($response["name"] ?? $peerHost) . "."
             . "\nPeer link is staged on this server."
+            . "\nReceiving host: $peerHost"
+            . "\nInvite ID: " . ($response["id"] ?? "unknown")
             . "\nNow open Mirror on the peer server and click Accept under Pending Invites."
             . "\nAfter it is accepted, choose shares in Share Pair."
         );
@@ -500,6 +502,14 @@ if ($action === "reject-invite") {
     unset($invites[$inviteId]);
     mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
     mirror_write_action("Invite rejected.");
+    mirror_redirect();
+}
+
+if ($action === "check-invites") {
+    global $pendingInvitesFile;
+    $pending = mirror_json_file($pendingInvitesFile, ["invites" => []]);
+    $invites = is_array($pending["invites"] ?? null) ? $pending["invites"] : [];
+    mirror_write_action("Pending invite check complete. Found " . count($invites) . " invite" . (count($invites) === 1 ? "." : "s."));
     mirror_redirect();
 }
 

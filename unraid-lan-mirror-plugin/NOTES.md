@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.4
+0.3.5
 ```
 
 Version source of truth:
@@ -433,6 +433,7 @@ Current release status:
 - `0.3.2` adds scan diagnostics and stronger pairing responder startup checks.
 - `0.3.3` improves invite/accept diagnostics and makes pending invites more visible.
 - `0.3.4` splits peer linking from share selection in guided pairing.
+- `0.3.5` keeps Pending Invites visible and adds a check button plus invite ID feedback.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -650,7 +651,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.4.
+- Current version: 0.3.5.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -701,7 +702,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.4`.
+- Current version is `0.3.5`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1120,6 +1121,16 @@ Next suggested task:
 - New decisions: Pairing/trust and share mapping should be separate steps.
 - Open questions: Confirm the link-first flow feels clearer, then decide whether Share Pair should fetch peer shares live from the linked peer.
 - Next suggested task: Push to GitHub, update both servers to `0.3.4`, invite/accept to establish link, then use Share Pair to choose shares.
+
+#### 2026-06-25 - Pending Invite Visibility
+
+- Task completed: Made the accept location visible even when there are no pending invites.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.5.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Pending Invites is now always shown, includes a Check Pending Invites button, shows a no-invites hint when empty, and Invite success now shows the receiving host and invite ID.
+- New decisions: The Accept location should never disappear just because no pending invite is currently stored.
+- Open questions: Confirm whether invite success shows an invite ID and whether the receiving server's Pending Invites count increments.
+- Next suggested task: Push to GitHub, update both servers to `0.3.5`, send one invite, then check Pending Invites on the receiving server.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

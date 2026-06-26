@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Splits peer linking from share selection in guided pairing.
-- Adds Use Linked Peer action for later share setup.
+- Keeps Pending Invites visible even when empty.
+- Adds Check Pending Invites and clearer invite success details.
 - Not safe for important shares yet.
   </CHANGES>
 
