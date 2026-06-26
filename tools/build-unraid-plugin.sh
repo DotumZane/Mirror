@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Uses normal page submit for Control actions.
-- Prevents Start/Stop from getting stuck in the AJAX refresh path.
+- Automatically prepares SSH on the linked peer before remote sync.
+- Starts sshd when peer keys are installed through pairing.
 - Not safe for important shares yet.
   </CHANGES>
 

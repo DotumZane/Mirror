@@ -100,6 +100,7 @@ function ssh_target(array $config): string {
 function ssh_base_args(array $config, string $configPath): array {
     $port = max(1, min(65535, (int)($config["server_b"]["port"] ?? 22)));
     $key = ensure_ssh_key($configPath);
+    ensure_remote_ssh_ready($config, $configPath);
     return [
         "ssh",
         "-i", $key,
@@ -121,6 +122,62 @@ function run_command(array $parts): string {
         throw new RuntimeException("command failed ($code): " . implode("\n", $output));
     }
     return implode("\n", $output);
+}
+
+function http_json(string $url, array $payload, float $timeout = 4.0): array {
+    $curl = trim((string)shell_exec("command -v curl 2>/dev/null"));
+    if ($curl === "") {
+        throw new RuntimeException("curl is required for peer setup but was not found");
+    }
+    $bodyFile = tempnam("/tmp", "mirror-body-");
+    $payloadFile = tempnam("/tmp", "mirror-json-");
+    if ($bodyFile === false || $payloadFile === false) {
+        throw new RuntimeException("could not create temporary files for peer setup");
+    }
+    file_put_contents($payloadFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
+    $cmd = escapeshellarg($curl)
+        . " -sS --connect-timeout " . escapeshellarg((string)$timeout)
+        . " --max-time " . escapeshellarg((string)$timeout)
+        . " -H " . escapeshellarg("Content-Type: application/json")
+        . " -H " . escapeshellarg("Cache-Control: no-cache")
+        . " -o " . escapeshellarg($bodyFile)
+        . " -w " . escapeshellarg("%{http_code}")
+        . " --data-binary @" . escapeshellarg($payloadFile)
+        . " " . escapeshellarg($url)
+        . " 2>&1";
+    exec($cmd, $output, $code);
+    $httpCode = (int)trim((string)end($output));
+    $body = is_file($bodyFile) ? (string)file_get_contents($bodyFile) : "";
+    @unlink($bodyFile);
+    @unlink($payloadFile);
+    if ($code !== 0 || $httpCode < 200 || $httpCode >= 300) {
+        throw new RuntimeException("peer setup request failed (HTTP $httpCode): " . trim($body . "\n" . implode("\n", $output)));
+    }
+    $decoded = json_decode($body, true);
+    if (!is_array($decoded)) {
+        throw new RuntimeException("peer setup returned invalid JSON: " . trim($body));
+    }
+    return $decoded;
+}
+
+function ensure_remote_ssh_ready(array $config, string $configPath): void {
+    static $ready = [];
+    $host = (string)($config["server_b"]["host"] ?? "");
+    if ($host === "" || isset($ready[$host])) {
+        return;
+    }
+    $publicKeyFile = ensure_ssh_key($configPath) . ".pub";
+    if (!is_file($publicKeyFile)) {
+        throw new RuntimeException("local transfer public key is missing");
+    }
+    $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", [
+        "public_key" => trim((string)file_get_contents($publicKeyFile)),
+        "from_name" => mirror_server_name(),
+    ]);
+    if (($response["status"] ?? "") !== "ok") {
+        throw new RuntimeException("peer SSH setup failed: " . json_encode($response, JSON_UNESCAPED_SLASHES));
+    }
+    $ready[$host] = true;
 }
 
 function remote_path(string $root, string $rel = ""): string {

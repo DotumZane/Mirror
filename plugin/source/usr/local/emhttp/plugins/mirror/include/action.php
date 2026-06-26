@@ -215,6 +215,26 @@ function mirror_ensure_key() {
     return trim((string)file_get_contents($keyFile . ".pub"));
 }
 
+function mirror_ensure_sshd() {
+    exec("pgrep -x sshd 2>/dev/null", $pids, $runningCode);
+    if ($runningCode === 0 && $pids) {
+        return "running";
+    }
+    $output = [];
+    $code = 1;
+    if (is_executable("/etc/rc.d/rc.sshd")) {
+        exec("/etc/rc.d/rc.sshd start 2>&1", $output, $code);
+    } elseif (is_executable("/usr/sbin/sshd")) {
+        exec("/usr/sbin/sshd 2>&1", $output, $code);
+    }
+    $check = [];
+    exec("pgrep -x sshd 2>/dev/null", $check, $checkCode);
+    if ($checkCode !== 0 || !$check) {
+        throw new RuntimeException("SSH service did not start:\n" . implode("\n", $output));
+    }
+    return "started";
+}
+
 function mirror_accept_public_key($key) {
     global $rootSshDir, $authorizedKeysFile;
     $key = trim((string)$key);
@@ -233,6 +253,7 @@ function mirror_accept_public_key($key) {
         file_put_contents($authorizedKeysFile, implode("\n", $existing) . "\n");
     }
     chmod($authorizedKeysFile, 0600);
+    return mirror_ensure_sshd();
 }
 
 function mirror_http_json($url, $timeout = 1.2, $payload = null) {

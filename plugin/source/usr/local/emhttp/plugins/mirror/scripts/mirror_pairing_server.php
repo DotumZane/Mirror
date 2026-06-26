@@ -5,6 +5,8 @@ $pendingInvitesFile = "$configDir/pending-invites.json";
 $actionFile = "$configDir/last-action.txt";
 $sshDir = "$configDir/ssh";
 $keyFile = "$sshDir/mirror_ed25519";
+$rootSshDir = "/root/.ssh";
+$authorizedKeysFile = "$rootSshDir/authorized_keys";
 $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 
 function mirror_json_response($data, $status = 200) {
@@ -69,6 +71,51 @@ function mirror_ensure_key() {
         chmod($keyFile . ".pub", 0644);
     }
     return trim((string)file_get_contents($keyFile . ".pub"));
+}
+
+function mirror_ensure_sshd() {
+    exec("pgrep -x sshd 2>/dev/null", $pids, $runningCode);
+    if ($runningCode === 0 && $pids) {
+        return "running";
+    }
+    $output = [];
+    $code = 1;
+    if (is_executable("/etc/rc.d/rc.sshd")) {
+        exec("/etc/rc.d/rc.sshd start 2>&1", $output, $code);
+    } elseif (is_executable("/usr/sbin/sshd")) {
+        exec("/usr/sbin/sshd 2>&1", $output, $code);
+    }
+    $check = [];
+    exec("pgrep -x sshd 2>/dev/null", $check, $checkCode);
+    if ($checkCode !== 0 || !$check) {
+        mirror_json_response([
+            "status" => "error",
+            "error" => "SSH service did not start.",
+            "output" => implode("\n", $output),
+        ], 500);
+    }
+    return "started";
+}
+
+function mirror_accept_public_key($key) {
+    global $rootSshDir, $authorizedKeysFile;
+    $key = trim((string)$key);
+    if (!preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $key)) {
+        mirror_json_response(["status" => "error", "error" => "Only ssh-ed25519 public keys are accepted."], 400);
+    }
+    if (!is_dir($rootSshDir)) {
+        mkdir($rootSshDir, 0700, true);
+    }
+    chmod($rootSshDir, 0700);
+    $existing = is_file($authorizedKeysFile)
+        ? file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+        : [];
+    if (!in_array($key, $existing, true)) {
+        $existing[] = $key;
+        file_put_contents($authorizedKeysFile, implode("\n", $existing) . "\n");
+    }
+    chmod($authorizedKeysFile, 0600);
+    return mirror_ensure_sshd();
 }
 
 function mirror_json_file($path, $default = []) {
@@ -167,6 +214,25 @@ if ($action === "invite") {
         "name" => mirror_server_name(),
         "version" => $version,
         "shares" => mirror_current_shares(),
+        "public_key" => mirror_ensure_key(),
+    ]);
+}
+
+if ($action === "ensure-ssh") {
+    if (!mirror_private_remote()) {
+        mirror_json_response(["status" => "error", "error" => "SSH setup is only accepted from private IPv4 addresses."], 403);
+    }
+    $payload = json_decode((string)file_get_contents("php://input"), true);
+    if (!is_array($payload)) {
+        $payload = $_GET;
+    }
+    $publicKey = trim((string)($payload["public_key"] ?? ""));
+    $sshd = mirror_accept_public_key($publicKey);
+    mirror_json_response([
+        "status" => "ok",
+        "name" => mirror_server_name(),
+        "version" => $version,
+        "sshd" => $sshd,
         "public_key" => mirror_ensure_key(),
     ]);
 }
