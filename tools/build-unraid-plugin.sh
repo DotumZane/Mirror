@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Uses normal page submit for Save Settings.
-- Prevents the Save Settings button from staying disabled after long saves.
+- Removes the manual SSH key setup sections from the Mirror page.
+- Keeps LAN pairing focused on direct peer invite and remote share selection.
 - Not safe for important shares yet.
   </CHANGES>
 

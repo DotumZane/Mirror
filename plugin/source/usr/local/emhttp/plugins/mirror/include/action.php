@@ -893,7 +893,7 @@ if ($action === "save-config") {
             $peerUser = (string)($existingConfig["server_b"]["user"] ?? "root");
         }
         if ($peerUser === "" || preg_match("#[^A-Za-z0-9_.-]#", $peerUser)) {
-            $errors[] = "Peer SSH user contains unsupported characters.";
+            $errors[] = "Peer user contains unsupported characters.";
         }
         $serverBRoot = $remoteShare !== "" ? "/mnt/user/" . $remoteShare : (string)($existingConfig["server_b"]["root"] ?? "/mnt/user/");
         $serverBConfiguredShare = $remoteShare;
@@ -981,64 +981,13 @@ if ($action === "factory-reset") {
     }
     exec("/usr/local/sbin/mirrorctl pair-start 2>&1", $startPairOutput, $startPairCode);
     $message = "Factory reset complete."
-        . "\nCleared Mirror config, pairing state, scan cache, SSH keys, database, trash, and logs."
+        . "\nCleared Mirror config, pairing state, scan cache, transfer keys, database, trash, and logs."
         . "\nUser shares and synced files were not touched.";
     $outputs = array_merge($stopOutput ?: [], $pairOutput ?: [], $startPairOutput ?: []);
     if ($outputs) {
         $message .= "\nCommand output:\n" . implode("\n", $outputs);
     }
     mirror_write_action($message);
-    mirror_redirect();
-}
-
-if ($action === "generate-key") {
-    mirror_preserve_mode_from_post();
-    if (!is_dir($sshDir)) {
-        mkdir($sshDir, 0700, true);
-    }
-    if (!is_file($keyFile)) {
-        $cmd = "ssh-keygen -t ed25519 -N '' -f " . escapeshellarg($keyFile) . " -C " . escapeshellarg("mirror-plugin@" . gethostname()) . " 2>&1";
-        exec($cmd, $output, $code);
-        chmod($keyFile, 0600);
-        if (is_file($keyFile . ".pub")) {
-            chmod($keyFile . ".pub", 0644);
-        }
-        mirror_write_action($code === 0 ? "SSH key generated." : "SSH key generation failed:\n" . implode("\n", $output));
-    } else {
-        mirror_write_action("SSH key already exists.");
-    }
-    mirror_redirect();
-}
-
-if ($action === "accept-peer-key") {
-    mirror_preserve_mode_from_post();
-    global $rootSshDir, $authorizedKeysFile;
-    $key = trim((string)($_POST["peer_public_key"] ?? ""));
-    $errors = [];
-    if ($key === "") {
-        $errors[] = "Peer public key is required.";
-    }
-    if (!preg_match("#^ssh-ed25519\\s+[A-Za-z0-9+/=]+(?:\\s+.*)?$#", $key)) {
-        $errors[] = "Only ssh-ed25519 public keys are accepted right now.";
-    }
-    if ($errors) {
-        mirror_write_action("Peer key not accepted:\n" . implode("\n", $errors));
-        mirror_redirect();
-    }
-
-    if (!is_dir($rootSshDir)) {
-        mkdir($rootSshDir, 0700, true);
-    }
-    chmod($rootSshDir, 0700);
-    $existing = is_file($authorizedKeysFile)
-        ? file($authorizedKeysFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
-        : [];
-    if (!in_array($key, $existing, true)) {
-        $existing[] = $key;
-        file_put_contents($authorizedKeysFile, implode("\n", $existing) . "\n");
-    }
-    chmod($authorizedKeysFile, 0600);
-    mirror_write_action("Peer key accepted into /root/.ssh/authorized_keys.");
     mirror_redirect();
 }
 
