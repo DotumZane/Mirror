@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.0
+0.3.1
 ```
 
 Version source of truth:
@@ -429,6 +429,7 @@ Current release status:
 - `0.2.4` changes update output to an Unraid-style in-page modal overlay.
 - `0.2.5` fixes duplicate plugin entries caused by installing `/tmp/mirror-latest.plg`.
 - `0.3.0` adds the first guided LAN peer discovery, invite, and accept workflow.
+- `0.3.1` adds a dedicated pairing responder on TCP port `23891` and direct peer IP fallback.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -646,7 +647,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.0.
+- Current version: 0.3.1.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -697,7 +698,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.0`.
+- Current version is `0.3.1`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1076,6 +1077,16 @@ Next suggested task:
 - New decisions: Pairing must require manual approval on the invited server; discovery can expose only basic server metadata and share names on trusted LAN.
 - Open questions: Confirm whether Unraid Connect/local access allows `http://peer/plugins/mirror/include/lan.php` between servers, and whether a future build should support HTTPS/custom ports.
 - Next suggested task: Push to GitHub, update both servers to `0.3.0`, run Find Mirror Servers, invite from one server, accept on the other, then test peer connection.
+
+#### 2026-06-25 - Pairing Responder Fix
+
+- Task completed: Fixed Find Mirror Servers not discovering peers through Unraid's authenticated web plugin path.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.3.1.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_pairing_server.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a dedicated pairing responder served by `php -S 0.0.0.0:23891`, taught `mirrorctl` to start/stop/restart it, starts it during install and before scans, changed discovery/invites to use port `23891`, and added a direct peer IP fallback field.
+- New decisions: Guided pairing should not depend on Unraid's authenticated web UI routes; use a tiny LAN-only responder for discovery and invite handoff.
+- Open questions: Confirm that both servers can reach each other on TCP port `23891`; if not, add custom pairing port settings.
+- Next suggested task: Push to GitHub, update both servers to `0.3.1`, confirm Pairing says `Listening on 23891`, then scan using the peer IP if automatic discovery is empty.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

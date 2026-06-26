@@ -7,8 +7,12 @@ BOOT_DIR="/boot/config/plugins/${PLUGIN}"
 CONFIG="${BOOT_DIR}/config.json"
 LOG="/var/log/${PLUGIN}.log"
 PID="/var/run/${PLUGIN}.pid"
+PAIR_LOG="/var/log/${PLUGIN}-pairing.log"
+PAIR_PID="/var/run/${PLUGIN}-pairing.pid"
+PAIR_PORT="${MIRROR_PAIR_PORT:-23891}"
 PHP_BIN="${PHP_BIN:-php}"
 RUNNER="${EMHTTP_DIR}/scripts/mirror_runner.php"
+PAIR_RUNNER="${EMHTTP_DIR}/scripts/mirror_pairing_server.php"
 
 ensure_config() {
   mkdir -p "$BOOT_DIR"
@@ -19,6 +23,10 @@ ensure_config() {
 
 is_running() {
   [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null
+}
+
+pairing_running() {
+  [ -f "$PAIR_PID" ] && kill -0 "$(cat "$PAIR_PID")" 2>/dev/null
 }
 
 sync_interval() {
@@ -36,6 +44,11 @@ case "${1:-status}" in
     echo "Config: $CONFIG"
     echo "Log: $LOG"
     echo "Runner: $RUNNER"
+    if pairing_running; then
+      echo "Pairing responder running with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
+    else
+      echo "Pairing responder stopped"
+    fi
     ;;
   run-once)
     ensure_config
@@ -88,8 +101,39 @@ case "${1:-status}" in
       echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     fi
     ;;
+  pair-start)
+    ensure_config
+    if pairing_running; then
+      echo "Mirror pairing responder already running with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
+      exit 0
+    fi
+    cd "$EMHTTP_DIR"
+    nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
+    echo "$!" > "$PAIR_PID"
+    echo "Mirror pairing responder started with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
+    ;;
+  pair-stop)
+    if pairing_running; then
+      kill "$(cat "$PAIR_PID")"
+      rm -f "$PAIR_PID"
+      echo "Mirror pairing responder stopped"
+    else
+      rm -f "$PAIR_PID"
+      echo "Mirror pairing responder already stopped"
+    fi
+    ;;
+  pair-restart)
+    if pairing_running; then
+      kill "$(cat "$PAIR_PID")"
+      rm -f "$PAIR_PID"
+    fi
+    cd "$EMHTTP_DIR"
+    nohup "$PHP_BIN" -S "0.0.0.0:${PAIR_PORT}" "$PAIR_RUNNER" >>"$PAIR_LOG" 2>&1 &
+    echo "$!" > "$PAIR_PID"
+    echo "Mirror pairing responder restarted with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
+    ;;
   *)
-    echo "Usage: mirrorctl {status|run-once|start|stop|restart|test-peer}" >&2
+    echo "Usage: mirrorctl {status|run-once|start|stop|restart|test-peer|pair-start|pair-stop|pair-restart}" >&2
     exit 2
     ;;
 esac

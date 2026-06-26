@@ -11,6 +11,7 @@ $pidFile = "/var/run/$plugin.pid";
 $rootSshDir = "/root/.ssh";
 $authorizedKeysFile = "$rootSshDir/authorized_keys";
 $pluginUrl = "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg";
+$pairingPort = 23891;
 
 function mirror_daemon_running() {
     global $pidFile;
@@ -222,7 +223,8 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
 }
 
 function mirror_remote_url($host, $query) {
-    return "http://" . $host . "/plugins/mirror/include/lan.php?" . http_build_query($query);
+    global $pairingPort;
+    return "http://" . $host . ":" . $pairingPort . "/?" . http_build_query($query);
 }
 
 function mirror_find_executable($candidates) {
@@ -363,13 +365,19 @@ $action = $_POST["action"] ?? "status";
 
 if ($action === "scan-peers") {
     global $discoveryFile;
+    exec("/usr/local/sbin/mirrorctl pair-start 2>&1");
     $subnet = trim((string)($_POST["scan_subnet"] ?? ""));
+    $directHost = trim((string)($_POST["direct_host"] ?? ""));
     $deepScan = !empty($_POST["deep_scan"]);
     if ($subnet === "") {
         $ip = mirror_primary_ip();
         $subnet = preg_replace('/\.\d+$/', ".0/24", $ip);
     }
     $hosts = $deepScan ? mirror_subnet_hosts($subnet) : mirror_known_lan_hosts($subnet);
+    if ($directHost !== "" && filter_var($directHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        array_unshift($hosts, $directHost);
+    }
+    $hosts = array_values(array_unique($hosts));
     $selfIp = mirror_primary_ip();
     $found = [];
     foreach ($hosts as $host) {

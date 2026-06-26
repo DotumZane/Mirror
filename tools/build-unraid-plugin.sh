@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds first guided LAN peer discovery, invite, and accept workflow.
-- Auto-fills remote mirror config and SSH keys after pairing approval.
+- Adds a dedicated LAN pairing responder on TCP port 23891.
+- Adds direct peer IP fallback for guided pairing discovery.
 - Not safe for important shares yet.
   </CHANGES>
 
@@ -69,6 +69,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
       if [ ! -f &plugin;/config.json ]; then
         cp &emhttp;/default-config.json &plugin;/config.json;
       fi;
+      /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
       if [ -f &emhttp;/Mirror.page ] &amp;&amp; [ -x /usr/local/sbin/mirrorctl ]; then
         echo "";
         echo "===================================================================";
@@ -88,6 +89,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
   <FILE Run="/bin/bash" Method="remove">
     <INLINE>
       /usr/local/sbin/mirrorctl stop 2>/dev/null || true;
+      /usr/local/sbin/mirrorctl pair-stop 2>/dev/null || true;
       removepkg &name;-&version; 2>/dev/null || true;
       rm -rf &emhttp;;
       rm -f /usr/local/sbin/mirrorctl;

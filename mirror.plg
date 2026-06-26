@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.3.0">
+  <!ENTITY version    "0.3.1">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.0.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.1.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "3a04afcac8f5ec7aeb0b145671e420eb">
+  <!ENTITY md5        "9c948ce8217d5dfdc918620e6d32216b">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.3.0
-- Adds first guided LAN peer discovery, invite, and accept workflow.
-- Auto-fills remote mirror config and SSH keys after pairing approval.
+### 0.3.1
+- Adds a dedicated LAN pairing responder on TCP port 23891.
+- Adds direct peer IP fallback for guided pairing discovery.
 - Not safe for important shares yet.
   </CHANGES>
 
@@ -39,6 +39,7 @@
       if [ ! -f &plugin;/config.json ]; then
         cp &emhttp;/default-config.json &plugin;/config.json;
       fi;
+      /usr/local/sbin/mirrorctl pair-start 2>/dev/null || true;
       if [ -f &emhttp;/Mirror.page ] &amp;&amp; [ -x /usr/local/sbin/mirrorctl ]; then
         echo "";
         echo "===================================================================";
@@ -58,6 +59,7 @@
   <FILE Run="/bin/bash" Method="remove">
     <INLINE>
       /usr/local/sbin/mirrorctl stop 2>/dev/null || true;
+      /usr/local/sbin/mirrorctl pair-stop 2>/dev/null || true;
       removepkg &name;-&version; 2>/dev/null || true;
       rm -rf &emhttp;;
       rm -f /usr/local/sbin/mirrorctl;

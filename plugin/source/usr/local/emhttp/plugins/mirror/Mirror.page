@@ -7,6 +7,7 @@ $plugin = "mirror";
 $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 $configFile = "/boot/config/plugins/$plugin/config.json";
 $pidFile = "/var/run/$plugin.pid";
+$pairPidFile = "/var/run/$plugin-pairing.pid";
 $logFile = "/var/log/$plugin.log";
 $actionFile = "/boot/config/plugins/$plugin/last-action.txt";
 $discoveryFile = "/boot/config/plugins/$plugin/discovered-peers.json";
@@ -17,6 +18,7 @@ $authorizedKeysFile = "/root/.ssh/authorized_keys";
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
 $running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
+$pairingRunning = is_file($pairPidFile) && posix_kill((int)trim(file_get_contents($pairPidFile)), 0);
 $logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFile)) : "";
 $lastAction = is_file($actionFile) ? trim(file_get_contents($actionFile)) : "";
 if (strpos($lastAction, "Plugin update command ") === 0) {
@@ -302,6 +304,10 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       <strong>Daemon</strong>
       <?=$running ? "Running" : "Stopped"?>
     </div>
+    <div class="mirror-stat">
+      <strong>Pairing</strong>
+      <?=$pairingRunning ? "Listening on 23891" : "Stopped"?>
+    </div>
   </div>
 
   <?php if ($lastAction): ?>
@@ -347,7 +353,12 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <div class="mirror-field">
           <label for="scan_subnet">Scan subnet</label>
           <input id="scan_subnet" name="scan_subnet" type="text" value="<?=mirror_value($discovery["subnet"] ?? $defaultSubnet)?>">
-          <span class="mirror-help">Known LAN hosts are checked first. Use deep scan if the peer is not found.</span>
+          <span class="mirror-help">Looks for Mirror pairing responders on TCP port 23891.</span>
+        </div>
+        <div class="mirror-field">
+          <label for="direct_host">Peer host or IP</label>
+          <input id="direct_host" name="direct_host" type="text" value="">
+          <span class="mirror-help">Optional. Use this if scan does not discover the peer automatically.</span>
         </div>
         <label class="mirror-check">
           <input type="checkbox" name="deep_scan" value="1">
