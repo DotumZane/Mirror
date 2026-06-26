@@ -493,6 +493,20 @@ function mirror_preserve_mode_from_post() {
     mirror_write_config($config);
 }
 
+function mirror_apply_linked_peer_to_config($peer) {
+    $peerHost = trim((string)($peer["host"] ?? ""));
+    if ($peerHost === "") {
+        return;
+    }
+    $config = mirror_existing_config();
+    $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
+    $config["server_b"]["type"] = "remote";
+    $config["server_b"]["host"] = $peerHost;
+    $config["server_b"]["user"] = (string)($config["server_b"]["user"] ?? "root");
+    $config["server_b"]["port"] = (int)($config["server_b"]["port"] ?? 22);
+    mirror_write_config($config);
+}
+
 $action = $_POST["action"] ?? "status";
 
 if ($action === "scan-peers") {
@@ -784,13 +798,7 @@ if ($action === "use-linked-peer") {
         mirror_write_action("No linked peer found. Invite and accept a peer first.");
         mirror_redirect();
     }
-    $config = mirror_existing_config();
-    $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
-    $config["server_b"]["type"] = "remote";
-    $config["server_b"]["host"] = (string)$peer["host"];
-    $config["server_b"]["user"] = "root";
-    $config["server_b"]["port"] = 22;
-    mirror_write_config($config);
+    mirror_apply_linked_peer_to_config($peer);
     mirror_write_action("Linked peer applied to Share Pair. Choose local and remote shares, then Save Settings.");
     mirror_redirect();
 }
@@ -814,7 +822,8 @@ if ($action === "refresh-peer-shares") {
         $peer["shares"] = $shares;
         $peer["shares_refreshed_at"] = time();
         mirror_write_peer_profile($peer);
-        mirror_write_action("Remote shares refreshed from " . ($peer["name"] ?? $peerHost) . ". Found " . count($shares) . " share" . (count($shares) === 1 ? "." : "s."));
+        mirror_apply_linked_peer_to_config($peer);
+        mirror_write_action("Remote shares refreshed from " . ($peer["name"] ?? $peerHost) . ". Found " . count($shares) . " share" . (count($shares) === 1 ? "." : "s.") . "\nRemote LAN mirror mode selected.");
     } catch (Throwable $error) {
         mirror_write_action("Remote shares not refreshed:\n" . $error->getMessage());
     }

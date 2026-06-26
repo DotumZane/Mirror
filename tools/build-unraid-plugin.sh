@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Hides remote host, SSH user, and SSH port fields when using a linked peer.
-- Uses the linked peer host automatically for remote share setup.
+- Keeps Remote LAN mirror selected after refreshing remote shares.
+- Applies the linked peer host when refreshing remote share choices.
 - Not safe for important shares yet.
   </CHANGES>
 
