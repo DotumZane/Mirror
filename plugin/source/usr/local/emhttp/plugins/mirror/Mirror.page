@@ -726,11 +726,30 @@ if (!empty($linkedPeer["host"]) && (
     </form>
     </div>
 
+  <?php else: ?>
+    <div class="mirror-section">
+      <h3>Shares</h3>
+      <p>
+        Share setup on this managed remote is controlled by the master server.
+        Open the Shares tab on <?=mirror_value($linkedPeer["name"] ?? "the master server")?> to choose local and remote shares.
+      </p>
+      <?php if (!empty($linkedPeer["host"])): ?>
+        <div class="mirror-grid">
+          <div class="mirror-stat">
+            <strong>Master server</strong>
+            <?=mirror_value($linkedPeer["name"] ?? "Linked peer")?>
+          </div>
+          <div class="mirror-stat">
+            <strong>Master IP</strong>
+            <?=mirror_value($linkedPeer["host"])?>
+          </div>
+        </div>
+      <?php endif; ?>
+    </div>
   <?php endif; ?>
   <?php endif; ?>
 
   <?php if ($mirrorTab === "config"): ?>
-  <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Trash</h3>
       <div class="mirror-grid">
@@ -750,15 +769,12 @@ if (!empty($linkedPeer["host"]) && (
       <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
     </div>
   <?php endif; ?>
-  <?php endif; ?>
 
   <?php if ($mirrorTab === "log"): ?>
-  <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Recent Log</h3>
       <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
     </div>
-  <?php endif; ?>
   <?php endif; ?>
 </div>
 
