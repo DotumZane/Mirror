@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds a Peer Link status tile.
-- Shows connected peer state as a success message in LAN Peer Setup.
+- Hides completed invite/accept detail messages once a peer is linked.
+- Keeps connected peer status visible through the Peer Link tile.
 - Not safe for important shares yet.
   </CHANGES>
 
