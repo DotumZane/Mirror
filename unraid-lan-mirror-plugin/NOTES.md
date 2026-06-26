@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.1
+0.4.2
 ```
 
 Version source of truth:
@@ -441,6 +441,7 @@ Current release status:
 - `0.3.9` clears stale/orphaned responder processes still owning TCP `23891`.
 - `0.4.0` clears cached discovery at scan start and labels stale peer cards.
 - `0.4.1` hides stale peer cards from the active list and makes Find Mirror Servers a normal submit.
+- `0.4.2` reports direct-host scan failures and adds a pairing responder restart button.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -658,7 +659,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.1.
+- Current version: 0.4.2.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -709,7 +710,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.1`.
+- Current version is `0.4.2`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1198,6 +1199,16 @@ Next suggested task:
 - New decisions: Long-running scan actions should use normal Unraid page submit behavior until the scanner becomes an actual background job.
 - Open questions: Confirm that the old `0.3.2` cached card no longer appears as an active invite target after updating to `0.4.1`.
 - Next suggested task: Push to GitHub, update both servers to `0.4.1`, click Find Mirror Servers, and verify only fresh peer results appear.
+
+#### 2026-06-25 - Direct Host Scan Diagnostics
+
+- Task completed: Made zero-result LAN scans explain direct-host failures.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.2.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Scan results now keep the typed direct host, record direct-host failure details in the action message, and LAN Peer Setup includes a Restart Pairing Responder button.
+- New decisions: Pairing troubleshooting needs direct action buttons and exact failure text in the UI, not only hidden log details.
+- Open questions: After updating to `0.4.2`, run Restart Pairing Responder on both servers, then Find Mirror Servers with the direct IP and read the direct-host failure line if no peer appears.
+- Next suggested task: Push to GitHub, update both servers to `0.4.2`, restart pairing responders on both servers, then run a direct-host scan.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

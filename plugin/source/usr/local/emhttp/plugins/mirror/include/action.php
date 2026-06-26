@@ -415,6 +415,7 @@ if ($action === "scan-peers") {
     }
     mirror_write_json_file($discoveryFile, [
         "subnet" => $subnet,
+        "direct_host" => $directHost,
         "deep_scan" => $deepScan,
         "scanned_at" => time(),
         "scan_status" => "running",
@@ -431,12 +432,19 @@ if ($action === "scan-peers") {
     $hosts = array_values(array_unique($hosts));
     $selfIp = mirror_primary_ip();
     $found = [];
+    $misses = [];
     foreach ($hosts as $host) {
         if ($host === "" || $host === $selfIp || !mirror_is_private_ip($host)) {
             continue;
         }
         $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello", "scan" => $scanNonce]), $deepScan ? 0.35 : 1.0);
         if (!is_array($peer) || ($peer["service"] ?? "") !== "mirror") {
+            if ($host === $directHost) {
+                $misses[] = [
+                    "host" => $host,
+                    "error" => is_array($peer) ? (string)($peer["error"] ?? json_encode($peer, JSON_UNESCAPED_SLASHES)) : "No response",
+                ];
+            }
             continue;
         }
         $peer["host"] = $host;
@@ -446,9 +454,11 @@ if ($action === "scan-peers") {
     }
     mirror_write_json_file($discoveryFile, [
         "subnet" => $subnet,
+        "direct_host" => $directHost,
         "deep_scan" => $deepScan,
         "scanned_at" => time(),
         "scan_status" => "complete",
+        "misses" => $misses,
         "peers" => array_values($found),
     ]);
     $message = "LAN scan complete. Found " . count($found) . " Mirror peer" . (count($found) === 1 ? "." : "s.")
@@ -458,8 +468,21 @@ if ($action === "scan-peers") {
     if ($directHost !== "") {
         $message .= "\nDirect host: $directHost";
     }
+    foreach ($misses as $miss) {
+        $message .= "\nDirect host failed: " . $miss["host"] . " - " . $miss["error"];
+    }
     if ($pairOutput) {
         $message .= "\nResponder output:\n" . implode("\n", $pairOutput);
+    }
+    mirror_write_action($message);
+    mirror_redirect();
+}
+
+if ($action === "pair-restart") {
+    exec("/usr/local/sbin/mirrorctl pair-restart 2>&1", $output, $code);
+    $message = $code === 0 ? "Pairing responder restarted." : "Pairing responder restart failed:";
+    if ($output) {
+        $message .= "\n" . implode("\n", $output);
     }
     mirror_write_action($message);
     mirror_redirect();

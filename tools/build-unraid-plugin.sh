@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Hides stale cached peer cards from the active LAN peer list.
-- Runs Find Mirror Servers as a normal submit so scans cannot leave the button stuck.
+- Reports direct-host scan failures instead of silently hiding them.
+- Adds a Restart Pairing Responder button to LAN Peer Setup.
 - Not safe for important shares yet.
   </CHANGES>
 

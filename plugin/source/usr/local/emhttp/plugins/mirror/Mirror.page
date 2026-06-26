@@ -127,6 +127,7 @@ $discoveredPeers = array_values(array_filter($rawDiscoveredPeers, function ($pee
 $staleDiscoveredPeers = count($rawDiscoveredPeers) - count($discoveredPeers);
 $discoveryScannedAt = (int)($discovery["scanned_at"] ?? 0);
 $discoveryStatus = (string)($discovery["scan_status"] ?? "");
+$discoveryDirectHost = (string)($discovery["direct_host"] ?? "");
 $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
 $pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
 $linkedPeer = mirror_json_file($peerFile, []);
@@ -402,7 +403,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         </div>
         <div class="mirror-field">
           <label for="direct_host">Peer host or IP</label>
-          <input id="direct_host" name="direct_host" type="text" value="">
+          <input id="direct_host" name="direct_host" type="text" value="<?=mirror_value($discoveryDirectHost)?>">
           <span class="mirror-help">Optional. Use this if scan does not discover the peer automatically.</span>
         </div>
         <label class="mirror-check">
@@ -412,6 +413,13 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       </div>
       <div class="mirror-actions">
         <button type="submit">Find Mirror Servers</button>
+      </div>
+    </form>
+    <form method="post" action="/plugins/mirror/include/action.php">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="pair-restart">
+      <div class="mirror-actions">
+        <button type="submit">Restart Pairing Responder</button>
       </div>
     </form>
     <?php if ($discoveryScannedAt > 0): ?>
