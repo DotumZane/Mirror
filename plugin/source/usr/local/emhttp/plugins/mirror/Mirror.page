@@ -120,9 +120,11 @@ $primaryIp = mirror_primary_ip();
 $defaultSubnet = $primaryIp ? preg_replace('/\.\d+$/', ".0/24", $primaryIp) : "";
 $discovery = mirror_json_file($discoveryFile, ["peers" => [], "subnet" => $defaultSubnet]);
 $rawDiscoveredPeers = is_array($discovery["peers"] ?? null) ? $discovery["peers"] : [];
+$peerFreshSeconds = 1800;
 $discoveredPeers = array_values(array_filter($rawDiscoveredPeers, function ($peer) {
+  global $peerFreshSeconds;
   $foundAt = (int)($peer["found_at"] ?? 0);
-  return $foundAt > 0 && (time() - $foundAt) <= 120;
+  return $foundAt > 0 && (time() - $foundAt) <= $peerFreshSeconds;
 }));
 $staleDiscoveredPeers = count($rawDiscoveredPeers) - count($discoveredPeers);
 $discoveryScannedAt = (int)($discovery["scanned_at"] ?? 0);
@@ -434,7 +436,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <?php endif; ?>
     <?php if ($staleDiscoveredPeers > 0 && !$discoveredPeers): ?>
       <div class="mirror-warning">
-        Previous peer results are stale and hidden. Run Find Mirror Servers again to refresh the list.
+        Previous peer results are older than 30 minutes and hidden. Run Find Mirror Servers again to refresh the list.
       </div>
     <?php endif; ?>
 
@@ -444,7 +446,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
           <?php
             $peerFoundAt = (int)($peer["found_at"] ?? 0);
             $peerAge = $peerFoundAt > 0 ? time() - $peerFoundAt : 999999;
-            $peerIsStale = $peerAge > 120;
+            $peerIsStale = $peerAge > $peerFreshSeconds;
           ?>
           <div class="mirror-peer-card">
             <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>

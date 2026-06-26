@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Auto-refreshes while LAN scans are running.
-- Speeds up deep /24 scan timeout and suggests direct-host scan when no peers are found.
+- Keeps discovered peers active for 30 minutes instead of hiding them after two minutes.
+- Keeps peer age visible on each discovered peer card.
 - Not safe for important shares yet.
   </CHANGES>
 

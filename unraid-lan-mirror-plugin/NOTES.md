@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.5
+0.4.6
 ```
 
 Version source of truth:
@@ -445,6 +445,7 @@ Current release status:
 - `0.4.3` treats same-version update checks as already current instead of failed.
 - `0.4.4` uses normal Unraid submits for pairing actions and reloads on AJAX failure.
 - `0.4.5` auto-refreshes running scans and shortens deep scan timeout.
+- `0.4.6` keeps discovered peers active for 30 minutes instead of hiding them after two.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -662,7 +663,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.5.
+- Current version: 0.4.6.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -713,7 +714,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.5`.
+- Current version is `0.4.6`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1242,6 +1243,16 @@ Next suggested task:
 - New decisions: Deep scanning should remain a fallback; direct-host scanning is the preferred troubleshooting path for two known servers.
 - Open questions: Confirm the scan no longer appears stuck on `running`, then use direct host if deep scan finds no peers.
 - Next suggested task: Push to GitHub, update both servers to `0.4.5`, run a direct-host scan with the other server's IP, and inspect the blue diagnostic if it finds no peers.
+
+#### 2026-06-25 - Peer Result Visibility Window
+
+- Task completed: Fixed found peers disappearing from the invite area too quickly.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.6.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Discovered peer cards now remain active for 30 minutes instead of two minutes, while still showing when each peer was last seen.
+- New decisions: Pairing discovery results should remain usable long enough for a human to read scan output, scroll, and click Invite.
+- Open questions: Confirm the Invite card remains visible after a successful scan.
+- Next suggested task: Push to GitHub, update both servers to `0.4.6`, run Find Mirror Servers, then use the visible Invite button.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

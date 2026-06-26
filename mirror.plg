@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.4.5">
+  <!ENTITY version    "0.4.6">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.5.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.6.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "05e56548e331375f1806eb3b2c5d1b30">
+  <!ENTITY md5        "f3a268525ada67a9136a54ba93ef96d2">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.4.5
-- Auto-refreshes while LAN scans are running.
-- Speeds up deep /24 scan timeout and suggests direct-host scan when no peers are found.
+### 0.4.6
+- Keeps discovered peers active for 30 minutes instead of hiding them after two minutes.
+- Keeps peer age visible on each discovered peer card.
 - Not safe for important shares yet.
   </CHANGES>
 
