@@ -867,11 +867,15 @@ if ($action === "save-config") {
         }
         $peer = mirror_json_file($peerFile, []);
         $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : [];
+        $linkedPeerHost = trim((string)($peer["host"] ?? ""));
         if ($remoteShare !== "" && $peerShares && !in_array($remoteShare, $peerShares, true)) {
             $errors[] = "Remote peer share must be selected from the linked peer's current shares.";
         }
         if ($remoteShare === "") {
             $remoteShare = (string)($existingConfig["server_b"]["share"] ?? "");
+        }
+        if ($linkedPeerHost !== "") {
+            $peerHost = $linkedPeerHost;
         }
         if ($peerHost === "") {
             $peerHost = (string)($existingConfig["server_b"]["host"] ?? "");

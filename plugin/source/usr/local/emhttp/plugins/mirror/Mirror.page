@@ -597,18 +597,9 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
             <span class="mirror-help">Use Refresh Remote Shares after pairing to load a dropdown from the peer.</span>
           <?php endif; ?>
         </div>
-        <div class="mirror-field mirror-remote-only">
-          <label for="peer_host">Peer host or IP</label>
-          <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($config["server_b"]["host"] ?? "")?>">
-        </div>
-        <div class="mirror-field mirror-remote-only">
-          <label for="peer_user">Peer SSH user</label>
-          <input id="peer_user" name="peer_user" type="text" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
-        </div>
-        <div class="mirror-field mirror-remote-only">
-          <label for="peer_port">Peer SSH port</label>
-          <input id="peer_port" name="peer_port" type="number" min="1" max="65535" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
-        </div>
+        <input type="hidden" name="peer_host" value="<?=mirror_value($linkedPeer["host"] ?? $config["server_b"]["host"] ?? "")?>">
+        <input type="hidden" name="peer_user" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
+        <input type="hidden" name="peer_port" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
         <div class="mirror-field">
           <label for="authority">Authority rule</label>
           <select id="authority" name="authority">

@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Loads remote shares from the linked peer.
-- Uses a dropdown for remote peer share selection when shares are available.
+- Hides remote host, SSH user, and SSH port fields when using a linked peer.
+- Uses the linked peer host automatically for remote share setup.
 - Not safe for important shares yet.
   </CHANGES>
 
