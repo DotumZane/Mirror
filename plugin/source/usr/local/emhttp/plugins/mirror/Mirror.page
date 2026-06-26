@@ -441,7 +441,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 
   <div class="mirror-section">
     <h3>LAN Peer Setup</h3>
-    <div class="mirror-help">First establish the peer link. After the invite is accepted, choose shares in Share Pair.</div>
+    <div class="mirror-help">Enter the other server's LAN IP and send an invite. After the invite is accepted, choose shares in Share Pair.</div>
     <?php if (!empty($linkedPeer["host"])): ?>
       <div class="mirror-warning">
         Linked peer: <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
@@ -449,25 +449,16 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <?php endif; ?>
     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="scan-peers">
+      <input type="hidden" name="action" value="invite-peer">
       <div class="mirror-form-grid">
         <div class="mirror-field">
-          <label for="scan_subnet">Scan subnet</label>
-          <input id="scan_subnet" name="scan_subnet" type="text" value="<?=mirror_value($discovery["subnet"] ?? $defaultSubnet)?>">
-          <span class="mirror-help">Looks for Mirror pairing responders on TCP port 23891.</span>
+          <label for="peer_host">Peer IP address</label>
+          <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($linkedPeer["host"] ?? $discoveryDirectHost)?>">
+          <span class="mirror-help">Use the other Unraid server's LAN IP. Its Mirror pairing responder must be listening on TCP port 23891.</span>
         </div>
-        <div class="mirror-field">
-          <label for="direct_host">Peer host or IP</label>
-          <input id="direct_host" name="direct_host" type="text" value="<?=mirror_value($discoveryDirectHost)?>">
-          <span class="mirror-help">Optional. Use this if scan does not discover the peer automatically.</span>
-        </div>
-        <label class="mirror-check">
-          <input type="checkbox" name="deep_scan" value="1">
-          Deep /24 scan
-        </label>
       </div>
       <div class="mirror-actions">
-        <button type="submit">Find Mirror Servers</button>
+        <button type="submit">Send Invite</button>
       </div>
     </form>
     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
@@ -484,66 +475,6 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <button type="submit">Check Local Responder</button>
       </div>
     </form>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="clear-discovery">
-      <input type="hidden" name="scan_subnet" value="<?=mirror_value($discovery["subnet"] ?? $defaultSubnet)?>">
-      <div class="mirror-actions">
-        <button type="submit">Clear Peer Results</button>
-      </div>
-    </form>
-    <?php if ($discoveryScannedAt > 0): ?>
-      <div class="mirror-help">
-        Last scan: <?=mirror_value(mirror_age_label($discoveryScannedAt))?><?=$discoveryStatus ? " (" . mirror_value($discoveryStatus) . ")" : ""?>.
-      </div>
-    <?php endif; ?>
-    <?php if ($discoveryStatus === "running"): ?>
-      <div class="mirror-warning">
-        Scan is still running. This page will refresh automatically.
-      </div>
-    <?php endif; ?>
-    <?php if ($staleDiscoveredPeers > 0 && !$discoveredPeers): ?>
-      <div class="mirror-warning">
-        Previous peer results are older than 30 minutes and hidden. Run Find Mirror Servers again to refresh the list.
-      </div>
-    <?php endif; ?>
-
-    <?php if ($discoveredPeers): ?>
-      <div class="mirror-peer-list">
-        <?php foreach ($discoveredPeers as $peer): ?>
-          <?php
-            $peerFoundAt = (int)($peer["found_at"] ?? 0);
-            $peerAge = $peerFoundAt > 0 ? time() - $peerFoundAt : 999999;
-            $peerIsStale = $peerAge > $peerFreshSeconds;
-          ?>
-          <div class="mirror-peer-card">
-            <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>
-            <div class="mirror-peer-meta">
-              <?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?> · seen <?=mirror_value(mirror_age_label($peerFoundAt))?>
-            </div>
-            <?php if (($peer["version"] ?? "") !== "" && ($peer["version"] ?? "") !== $version): ?>
-              <div class="mirror-warning">
-                This peer's pairing responder is reporting Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Restart/update Mirror on that server so the responder reports <?=mirror_value($version)?> before pairing.
-                <span class="mirror-help">
-                  Responder host <?=mirror_value($peer["responder_host"] ?? $peer["host"] ?? "unknown")?>,
-                  pid <?=mirror_value($peer["responder_pid"] ?? "unknown")?>,
-                  version mtime <?=mirror_value($peer["version_mtime"] ?? "unknown")?>.
-                </span>
-              </div>
-            <?php endif; ?>
-            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-              <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-              <input type="hidden" name="action" value="invite-peer">
-              <input type="hidden" name="peer_host" value="<?=mirror_value($peer["host"] ?? "")?>">
-              <div class="mirror-actions">
-                <button type="submit">Invite</button>
-              </div>
-            </form>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    <?php endif; ?>
-
     <h3>Pending Invites</h3>
     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">

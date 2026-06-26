@@ -661,6 +661,14 @@ if ($action === "invite-peer") {
         if ($peerHost === "" || !mirror_is_private_ip($peerHost)) {
             throw new RuntimeException("Peer host must be a private LAN IP address.");
         }
+        mirror_write_json_file($discoveryFile, [
+            "subnet" => preg_replace('/\.\d+$/', ".0/24", mirror_primary_ip()),
+            "direct_host" => $peerHost,
+            "deep_scan" => false,
+            "scanned_at" => 0,
+            "scan_status" => "direct-invite",
+            "peers" => [],
+        ]);
         $publicKey = mirror_ensure_key();
         $payload = [
             "action" => "invite",

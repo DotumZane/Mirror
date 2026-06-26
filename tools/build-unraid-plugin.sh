@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds local responder check and clear peer results controls.
-- Helps separate stale discovery cards from live responder mismatches.
+- Simplifies LAN pairing to direct peer IP invites.
+- Removes automatic peer discovery cards from the main pairing flow.
 - Not safe for important shares yet.
   </CHANGES>
 
