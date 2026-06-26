@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.3.9
+0.4.0
 ```
 
 Version source of truth:
@@ -390,7 +390,8 @@ Version meaning:
 - `0.1.0`: first two-peer LAN prototype.
 - `0.2.0`: first remote peer setup and update flow hardening.
 - `0.3.0`: guided LAN peer discovery and invite/accept setup.
-- `0.4.0`: safer conflict/trash management for peer sync.
+- `0.4.0`: clearer LAN pairing diagnostics and stale discovery handling.
+- `0.4.x`: safer conflict/trash management for peer sync.
 - `0.5.0`: first broader UI-managed test build.
 - `1.0.0`: first version considered safe enough for careful real-world use.
 
@@ -438,6 +439,7 @@ Current release status:
 - `0.3.7` prevents stuck disabled AJAX buttons and warns about peer version mismatch.
 - `0.3.8` restarts the pairing responder on install/update so it cannot keep serving stale code.
 - `0.3.9` clears stale/orphaned responder processes still owning TCP `23891`.
+- `0.4.0` clears cached discovery at scan start and labels stale peer cards.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -655,7 +657,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.3.9.
+- Current version: 0.4.0.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -706,7 +708,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.3.9`.
+- Current version is `0.4.0`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1175,6 +1177,16 @@ Next suggested task:
 - New decisions: The pairing responder port belongs to Mirror, so restart/stop commands are allowed to clear stale owners on that port.
 - Open questions: Confirm that updating both servers to `0.3.9` makes Find Mirror Servers report the peer responder as `0.3.9`.
 - Next suggested task: Push to GitHub, update both servers to `0.3.9`, run Find Mirror Servers, and retry Invite only after both responders report `0.3.9`.
+
+#### 2026-06-25 - Stale Discovery Handling
+
+- Task completed: Stopped cached LAN discovery data from looking like a fresh peer result.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.0.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Find Mirror Servers now clears saved peer cards at scan start, scan requests include a nonce, peer cards show when they were last seen, stale cached peer cards are labeled, and Invite is disabled for stale cached results.
+- New decisions: The UI must distinguish cached discovery results from live scan results before pairing actions are allowed.
+- Open questions: Confirm whether the stale `0.3.2` peer card disappears or updates after installing `0.4.0` and running Find Mirror Servers.
+- Next suggested task: Push to GitHub, update both servers to `0.4.0`, run Find Mirror Servers, and check the Last scan/seen timestamps before inviting.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 

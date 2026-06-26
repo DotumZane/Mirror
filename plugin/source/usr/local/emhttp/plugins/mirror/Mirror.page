@@ -78,6 +78,21 @@ function mirror_current_shares() {
   return array_values($shares);
 }
 
+function mirror_age_label($timestamp) {
+  $timestamp = (int)$timestamp;
+  if ($timestamp <= 0) {
+    return "unknown age";
+  }
+  $age = max(0, time() - $timestamp);
+  if ($age < 60) {
+    return $age . "s ago";
+  }
+  if ($age < 3600) {
+    return floor($age / 60) . "m ago";
+  }
+  return floor($age / 3600) . "h ago";
+}
+
 function mirror_json_file($path, $default = []) {
   if (!is_file($path)) {
     return $default;
@@ -105,6 +120,8 @@ $primaryIp = mirror_primary_ip();
 $defaultSubnet = $primaryIp ? preg_replace('/\.\d+$/', ".0/24", $primaryIp) : "";
 $discovery = mirror_json_file($discoveryFile, ["peers" => [], "subnet" => $defaultSubnet]);
 $discoveredPeers = is_array($discovery["peers"] ?? null) ? $discovery["peers"] : [];
+$discoveryScannedAt = (int)($discovery["scanned_at"] ?? 0);
+$discoveryStatus = (string)($discovery["scan_status"] ?? "");
 $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
 $pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
 $linkedPeer = mirror_json_file($peerFile, []);
@@ -392,13 +409,30 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <button type="submit">Find Mirror Servers</button>
       </div>
     </form>
+    <?php if ($discoveryScannedAt > 0): ?>
+      <div class="mirror-help">
+        Last scan: <?=mirror_value(mirror_age_label($discoveryScannedAt))?><?=$discoveryStatus ? " (" . mirror_value($discoveryStatus) . ")" : ""?>.
+      </div>
+    <?php endif; ?>
 
     <?php if ($discoveredPeers): ?>
       <div class="mirror-peer-list">
         <?php foreach ($discoveredPeers as $peer): ?>
+          <?php
+            $peerFoundAt = (int)($peer["found_at"] ?? 0);
+            $peerAge = $peerFoundAt > 0 ? time() - $peerFoundAt : 999999;
+            $peerIsStale = $peerAge > 120;
+          ?>
           <div class="mirror-peer-card">
             <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>
-            <div class="mirror-peer-meta"><?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?></div>
+            <div class="mirror-peer-meta">
+              <?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?> · seen <?=mirror_value(mirror_age_label($peerFoundAt))?>
+            </div>
+            <?php if ($peerIsStale): ?>
+              <div class="mirror-warning">
+                This is cached discovery data. Click Find Mirror Servers again before inviting.
+              </div>
+            <?php endif; ?>
             <?php if (($peer["version"] ?? "") !== "" && ($peer["version"] ?? "") !== $version): ?>
               <div class="mirror-warning">
                 This peer's pairing responder is reporting Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Restart/update Mirror on that server so the responder reports <?=mirror_value($version)?> before pairing.
@@ -409,7 +443,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
               <input type="hidden" name="action" value="invite-peer">
               <input type="hidden" name="peer_host" value="<?=mirror_value($peer["host"] ?? "")?>">
               <div class="mirror-actions">
-                <button type="submit">Invite</button>
+                <button type="submit" <?=$peerIsStale ? "disabled" : ""?>>Invite</button>
               </div>
             </form>
           </div>

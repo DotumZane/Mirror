@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Clears stale/orphaned pairing responder processes that still own TCP 23891.
-- Restarts the LAN pairing responder after install/update.
+- Clears cached peer cards before each LAN scan and labels stale discovery results.
+- Blocks inviting from stale cached discovery data.
 - Not safe for important shares yet.
   </CHANGES>
 

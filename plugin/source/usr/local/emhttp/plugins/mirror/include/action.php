@@ -406,9 +406,6 @@ $action = $_POST["action"] ?? "status";
 
 if ($action === "scan-peers") {
     global $discoveryFile;
-    exec("/usr/local/sbin/mirrorctl pair-restart 2>&1", $pairOutput, $pairCode);
-    usleep(250000);
-    $localCheck = mirror_http_json(mirror_remote_url("127.0.0.1", ["action" => "hello"]), 1.0);
     $subnet = trim((string)($_POST["scan_subnet"] ?? ""));
     $directHost = trim((string)($_POST["direct_host"] ?? ""));
     $deepScan = !empty($_POST["deep_scan"]);
@@ -416,6 +413,17 @@ if ($action === "scan-peers") {
         $ip = mirror_primary_ip();
         $subnet = preg_replace('/\.\d+$/', ".0/24", $ip);
     }
+    mirror_write_json_file($discoveryFile, [
+        "subnet" => $subnet,
+        "deep_scan" => $deepScan,
+        "scanned_at" => time(),
+        "scan_status" => "running",
+        "peers" => [],
+    ]);
+    exec("/usr/local/sbin/mirrorctl pair-restart 2>&1", $pairOutput, $pairCode);
+    usleep(250000);
+    $scanNonce = (string)time();
+    $localCheck = mirror_http_json(mirror_remote_url("127.0.0.1", ["action" => "hello", "scan" => $scanNonce]), 1.0);
     $hosts = $deepScan ? mirror_subnet_hosts($subnet) : mirror_known_lan_hosts($subnet);
     if ($directHost !== "" && filter_var($directHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         array_unshift($hosts, $directHost);
@@ -427,18 +435,20 @@ if ($action === "scan-peers") {
         if ($host === "" || $host === $selfIp || !mirror_is_private_ip($host)) {
             continue;
         }
-        $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello"]), $deepScan ? 0.35 : 1.0);
+        $peer = mirror_http_json(mirror_remote_url($host, ["action" => "hello", "scan" => $scanNonce]), $deepScan ? 0.35 : 1.0);
         if (!is_array($peer) || ($peer["service"] ?? "") !== "mirror") {
             continue;
         }
         $peer["host"] = $host;
         $peer["found_at"] = time();
+        $peer["scan_nonce"] = $scanNonce;
         $found[$host] = $peer;
     }
     mirror_write_json_file($discoveryFile, [
         "subnet" => $subnet,
         "deep_scan" => $deepScan,
         "scanned_at" => time(),
+        "scan_status" => "complete",
         "peers" => array_values($found),
     ]);
     $message = "LAN scan complete. Found " . count($found) . " Mirror peer" . (count($found) === 1 ? "." : "s.")
