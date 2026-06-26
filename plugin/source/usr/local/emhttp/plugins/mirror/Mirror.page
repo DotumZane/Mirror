@@ -119,7 +119,12 @@ $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $primaryIp = mirror_primary_ip();
 $defaultSubnet = $primaryIp ? preg_replace('/\.\d+$/', ".0/24", $primaryIp) : "";
 $discovery = mirror_json_file($discoveryFile, ["peers" => [], "subnet" => $defaultSubnet]);
-$discoveredPeers = is_array($discovery["peers"] ?? null) ? $discovery["peers"] : [];
+$rawDiscoveredPeers = is_array($discovery["peers"] ?? null) ? $discovery["peers"] : [];
+$discoveredPeers = array_values(array_filter($rawDiscoveredPeers, function ($peer) {
+  $foundAt = (int)($peer["found_at"] ?? 0);
+  return $foundAt > 0 && (time() - $foundAt) <= 120;
+}));
+$staleDiscoveredPeers = count($rawDiscoveredPeers) - count($discoveredPeers);
 $discoveryScannedAt = (int)($discovery["scanned_at"] ?? 0);
 $discoveryStatus = (string)($discovery["scan_status"] ?? "");
 $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
@@ -386,7 +391,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         Linked peer: <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
       </div>
     <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="scan-peers">
       <div class="mirror-form-grid">
@@ -414,6 +419,11 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         Last scan: <?=mirror_value(mirror_age_label($discoveryScannedAt))?><?=$discoveryStatus ? " (" . mirror_value($discoveryStatus) . ")" : ""?>.
       </div>
     <?php endif; ?>
+    <?php if ($staleDiscoveredPeers > 0 && !$discoveredPeers): ?>
+      <div class="mirror-warning">
+        Previous peer results are stale and hidden. Run Find Mirror Servers again to refresh the list.
+      </div>
+    <?php endif; ?>
 
     <?php if ($discoveredPeers): ?>
       <div class="mirror-peer-list">
@@ -428,11 +438,6 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
             <div class="mirror-peer-meta">
               <?=mirror_value($peer["host"] ?? "")?> · Mirror <?=mirror_value($peer["version"] ?? "unknown")?> · seen <?=mirror_value(mirror_age_label($peerFoundAt))?>
             </div>
-            <?php if ($peerIsStale): ?>
-              <div class="mirror-warning">
-                This is cached discovery data. Click Find Mirror Servers again before inviting.
-              </div>
-            <?php endif; ?>
             <?php if (($peer["version"] ?? "") !== "" && ($peer["version"] ?? "") !== $version): ?>
               <div class="mirror-warning">
                 This peer's pairing responder is reporting Mirror <?=mirror_value($peer["version"] ?? "unknown")?>. Restart/update Mirror on that server so the responder reports <?=mirror_value($version)?> before pairing.
@@ -443,7 +448,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
               <input type="hidden" name="action" value="invite-peer">
               <input type="hidden" name="peer_host" value="<?=mirror_value($peer["host"] ?? "")?>">
               <div class="mirror-actions">
-                <button type="submit" <?=$peerIsStale ? "disabled" : ""?>>Invite</button>
+                <button type="submit">Invite</button>
               </div>
             </form>
           </div>
@@ -768,7 +773,7 @@ function bindMirrorPage() {
   }
 
   document.querySelectorAll(".mirror-panel form").forEach(function (form) {
-    if (form.dataset.mirrorBound === "1" || form.target === "mirror_update_frame") {
+    if (form.dataset.mirrorBound === "1" || form.target === "mirror_update_frame" || form.dataset.mirrorFullSubmit === "1") {
       return;
     }
     form.dataset.mirrorBound = "1";

@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.4.0">
+  <!ENTITY version    "0.4.1">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.0.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.4.1.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "a5b2337b232a8a8c8dfbdb4d58f45786">
+  <!ENTITY md5        "c3afea7169fc3c939a5bdde5d8bb126a">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.4.0
-- Clears cached peer cards before each LAN scan and labels stale discovery results.
-- Blocks inviting from stale cached discovery data.
+### 0.4.1
+- Hides stale cached peer cards from the active LAN peer list.
+- Runs Find Mirror Servers as a normal submit so scans cannot leave the button stuck.
 - Not safe for important shares yet.
   </CHANGES>
 

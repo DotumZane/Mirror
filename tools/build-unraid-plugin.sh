@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Clears cached peer cards before each LAN scan and labels stale discovery results.
-- Blocks inviting from stale cached discovery data.
+- Hides stale cached peer cards from the active LAN peer list.
+- Runs Find Mirror Servers as a normal submit so scans cannot leave the button stuck.
 - Not safe for important shares yet.
   </CHANGES>
 

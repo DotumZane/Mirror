@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.4.0
+0.4.1
 ```
 
 Version source of truth:
@@ -440,6 +440,7 @@ Current release status:
 - `0.3.8` restarts the pairing responder on install/update so it cannot keep serving stale code.
 - `0.3.9` clears stale/orphaned responder processes still owning TCP `23891`.
 - `0.4.0` clears cached discovery at scan start and labels stale peer cards.
+- `0.4.1` hides stale peer cards from the active list and makes Find Mirror Servers a normal submit.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -657,7 +658,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.4.0.
+- Current version: 0.4.1.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -708,7 +709,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.4.0`.
+- Current version is `0.4.1`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -1187,6 +1188,16 @@ Next suggested task:
 - New decisions: The UI must distinguish cached discovery results from live scan results before pairing actions are allowed.
 - Open questions: Confirm whether the stale `0.3.2` peer card disappears or updates after installing `0.4.0` and running Find Mirror Servers.
 - Next suggested task: Push to GitHub, update both servers to `0.4.0`, run Find Mirror Servers, and check the Last scan/seen timestamps before inviting.
+
+#### 2026-06-25 - Active Peer List Cleanup
+
+- Task completed: Removed stale discovery cards from the active invite flow.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.4.1.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Peer cards older than two minutes are hidden from the active peer list, the page shows a warning when only stale cached results exist, and Find Mirror Servers now uses a full submit instead of AJAX so long scans cannot leave the button disabled.
+- New decisions: Long-running scan actions should use normal Unraid page submit behavior until the scanner becomes an actual background job.
+- Open questions: Confirm that the old `0.3.2` cached card no longer appears as an active invite target after updating to `0.4.1`.
+- Next suggested task: Push to GitHub, update both servers to `0.4.1`, click Find Mirror Servers, and verify only fresh peer results appear.
 
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
