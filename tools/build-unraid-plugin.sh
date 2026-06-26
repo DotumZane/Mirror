@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Moves status cards and notices into the Status tab.
-- Switches tab links without a full Unraid page flash.
+- Tightens native-style tab spacing, borders, and inactive states.
+- Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>
 

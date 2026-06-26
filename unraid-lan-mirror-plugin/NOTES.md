@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.8.3
+0.8.4
 ```
 
 Version source of truth:
@@ -482,6 +482,7 @@ Current release status:
 - `0.8.1` restyles the tabs to match Unraid's native plugin tab strip.
 - `0.8.2` changes the tabs from JavaScript panels to separate tab URLs.
 - `0.8.3` moves status chrome into the Status tab and soft-navigates tab links.
+- `0.8.4` tightens the native-style tab spacing, borders, and inactive states.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -699,7 +700,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.8.3.
+- Current version: 0.8.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -750,7 +751,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.8.3`.
+- Current version is `0.8.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -760,7 +761,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `0.8.3`, and check tab switching without whole-page flash.
+- Push to GitHub, update both Unraid servers to `0.8.4`, and compare the tab strip against the reference plugin.
 
 ### Chat Handoff
 
@@ -771,7 +772,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `0.8.3`
+- Current version: `0.8.4`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -789,7 +790,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-0.8.3.txz`.
+- Versioned package build exists at `packages/mirror-0.8.4.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -817,7 +818,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `0.8.3`.
+2. On both Unraid servers, update Mirror to `0.8.4`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1702,6 +1703,16 @@ Next suggested task:
 - Open questions: Confirm tab switching is visually smooth inside Unraid Connect and browser back/forward changes tabs correctly.
 - Next suggested task: Push to GitHub, update both servers to `0.8.3`, and verify the tab layout against the reference plugin.
 
+#### 2026-06-26 - Refined Native Tab Look
+
+- Task completed: Tuned the Mirror tabs closer to the referenced Unraid plugin style.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.8.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Reduced tab height and spacing, darkened inactive tabs, squared the attached-tab shape, and made the active tab use an orange top/left edge.
+- New decisions: Tab visual design should stay compact and native-looking.
+- Open questions: Confirm the active tab border and inactive contrast match the reference closely enough on Unraid.
+- Next suggested task: Push to GitHub, update both servers to `0.8.4`, and compare the tab strip against the referenced plugin.
+
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
 - Task completed: Confirmed the plugin can sync two selected local Unraid shares.
@@ -1720,4 +1731,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.8.3`, and verify the tab layout against the reference plugin.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.8.4`, and compare the tab strip against the referenced plugin.

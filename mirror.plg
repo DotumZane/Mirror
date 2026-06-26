@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.8.3">
+  <!ENTITY version    "0.8.4">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.8.3.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.8.4.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "f1dc57cf3486f9a0f5393a93a5c09b6a">
+  <!ENTITY md5        "c8a3bc33b400140b168b7b0b95b1f0de">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.8.3
-- Moves status cards and notices into the Status tab.
-- Switches tab links without a full Unraid page flash.
+### 0.8.4
+- Tightens native-style tab spacing, borders, and inactive states.
+- Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>
 
