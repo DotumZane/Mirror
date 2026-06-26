@@ -369,23 +369,25 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     Early test build. Use disposable test shares only.
   </div>
 
-  <div class="mirror-section">
-    <h3>Server Role</h3>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="save-role">
-      <div class="mirror-mode-switch" role="group" aria-label="Server role">
-        <input id="node_role_master" type="radio" name="node_role" value="master" <?=$nodeRole === "master" ? "checked" : ""?>>
-        <label for="node_role_master">Master</label>
-        <input id="node_role_remote" type="radio" name="node_role" value="managed_remote" <?=$nodeRole === "managed_remote" ? "checked" : ""?>>
-        <label for="node_role_remote">Managed remote</label>
-      </div>
-      <span class="mirror-help">Use Master on the server where you choose shares and rules. Use Managed remote on the other server so it only accepts pairing and waits for master-controlled setup.</span>
-      <div class="mirror-actions">
-        <button type="submit">Save Role</button>
-      </div>
-    </form>
-  </div>
+  <?php if ($nodeRole !== "managed_remote"): ?>
+    <div class="mirror-section">
+      <h3>Server Role</h3>
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="save-role">
+        <div class="mirror-mode-switch" role="group" aria-label="Server role">
+          <input id="node_role_master" type="radio" name="node_role" value="master" checked>
+          <label for="node_role_master">Master</label>
+          <input id="node_role_remote" type="radio" name="node_role" value="managed_remote">
+          <label for="node_role_remote">Managed remote</label>
+        </div>
+        <span class="mirror-help">Use Master on the server where you choose shares and rules. Use Managed remote on the other server so it only accepts pairing and waits for master-controlled setup.</span>
+        <div class="mirror-actions">
+          <button type="submit">Save Role</button>
+        </div>
+      </form>
+    </div>
+  <?php endif; ?>
 
   <?php if ($nodeRole === "managed_remote"): ?>
     <div class="mirror-warning">
@@ -412,7 +414,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     </div>
   </div>
 
-  <?php if (!$shares): ?>
+  <?php if (!$shares && $nodeRole !== "managed_remote"): ?>
     <div class="mirror-warning">
       No user shares were found under /mnt/user. Create two disposable test
       shares first, then return here.
@@ -534,13 +536,9 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     <?php endif; ?>
   </div>
 
-  <div class="mirror-section">
-    <h3>Share Pair</h3>
-    <?php if ($nodeRole === "managed_remote"): ?>
-      <div class="mirror-warning">
-        Share Pair is controlled from the master server while this server is Managed remote.
-      </div>
-    <?php endif; ?>
+  <?php if ($nodeRole !== "managed_remote"): ?>
+    <div class="mirror-section">
+      <h3>Share Pair</h3>
     <?php if (!empty($linkedPeer["host"])): ?>
       <form method="post" action="/plugins/mirror/include/action.php">
         <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
@@ -624,52 +622,64 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
         <input type="submit" value="Save Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
       </div>
     </form>
-  </div>
-
-  <div class="mirror-section mirror-remote-only">
-    <h3>LAN Peer SSH Key</h3>
-    <p>
-      Install this plugin on both servers. On server A, generate a key here,
-      then add the public key to server B for the SSH user above.
-    </p>
-    <form method="post" action="/plugins/mirror/include/action.php">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="preserve_mirror_mode" value="remote">
-      <div class="mirror-actions">
-        <button type="submit" name="action" value="generate-key">Generate SSH Key</button>
-        <button type="submit" name="action" value="test-peer">Test Peer</button>
-      </div>
-    </form>
-    <div class="mirror-field">
-      <label for="public_key">Public key to add on peer</label>
-      <textarea id="public_key" readonly><?=mirror_value($publicKey ?: "No key generated yet.")?></textarea>
     </div>
-  </div>
 
-  <div class="mirror-section mirror-remote-only">
-    <h3>Accept Peer Key</h3>
-    <p>
-      On the peer server, paste the other server's public key here to allow SSH
-      access for mirroring.
-    </p>
-    <form method="post" action="/plugins/mirror/include/action.php">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="accept-peer-key">
-      <input type="hidden" name="preserve_mirror_mode" value="remote">
+    <div class="mirror-section mirror-remote-only">
+      <h3>LAN Peer SSH Key</h3>
+      <p>
+        Install this plugin on both servers. On server A, generate a key here,
+        then add the public key to server B for the SSH user above.
+      </p>
+      <form method="post" action="/plugins/mirror/include/action.php">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="preserve_mirror_mode" value="remote">
+        <div class="mirror-actions">
+          <button type="submit" name="action" value="generate-key">Generate SSH Key</button>
+          <button type="submit" name="action" value="test-peer">Test Peer</button>
+        </div>
+      </form>
       <div class="mirror-field">
-        <label for="peer_public_key">Peer public key</label>
-        <textarea id="peer_public_key" name="peer_public_key" placeholder="ssh-ed25519 AAAA... mirror-plugin@server"></textarea>
-        <span class="mirror-help">Installed into /root/.ssh/authorized_keys.</span>
+        <label for="public_key">Public key to add on peer</label>
+        <textarea id="public_key" readonly><?=mirror_value($publicKey ?: "No key generated yet.")?></textarea>
       </div>
-      <div class="mirror-actions">
-        <button type="submit">Accept Peer Key</button>
-      </div>
-    </form>
-    <div class="mirror-help">Accepted Mirror keys on this server: <?=mirror_value($acceptedKeyCount)?></div>
-  </div>
+    </div>
+
+    <div class="mirror-section mirror-remote-only">
+      <h3>Accept Peer Key</h3>
+      <p>
+        On the peer server, paste the other server's public key here to allow SSH
+        access for mirroring.
+      </p>
+      <form method="post" action="/plugins/mirror/include/action.php">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="accept-peer-key">
+        <input type="hidden" name="preserve_mirror_mode" value="remote">
+        <div class="mirror-field">
+          <label for="peer_public_key">Peer public key</label>
+          <textarea id="peer_public_key" name="peer_public_key" placeholder="ssh-ed25519 AAAA... mirror-plugin@server"></textarea>
+          <span class="mirror-help">Installed into /root/.ssh/authorized_keys.</span>
+        </div>
+        <div class="mirror-actions">
+          <button type="submit">Accept Peer Key</button>
+        </div>
+      </form>
+      <div class="mirror-help">Accepted Mirror keys on this server: <?=mirror_value($acceptedKeyCount)?></div>
+    </div>
+  <?php endif; ?>
 
   <div class="mirror-section">
     <h3>Control</h3>
+    <?php if ($nodeRole === "managed_remote"): ?>
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="save-role">
+        <input type="hidden" name="node_role" value="master">
+        <div class="mirror-actions">
+          <button type="submit">Switch Back To Master</button>
+        </div>
+      </form>
+      <span class="mirror-help">Managed remote hides local sync settings. Switch back to Master or factory reset if this server should control share pairing.</span>
+    <?php endif; ?>
     <form method="post" action="/plugins/mirror/include/action.php">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <div class="mirror-actions">
@@ -693,29 +703,31 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
     </form>
   </div>
 
-  <div class="mirror-section">
-    <h3>Trash</h3>
-    <div class="mirror-grid">
-      <div class="mirror-stat">
-        <strong>Trash path</strong>
-        <?=mirror_value($trashRoot)?>
+  <?php if ($nodeRole !== "managed_remote"): ?>
+    <div class="mirror-section">
+      <h3>Trash</h3>
+      <div class="mirror-grid">
+        <div class="mirror-stat">
+          <strong>Trash path</strong>
+          <?=mirror_value($trashRoot)?>
+        </div>
       </div>
+      <p>
+        Overwritten and deleted files are copied here before the plugin changes
+        them. Remote peer trash is stored on the peer at the same plugin path.
+      </p>
     </div>
-    <p>
-      Overwritten and deleted files are copied here before the plugin changes
-      them. Remote peer trash is stored on the peer at the same plugin path.
-    </p>
-  </div>
 
-  <div class="mirror-section">
-    <h3>Current Config</h3>
-    <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
-  </div>
+    <div class="mirror-section">
+      <h3>Current Config</h3>
+      <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
+    </div>
 
-  <div class="mirror-section">
-    <h3>Recent Log</h3>
-    <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
-  </div>
+    <div class="mirror-section">
+      <h3>Recent Log</h3>
+      <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
+    </div>
+  <?php endif; ?>
 </div>
 
 <script>

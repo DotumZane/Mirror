@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds Factory Reset Plugin to clear Mirror state without touching shares.
-- Adds Master / Managed remote server role mode.
+- Shows a simplified managed remote page with only update, LAN peer setup, and control sections.
+- Keeps switching back to Master available from Control.
 - Not safe for important shares yet.
   </CHANGES>
 
