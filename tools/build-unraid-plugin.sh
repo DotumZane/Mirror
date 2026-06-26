@@ -44,7 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Allows daemon scan interval 0 for automatic local change detection.
+- Improves the Shares tab layout and setup guidance.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>

@@ -318,6 +318,46 @@ if (!empty($linkedPeer["host"]) && (
   color: #111;
   font-weight: 700;
 }
+.mirror-share-lead {
+  margin: 0 0 14px;
+  opacity: 0.86;
+}
+.mirror-share-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin: 12px 0 18px;
+}
+.mirror-share-status-item {
+  border-left: 3px solid #ff6a2a;
+  padding: 2px 0 2px 10px;
+}
+.mirror-share-status-item strong,
+.mirror-share-group-title {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.mirror-share-status-item span {
+  opacity: 0.82;
+}
+.mirror-share-group {
+  margin-top: 20px;
+}
+.mirror-share-group-title {
+  border-bottom: 1px solid var(--border-color, #333);
+  padding-bottom: 7px;
+}
+.mirror-share-save {
+  align-items: center;
+  border-top: 1px solid var(--border-color, #333);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 22px;
+  padding-top: 14px;
+}
 .mirror-hidden {
   display: none;
 }
@@ -632,99 +672,135 @@ if (!empty($linkedPeer["host"]) && (
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Share Pair</h3>
-    <?php if (!empty($linkedPeer["host"])): ?>
-      <form method="post" action="/plugins/mirror/include/action.php">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="use-linked-peer">
-        <div class="mirror-actions">
-          <button type="submit">Use Linked Peer</button>
-        </div>
-      </form>
-      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="refresh-peer-shares">
-        <div class="mirror-actions">
-          <button type="submit">Refresh Remote Shares</button>
-        </div>
-      </form>
-      <span class="mirror-help">Use Linked Peer or Refresh Remote Shares selects Remote LAN mirror with <?=mirror_value($linkedPeer["host"])?>. Remote shares loaded: <?=mirror_value(count($linkedPeerShares))?>.</span>
-    <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="save-config">
+      <p class="mirror-share-lead">Choose which local share this server owns, then choose where Mirror should keep the matching copy.</p>
 
-      <div class="mirror-mode-switch" role="group" aria-label="Mirror mode">
-        <input id="mirror_mode_local" type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
-        <label for="mirror_mode_local">Local mirror</label>
-        <input id="mirror_mode_remote" type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
-        <label for="mirror_mode_remote">Remote LAN mirror</label>
+      <div class="mirror-share-status">
+        <div class="mirror-share-status-item">
+          <strong>Current mode</strong>
+          <span><?=$serverBType === "remote" ? "Remote LAN mirror" : "Local mirror"?></span>
+        </div>
+        <div class="mirror-share-status-item">
+          <strong>Linked peer</strong>
+          <span><?=!empty($linkedPeer["host"]) ? mirror_value(($linkedPeer["name"] ?? "Peer") . " at " . $linkedPeer["host"]) : "No linked peer yet"?></span>
+        </div>
+        <div class="mirror-share-status-item">
+          <strong>Remote shares loaded</strong>
+          <span><?=mirror_value(count($linkedPeerShares))?></span>
+        </div>
       </div>
 
-      <div class="mirror-form-grid">
-        <div class="mirror-field">
-          <label for="server_a_share">Server A share</label>
-          <select id="server_a_share" name="server_a_share" <?=$shares ? "" : "disabled"?>>
-            <option value="">Select a share</option>
-            <?php foreach ($shares as $share): ?>
-              <option value="<?=mirror_value($share)?>" <?=$share === $serverAShare ? "selected" : ""?>><?=mirror_value($share)?></option>
-            <?php endforeach; ?>
-          </select>
-          <span class="mirror-help">Source path: <?=mirror_value($config["server_a"]["root"])?></span>
+      <?php if (!empty($linkedPeer["host"])): ?>
+        <form method="post" action="/plugins/mirror/include/action.php">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="use-linked-peer">
+          <div class="mirror-actions">
+            <button type="submit">Use Linked Peer</button>
+          </div>
+        </form>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="refresh-peer-shares">
+          <div class="mirror-actions">
+            <button type="submit">Refresh Remote Shares</button>
+          </div>
+        </form>
+        <span class="mirror-help">Use Linked Peer switches this setup to the paired server. Refresh Remote Shares updates the remote share dropdown.</span>
+      <?php else: ?>
+        <div class="mirror-warning">Pair with another server on the LAN Setup tab before choosing a remote share.</div>
+      <?php endif; ?>
+
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="save-config">
+
+        <div class="mirror-share-group">
+          <strong class="mirror-share-group-title">Mirror Type</strong>
+          <div class="mirror-mode-switch" role="group" aria-label="Mirror mode">
+            <input id="mirror_mode_local" type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
+            <label for="mirror_mode_local">Local mirror</label>
+            <input id="mirror_mode_remote" type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
+            <label for="mirror_mode_remote">Remote LAN mirror</label>
+          </div>
+          <span class="mirror-help">Local mirror keeps both copies on this server. Remote LAN mirror uses the linked server as the second side.</span>
         </div>
-        <div class="mirror-field mirror-local-only">
-          <label for="server_b_share">Server B share</label>
-          <select id="server_b_share" name="server_b_share" <?=$shares ? "" : "disabled"?>>
-            <option value="">Select a share</option>
-            <?php foreach ($shares as $share): ?>
-              <option value="<?=mirror_value($share)?>" <?=$share === $serverBShare ? "selected" : ""?>><?=mirror_value($share)?></option>
-            <?php endforeach; ?>
-          </select>
-          <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
+
+        <div class="mirror-share-group">
+          <strong class="mirror-share-group-title">Shares</strong>
+          <div class="mirror-form-grid">
+            <div class="mirror-field">
+              <label for="server_a_share">This server share</label>
+              <select id="server_a_share" name="server_a_share" <?=$shares ? "" : "disabled"?>>
+                <option value="">Select a share</option>
+                <?php foreach ($shares as $share): ?>
+                  <option value="<?=mirror_value($share)?>" <?=$share === $serverAShare ? "selected" : ""?>><?=mirror_value($share)?></option>
+                <?php endforeach; ?>
+              </select>
+              <span class="mirror-help">Local path: <?=mirror_value($config["server_a"]["root"])?></span>
+            </div>
+            <div class="mirror-field mirror-local-only">
+              <label for="server_b_share">Second local share</label>
+              <select id="server_b_share" name="server_b_share" <?=$shares ? "" : "disabled"?>>
+                <option value="">Select a share</option>
+                <?php foreach ($shares as $share): ?>
+                  <option value="<?=mirror_value($share)?>" <?=$share === $serverBShare ? "selected" : ""?>><?=mirror_value($share)?></option>
+                <?php endforeach; ?>
+              </select>
+              <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
+            </div>
+            <div class="mirror-field mirror-remote-only">
+              <label for="remote_share">Remote server share</label>
+              <?php if ($linkedPeerShares): ?>
+                <select id="remote_share" name="remote_share">
+                  <option value="">Select a remote share</option>
+                  <?php foreach ($linkedPeerShares as $share): ?>
+                    <option value="<?=mirror_value($share)?>" <?=$share === ($config["server_b"]["share"] ?? $serverBShare) ? "selected" : ""?>><?=mirror_value($share)?></option>
+                  <?php endforeach; ?>
+                </select>
+                <span class="mirror-help">Loaded from <?=mirror_value($linkedPeer["name"] ?? "linked peer")?>.</span>
+              <?php else: ?>
+                <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
+                <span class="mirror-help">Refresh Remote Shares after pairing to choose from a dropdown.</span>
+              <?php endif; ?>
+            </div>
+          </div>
         </div>
-        <div class="mirror-field mirror-remote-only">
-          <label for="remote_share">Remote peer share</label>
-          <?php if ($linkedPeerShares): ?>
-            <select id="remote_share" name="remote_share">
-              <option value="">Select a remote share</option>
-              <?php foreach ($linkedPeerShares as $share): ?>
-                <option value="<?=mirror_value($share)?>" <?=$share === ($config["server_b"]["share"] ?? $serverBShare) ? "selected" : ""?>><?=mirror_value($share)?></option>
-              <?php endforeach; ?>
-            </select>
-            <span class="mirror-help">Loaded from <?=mirror_value($linkedPeer["name"] ?? "linked peer")?>.</span>
-          <?php else: ?>
-            <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
-            <span class="mirror-help">Use Refresh Remote Shares after pairing to load a dropdown from the peer.</span>
-          <?php endif; ?>
-        </div>
+
         <input type="hidden" name="peer_host" value="<?=mirror_value($linkedPeer["host"] ?? $config["server_b"]["host"] ?? "")?>">
         <input type="hidden" name="peer_user" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
         <input type="hidden" name="peer_port" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
-        <div class="mirror-field">
-          <label for="authority">Authority rule</label>
-          <select id="authority" name="authority">
-            <option value="server_a_preferred" <?=$config["authority"] === "server_a_preferred" ? "selected" : ""?>>Server A preferred</option>
-            <option value="equal_peers" <?=$config["authority"] === "equal_peers" ? "selected" : ""?>>Equal peers</option>
-          </select>
-        </div>
-        <div class="mirror-field">
-          <label for="delete_behavior">Delete behavior</label>
-          <select id="delete_behavior" name="delete_behavior">
-            <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
-            <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after saving trash</option>
-          </select>
-          <span class="mirror-help">Use Mirror deletes for true equal-peer delete behavior.</span>
-        </div>
-        <div class="mirror-field">
-          <label for="sync_interval">Daemon scan interval seconds</label>
-          <span class="mirror-help">Set this to 0 to detect local share changes automatically instead of scanning on a timer.</span>
-          <input id="sync_interval" name="sync_interval" type="number" min="0" max="3600" value="<?=mirror_value($config["sync_interval"])?>">
-        </div>
-      </div>
 
-      <div class="mirror-actions">
-        <input type="submit" value="Save Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
-      </div>
-    </form>
+        <div class="mirror-share-group">
+          <strong class="mirror-share-group-title">Sync Behavior</strong>
+          <div class="mirror-form-grid">
+            <div class="mirror-field">
+              <label for="authority">Conflict rule</label>
+              <select id="authority" name="authority">
+                <option value="server_a_preferred" <?=$config["authority"] === "server_a_preferred" ? "selected" : ""?>>This server preferred</option>
+                <option value="equal_peers" <?=$config["authority"] === "equal_peers" ? "selected" : ""?>>Equal peers</option>
+              </select>
+              <span class="mirror-help">Use Equal peers when both servers can make intentional changes.</span>
+            </div>
+            <div class="mirror-field">
+              <label for="delete_behavior">Delete behavior</label>
+              <select id="delete_behavior" name="delete_behavior">
+                <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
+                <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after saving trash</option>
+              </select>
+              <span class="mirror-help">Mirror deletes is closer to true two-way sync. Deleted files are copied to trash first.</span>
+            </div>
+            <div class="mirror-field">
+              <label for="sync_interval">Daemon scan interval seconds</label>
+              <span class="mirror-help">Set this to 0 to detect local share changes automatically instead of scanning on a timer.</span>
+              <input id="sync_interval" name="sync_interval" type="number" min="0" max="3600" value="<?=mirror_value($config["sync_interval"])?>">
+            </div>
+          </div>
+        </div>
+
+        <div class="mirror-share-save">
+          <span class="mirror-help">Save settings before starting Mirror or running an initial sync.</span>
+          <input type="submit" value="Save Share Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
+        </div>
+      </form>
     </div>
 
   <?php else: ?>
