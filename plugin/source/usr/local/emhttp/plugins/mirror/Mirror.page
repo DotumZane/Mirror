@@ -373,44 +373,47 @@ if (!empty($linkedPeer["host"]) && (
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 14px 0 14px;
+  margin: 10px 0 18px;
   padding-left: 0;
-  border-bottom: 1px solid #2f2f2f;
+  border-bottom: 1px solid #333;
 }
 .mirror-tab {
   align-items: center;
-  background: #211f1f;
-  border: 1px solid #363636;
+  background: transparent;
+  border: 1px solid transparent;
   border-bottom: 0;
-  border-radius: 4px 4px 0 0;
-  color: rgba(221, 221, 221, 0.48);
+  border-radius: 3px 3px 0 0;
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.08);
+  color: rgba(221, 221, 221, 0.42);
   cursor: pointer;
   display: inline-flex;
-  font-size: 13px;
-  gap: 7px;
+  font-size: 12px;
+  gap: 6px;
   line-height: 1;
-  margin: 0 3px 0 0;
-  min-height: 28px;
-  padding: 7px 11px 8px;
+  margin: 0;
+  min-height: 27px;
+  padding: 7px 10px 8px;
   text-decoration: none;
 }
 .mirror-tab.is-active {
   background: #1b1818;
   border-color: #ff6a2a #363636 #1b1818 #ff6a2a;
+  box-shadow: inset 1px 0 0 rgba(255, 106, 42, 0.28);
   color: #ddd;
   font-weight: 700;
   margin-bottom: -1px;
 }
 .mirror-tab .fa {
-  color: rgba(221, 221, 221, 0.5);
-  font-size: 13px;
+  color: rgba(221, 221, 221, 0.46);
+  font-size: 12px;
   line-height: 1;
 }
 .mirror-tab.is-active .fa {
   color: #fff;
 }
 .mirror-tab:hover {
-  color: rgba(221, 221, 221, 0.78);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(221, 221, 221, 0.76);
 }
 </style>
 
