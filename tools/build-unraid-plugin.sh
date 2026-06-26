@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Fixes status boxes at the same compact height.
-- Moves the Version box update button to the top-right.
+- Improves quick LAN peer discovery beyond cached ARP/neighbor entries.
+- Adds clearer guidance when a quick scan finds no peer.
 - Not safe for important shares yet.
   </CHANGES>
 

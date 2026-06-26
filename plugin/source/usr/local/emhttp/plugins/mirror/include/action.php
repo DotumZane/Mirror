@@ -149,10 +149,34 @@ function mirror_known_lan_hosts($subnet) {
             $hosts[$host] = true;
         }
     }
-    foreach (mirror_subnet_hosts($subnet) as $host) {
-        if (isset($hosts[$host])) {
-            continue;
+    return array_keys($hosts);
+}
+
+function mirror_priority_lan_hosts($subnet, $selfIp) {
+    if (!preg_match('/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.0\/24$/', $subnet, $matches)) {
+        return [];
+    }
+    $prefix = $matches[1];
+    $hosts = [];
+    $add = function ($lastOctet) use (&$hosts, $prefix, $selfIp) {
+        $lastOctet = (int)$lastOctet;
+        if ($lastOctet < 1 || $lastOctet > 254) {
+            return;
         }
+        $host = "$prefix.$lastOctet";
+        if ($host !== $selfIp) {
+            $hosts[$host] = true;
+        }
+    };
+    if (preg_match('/\.(\d{1,3})$/', $selfIp, $selfMatch)) {
+        $selfLast = (int)$selfMatch[1];
+        for ($offset = 1; $offset <= 24; $offset++) {
+            $add($selfLast - $offset);
+            $add($selfLast + $offset);
+        }
+    }
+    foreach ([1, 2, 3, 10, 11, 20, 25, 50, 68, 99, 100, 101, 150, 200, 220, 254] as $lastOctet) {
+        $add($lastOctet);
     }
     return array_keys($hosts);
 }
@@ -490,12 +514,15 @@ if ($action === "scan-peers") {
     usleep(250000);
     $scanNonce = (string)time();
     $localCheck = mirror_http_json(mirror_remote_url("127.0.0.1", ["action" => "hello", "scan" => $scanNonce]), 1.0);
+    $selfIp = mirror_primary_ip();
     $hosts = $deepScan ? mirror_subnet_hosts($subnet) : mirror_known_lan_hosts($subnet);
+    if (!$deepScan) {
+        $hosts = array_merge($hosts, mirror_priority_lan_hosts($subnet, $selfIp));
+    }
     if ($directHost !== "" && filter_var($directHost, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
         array_unshift($hosts, $directHost);
     }
     $hosts = array_values(array_unique($hosts));
-    $selfIp = mirror_primary_ip();
     $found = [];
     $misses = [];
     foreach ($hosts as $host) {
@@ -532,6 +559,8 @@ if ($action === "scan-peers") {
         . "\nHosts checked: " . count($hosts);
     if ($directHost !== "") {
         $message .= "\nDirect host: $directHost";
+    } elseif (!$deepScan && count($found) === 0) {
+        $message .= "\nQuick scan checked known LAN neighbors and nearby/common IPs. If the peer is still missing, enter the other server IP in Peer host or IP, or run Deep /24 scan.";
     } elseif ($deepScan && count($found) === 0) {
         $message .= "\nDeep scan found no peers. Enter the other server IP in Peer host or IP and scan again.";
     }
