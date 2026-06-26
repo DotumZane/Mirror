@@ -308,6 +308,10 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       <strong>Pairing</strong>
       <?=$pairingRunning ? "Listening on 23891" : "Stopped"?>
     </div>
+    <div class="mirror-stat">
+      <strong>Pending Invites</strong>
+      <?=mirror_value(count($pendingInvites))?>
+    </div>
   </div>
 
   <?php if ($lastAction): ?>
@@ -346,6 +350,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
 
   <div class="mirror-section">
     <h3>LAN Peer Setup</h3>
+    <div class="mirror-help">Use one server to send an invite, then open Mirror on the other server and accept it. Do not invite both directions for the same pair.</div>
     <form method="post" action="/plugins/mirror/include/action.php">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="scan-peers">

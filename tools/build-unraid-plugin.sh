@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds diagnostics to Find Mirror Servers and pairing responder startup.
-- Restarts and self-tests the pairing responder before LAN scans.
+- Improves guided pairing invite and accept diagnostics.
+- Shows pending invite count and clearer pairing instructions.
 - Not safe for important shares yet.
   </CHANGES>
 

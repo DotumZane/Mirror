@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.3.2">
+  <!ENTITY version    "0.3.3">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.2.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.3.3.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "e19bc46bbe11fa68c043d479b610a371">
+  <!ENTITY md5        "c51c5f1cd9d14e4ad3173b08fde95825">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.3.2
-- Adds diagnostics to Find Mirror Servers and pairing responder startup.
-- Restarts and self-tests the pairing responder before LAN scans.
+### 0.3.3
+- Improves guided pairing invite and accept diagnostics.
+- Shows pending invite count and clearer pairing instructions.
 - Not safe for important shares yet.
   </CHANGES>
 

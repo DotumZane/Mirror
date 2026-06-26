@@ -201,7 +201,7 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
         return null;
     }
     $cmd = escapeshellarg($curl)
-        . " -fsSL --connect-timeout " . escapeshellarg((string)$timeout)
+        . " -sSL --connect-timeout " . escapeshellarg((string)$timeout)
         . " --max-time " . escapeshellarg((string)$timeout);
     $payloadFile = null;
     if ($payload !== null) {
@@ -215,11 +215,12 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
     if ($payloadFile !== null) {
         @unlink($payloadFile);
     }
-    if ($code !== 0) {
-        return null;
-    }
     $decoded = json_decode(implode("\n", $output), true);
-    return is_array($decoded) ? $decoded : null;
+    if (is_array($decoded)) {
+        $decoded["_curl_code"] = $code;
+        return $decoded;
+    }
+    return ["status" => "error", "error" => "No JSON response from $url", "_curl_code" => $code];
 }
 
 function mirror_remote_url($host, $query) {
@@ -434,11 +435,16 @@ if ($action === "invite-peer") {
         ];
         $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "invite"]), 4.0, $payload);
         if (!is_array($response) || ($response["status"] ?? "") !== "pending") {
-            throw new RuntimeException("Peer did not accept the invite request.");
+            $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
+            throw new RuntimeException("Peer did not store the invite request: $peerError");
         }
         mirror_accept_public_key((string)($response["public_key"] ?? ""));
         mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $authority, $deleteBehavior);
-        mirror_write_action("Invite sent to " . ($response["name"] ?? $peerHost) . ". This server is configured. Accept the pending invite on the peer server to finish pairing.");
+        mirror_write_action(
+            "Invite sent to " . ($response["name"] ?? $peerHost) . "."
+            . "\nThis server is configured for remote peer " . $peerHost . "."
+            . "\nNow open Mirror on the peer server and click Accept under Pending Invites."
+        );
     } catch (Throwable $error) {
         mirror_write_action("Invite failed:\n" . $error->getMessage());
     }
@@ -466,7 +472,13 @@ if ($action === "accept-invite") {
         );
         unset($invites[$inviteId]);
         mirror_write_json_file($pendingInvitesFile, ["invites" => $invites]);
-        mirror_write_action("Invite accepted. This server is now paired with " . ($invite["from_name"] ?? $invite["from_host"] ?? "peer") . ".");
+        mirror_write_action(
+            "Invite accepted."
+            . "\nThis server is now paired with " . ($invite["from_name"] ?? $invite["from_host"] ?? "peer") . "."
+            . "\nRemote host: " . ($invite["from_host"] ?? "")
+            . "\nRemote share: " . ($invite["from_share"] ?? "")
+            . "\nRun Test Peer on both servers next."
+        );
     } catch (Throwable $error) {
         mirror_write_action("Invite accept failed:\n" . $error->getMessage());
     }
