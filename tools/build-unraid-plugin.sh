@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Makes scanning read-only so deleted shares are not recreated.
-- Skips the sync daemon on Managed remote servers.
+- Adds a background Initial Sync action for large shares.
+- Reorganizes the Mirror page into Status, LAN Setup, Shares, Config, and Log tabs.
 - Not safe for important shares yet.
   </CHANGES>
 

@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.7.7
+0.8.0
 ```
 
 Version source of truth:
@@ -393,6 +393,7 @@ Version meaning:
 - `0.4.0`: clearer LAN pairing diagnostics and stale discovery handling.
 - `0.4.x`: safer conflict/trash management for peer sync.
 - `0.5.0`: first broader UI-managed test build.
+- `0.8.0`: first large-share baseline sync and tabbed control UI.
 - `1.0.0`: first version considered safe enough for careful real-world use.
 
 Bump rules:
@@ -477,6 +478,7 @@ Current release status:
 - `0.7.5` sends Master Start and Stop to the linked remote.
 - `0.7.6` verifies daemon stop and reports remote control status.
 - `0.7.7` stops scans from recreating deleted shares and skips sync daemon start on Managed remote.
+- `0.8.0` adds background Initial Sync for large shares and reorganizes the UI into tabs.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -694,7 +696,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.7.7.
+- Current version: 0.8.0.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -745,7 +747,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.7.7`.
+- Current version is `0.8.0`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -755,7 +757,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `0.7.7`, and confirm deleted test shares are not recreated by scanning.
+- Push to GitHub, update both Unraid servers to `0.8.0`, and test Initial Sync plus the new tabs.
 
 ### Chat Handoff
 
@@ -766,7 +768,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `0.7.7`
+- Current version: `0.8.0`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -784,7 +786,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-0.7.7.txz`.
+- Versioned package build exists at `packages/mirror-0.8.0.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -812,7 +814,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `0.7.7`.
+2. On both Unraid servers, update Mirror to `0.8.0`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1657,6 +1659,16 @@ Next suggested task:
 - Open questions: Confirm deleting `mirror-share-a` on Server B no longer comes back after Start/Stop or Status.
 - Next suggested task: Push to GitHub, update both servers to `0.7.7`, delete the mistaken test share on Server B, then start from the Master and confirm it stays deleted unless it is the selected remote target.
 
+#### 2026-06-26 - Large Share Initial Sync And Tabs
+
+- Task completed: Added a background Initial Sync path for large shares and reorganized the Mirror page into tabs.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.8.0.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added `initial-sync` to the runner and `mirrorctl`, using rsync as a background baseline copy from the master share to the selected target share. The UI now has Status/Control, LAN Setup, Shares, Config, and Log tabs.
+- New decisions: Very large shares should use an explicit baseline sync before relying on normal incremental daemon behavior.
+- Open questions: Confirm Initial Sync starts cleanly and writes progress to Recent Log on Unraid.
+- Next suggested task: Push to GitHub, update both servers to `0.8.0`, save the share pair, click Initial Sync on the master, and watch the Log tab.
+
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
 - Task completed: Confirmed the plugin can sync two selected local Unraid shares.
@@ -1675,4 +1687,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.7.7`, delete the mistaken test share on Server B, then start from the Master and confirm it stays deleted unless it is the selected remote target.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.8.0`, save the share pair, click Initial Sync on the master, and watch the Log tab.

@@ -1172,7 +1172,7 @@ if ($action === "update-plugin") {
     mirror_redirect();
 }
 
-$allowed = ["status", "run-once", "start", "stop", "test-peer"];
+$allowed = ["status", "run-once", "initial-sync", "start", "stop", "test-peer"];
 if (!in_array($action, $allowed, true)) {
     $action = "status";
 }

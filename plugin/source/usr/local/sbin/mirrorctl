@@ -7,6 +7,7 @@ BOOT_DIR="/boot/config/plugins/${PLUGIN}"
 CONFIG="${BOOT_DIR}/config.json"
 LOG="/var/log/${PLUGIN}.log"
 PID="/var/run/${PLUGIN}.pid"
+BASELINE_PID="/var/run/${PLUGIN}-initial-sync.pid"
 CONTROL="/usr/local/sbin/mirrorctl"
 PAIR_LOG="/var/log/${PLUGIN}-pairing.log"
 PAIR_PID="/var/run/${PLUGIN}-pairing.pid"
@@ -24,6 +25,10 @@ ensure_config() {
 
 is_running() {
   [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null
+}
+
+baseline_running() {
+  [ -f "$BASELINE_PID" ] && kill -0 "$(cat "$BASELINE_PID")" 2>/dev/null
 }
 
 stop_daemon() {
@@ -163,11 +168,41 @@ case "${1:-status}" in
     else
       echo "Pairing responder stopped"
     fi
+    if baseline_running; then
+      echo "Initial sync running with pid $(cat "$BASELINE_PID")"
+    else
+      rm -f "$BASELINE_PID"
+      echo "Initial sync stopped"
+    fi
     ;;
   run-once)
     ensure_config
     cd "$EMHTTP_DIR"
     "$PHP_BIN" "$RUNNER" run-once --config "$CONFIG" | tee -a "$LOG"
+    ;;
+  initial-sync)
+    ensure_config
+    if baseline_running; then
+      echo "Initial sync already running with pid $(cat "$BASELINE_PID")"
+      exit 0
+    fi
+    if [ "$(node_role)" = "managed_remote" ]; then
+      echo "Initial sync skipped: this server is Managed remote and waits for the master."
+      exit 0
+    fi
+    cd "$EMHTTP_DIR"
+    echo "$(timestamp) initial sync requested: control=${CONTROL}" >>"$LOG"
+    nohup sh -c '"$1" "$2" initial-sync --config "$3"; code="$?"; rm -f "$4"; exit "$code"' sh "$PHP_BIN" "$RUNNER" "$CONFIG" "$BASELINE_PID" >>"$LOG" 2>&1 &
+    echo "$!" > "$BASELINE_PID"
+    sleep 0.3
+    if ! baseline_running; then
+      rm -f "$BASELINE_PID"
+      echo "Initial sync failed to launch"
+      tail -n 30 "$LOG" 2>/dev/null || true
+      exit 1
+    fi
+    echo "Initial sync started with pid $(cat "$BASELINE_PID")"
+    echo "Progress is written to $LOG"
     ;;
   test-peer)
     ensure_config
@@ -256,7 +291,7 @@ case "${1:-status}" in
     echo "Mirror pairing responder restarted with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
     ;;
   *)
-    echo "Usage: mirrorctl {status|run-once|start|stop|restart|test-peer|pair-start|pair-stop|pair-restart}" >&2
+    echo "Usage: mirrorctl {status|run-once|initial-sync|start|stop|restart|test-peer|pair-start|pair-stop|pair-restart}" >&2
     exit 2
     ;;
 esac

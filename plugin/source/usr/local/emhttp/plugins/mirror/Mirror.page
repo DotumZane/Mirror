@@ -356,6 +356,31 @@ if (!empty($linkedPeer["host"]) && (
 .mirror-peer-meta {
   opacity: 0.76;
 }
+.mirror-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 10px;
+}
+.mirror-tab {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+.mirror-tab.is-active {
+  background: #ff6a2a;
+  border-color: #ff6a2a;
+  color: #111;
+  font-weight: 700;
+}
+.mirror-tab-panel {
+  display: none;
+}
+.mirror-tab-panel.is-active {
+  display: block;
+}
 </style>
 
 <div class="mirror-panel">
@@ -414,6 +439,54 @@ if (!empty($linkedPeer["host"]) && (
     Early test build. Use disposable test shares only.
   </div>
 
+  <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
+    <button class="mirror-tab is-active" type="button" data-mirror-tab="status">Status/Control</button>
+    <button class="mirror-tab" type="button" data-mirror-tab="lan">LAN Setup</button>
+    <button class="mirror-tab" type="button" data-mirror-tab="shares">Shares</button>
+    <button class="mirror-tab" type="button" data-mirror-tab="config">Config</button>
+    <button class="mirror-tab" type="button" data-mirror-tab="log">Log</button>
+  </div>
+
+  <div class="mirror-tab-panel is-active" data-mirror-tab-panel="status">
+  <div class="mirror-section">
+    <h3>Control</h3>
+    <?php if ($nodeRole === "managed_remote"): ?>
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="save-role">
+        <input type="hidden" name="node_role" value="master">
+        <div class="mirror-actions">
+          <button type="submit">Switch Back To Master</button>
+        </div>
+      </form>
+      <span class="mirror-help">Managed remote hides local sync settings. Switch back to Master or factory reset if this server should control share pairing.</span>
+    <?php endif; ?>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <div class="mirror-actions">
+        <button type="submit" name="action" value="status">Status</button>
+        <button type="submit" name="action" value="initial-sync">Initial Sync</button>
+        <button type="submit" name="action" value="run-once">Run Once</button>
+        <button type="submit" name="action" value="start">Start</button>
+        <button type="submit" name="action" value="stop">Stop</button>
+      </div>
+    </form>
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+      <input type="hidden" name="action" value="factory-reset">
+      <label class="mirror-check">
+        <input type="checkbox" name="confirm_factory_reset" value="1">
+        Confirm factory reset
+      </label>
+      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, scan cache, transfer keys, database, trash, and logs. It does not delete user shares or synced files.</span>
+      <div class="mirror-actions">
+        <button type="submit">Factory Reset Plugin</button>
+      </div>
+    </form>
+  </div>
+  </div>
+
+  <div class="mirror-tab-panel" data-mirror-tab-panel="lan">
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Server Role</h3>
@@ -521,7 +594,9 @@ if (!empty($linkedPeer["host"]) && (
       <div class="mirror-help">No pending invites on this server yet. Send an invite from the other server, then refresh or click Check Pending Invites.</div>
     <?php endif; ?>
   </div>
+  </div>
 
+  <div class="mirror-tab-panel" data-mirror-tab-panel="shares">
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Share Pair</h3>
@@ -620,43 +695,9 @@ if (!empty($linkedPeer["host"]) && (
     </div>
 
   <?php endif; ?>
-
-  <div class="mirror-section">
-    <h3>Control</h3>
-    <?php if ($nodeRole === "managed_remote"): ?>
-      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="save-role">
-        <input type="hidden" name="node_role" value="master">
-        <div class="mirror-actions">
-          <button type="submit">Switch Back To Master</button>
-        </div>
-      </form>
-      <span class="mirror-help">Managed remote hides local sync settings. Switch back to Master or factory reset if this server should control share pairing.</span>
-    <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <div class="mirror-actions">
-        <button type="submit" name="action" value="status">Status</button>
-        <button type="submit" name="action" value="run-once">Run Once</button>
-        <button type="submit" name="action" value="start">Start</button>
-        <button type="submit" name="action" value="stop">Stop</button>
-      </div>
-    </form>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="factory-reset">
-      <label class="mirror-check">
-        <input type="checkbox" name="confirm_factory_reset" value="1">
-        Confirm factory reset
-      </label>
-      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, scan cache, transfer keys, database, trash, and logs. It does not delete user shares or synced files.</span>
-      <div class="mirror-actions">
-        <button type="submit">Factory Reset Plugin</button>
-      </div>
-    </form>
   </div>
 
+  <div class="mirror-tab-panel" data-mirror-tab-panel="config">
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Trash</h3>
@@ -676,12 +717,17 @@ if (!empty($linkedPeer["host"]) && (
       <h3>Current Config</h3>
       <pre class="mirror-code"><?=mirror_value(json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))?></pre>
     </div>
+  <?php endif; ?>
+  </div>
 
+  <div class="mirror-tab-panel" data-mirror-tab-panel="log">
+  <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
       <h3>Recent Log</h3>
       <pre class="mirror-log"><?=mirror_value($logTail ?: "No log entries yet.")?></pre>
     </div>
   <?php endif; ?>
+  </div>
 </div>
 
 <script>
@@ -788,6 +834,39 @@ function refreshMirrorPanel() {
 }
 
 function bindMirrorPage() {
+  function activateTab(name) {
+    document.querySelectorAll(".mirror-tab").forEach(function (tab) {
+      tab.classList.toggle("is-active", tab.dataset.mirrorTab === name);
+    });
+    document.querySelectorAll(".mirror-tab-panel").forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.dataset.mirrorTabPanel === name);
+    });
+    try {
+      window.localStorage.setItem("mirror_active_tab", name);
+    } catch (error) {
+    }
+  }
+
+  var activeTab = "status";
+  try {
+    activeTab = window.localStorage.getItem("mirror_active_tab") || "status";
+  } catch (error) {
+  }
+  if (!document.querySelector('[data-mirror-tab="' + activeTab + '"]')) {
+    activeTab = "status";
+  }
+  activateTab(activeTab);
+
+  document.querySelectorAll(".mirror-tab").forEach(function (tab) {
+    if (tab.dataset.mirrorTabBound === "1") {
+      return;
+    }
+    tab.dataset.mirrorTabBound = "1";
+    tab.addEventListener("click", function () {
+      activateTab(tab.dataset.mirrorTab || "status");
+    });
+  });
+
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');
     return selected ? selected.value : 'local';

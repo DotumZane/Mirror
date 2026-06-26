@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 function usage(): int {
-    fwrite(STDERR, "Usage: mirror_runner.php {interval|run-once|daemon|test-peer} --config <path> [--interval <seconds>]\n");
+    fwrite(STDERR, "Usage: mirror_runner.php {interval|run-once|initial-sync|daemon|test-peer} --config <path> [--interval <seconds>]\n");
     return 2;
 }
 
@@ -126,6 +126,15 @@ function run_command(array $parts): string {
         throw new RuntimeException("command failed ($code): " . implode("\n", $output));
     }
     return implode("\n", $output);
+}
+
+function run_command_to_log(array $parts): string {
+    $cmd = shell_command($parts) . " 2>&1";
+    passthru($cmd, $code);
+    if ($code !== 0) {
+        throw new RuntimeException("command failed ($code): " . $cmd);
+    }
+    return "";
 }
 
 function http_json(string $url, array $payload = [], float $timeout = 4.0, bool $post = true): array {
@@ -373,6 +382,46 @@ function copy_remote_to_local(array $config, string $configPath, string $sourceR
     ];
     run_command($cmd);
     $summary["copied"]++;
+}
+
+function initial_sync(string $configPath): array {
+    $config = load_config($configPath);
+    if (node_is_managed_remote($config)) {
+        return ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+    }
+    $aRoot = rtrim((string)$config["server_a"]["root"], "/");
+    $bRoot = rtrim((string)$config["server_b"]["root"], "/");
+    if ($aRoot === "" || $bRoot === "") {
+        throw new RuntimeException("initial sync requires both share roots");
+    }
+    if (!is_dir($aRoot)) {
+        throw new RuntimeException("local source share does not exist: $aRoot");
+    }
+    echo date("c") . " initial sync starting: $aRoot -> $bRoot\n";
+    if (endpoint_is_remote($config)) {
+        run_command(array_merge(ssh_base_args($config, $configPath), [ssh_target($config), "mkdir -p " . escapeshellarg($bRoot)]));
+        run_command_to_log([
+            "rsync",
+            "-a",
+            "--info=progress2",
+            "-e", rsync_ssh_option($config, $configPath),
+            rtrim($aRoot, "/") . "/",
+            remote_spec($config, rtrim($bRoot, "/") . "/"),
+        ]);
+    } else {
+        if (!is_dir($bRoot) && !mkdir($bRoot, 0777, true) && !is_dir($bRoot)) {
+            throw new RuntimeException("could not create target share root: $bRoot");
+        }
+        run_command_to_log([
+            "rsync",
+            "-a",
+            "--info=progress2",
+            rtrim($aRoot, "/") . "/",
+            rtrim($bRoot, "/") . "/",
+        ]);
+    }
+    echo date("c") . " initial sync copy finished; recording baseline state\n";
+    return sync_once($configPath);
 }
 
 function trash_remote_file(array $config, string $configPath, string $root, string $rel, string $reason, array &$summary): void {
@@ -638,6 +687,11 @@ try {
     if ($command === "run-once") {
         $summary = sync_once((string)$configPath);
         echo "sync complete: copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}\n";
+        exit($summary["conflicts"] > 0 ? 1 : 0);
+    }
+    if ($command === "initial-sync") {
+        $summary = initial_sync((string)$configPath);
+        echo "initial sync complete: copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}\n";
         exit($summary["conflicts"] > 0 ? 1 : 0);
     }
     if ($command === "test-peer") {
