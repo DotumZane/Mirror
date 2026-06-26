@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Keeps Remote LAN mirror selected after refreshing remote shares.
-- Applies the linked peer host when refreshing remote share choices.
+- Uses normal page submit for Save Settings.
+- Prevents the Save Settings button from staying disabled after long saves.
 - Not safe for important shares yet.
   </CHANGES>
 

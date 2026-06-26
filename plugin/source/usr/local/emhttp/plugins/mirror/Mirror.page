@@ -550,7 +550,7 @@ $acceptedKeyCount = is_file($authorizedKeysFile)
       </form>
       <span class="mirror-help">Use Linked Peer or Refresh Remote Shares selects Remote LAN mirror with <?=mirror_value($linkedPeer["host"])?>. Remote shares loaded: <?=mirror_value(count($linkedPeerShares))?>.</span>
     <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php">
+    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
       <input type="hidden" name="action" value="save-config">
 

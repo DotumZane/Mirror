@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.6.3
+0.6.4
 ```
 
 Version source of truth:
@@ -463,6 +463,7 @@ Current release status:
 - `0.6.1` loads remote shares from the linked peer and uses a remote share dropdown.
 - `0.6.2` hides remote host, SSH user, and SSH port fields when a linked peer is available.
 - `0.6.3` keeps Remote LAN mirror selected after refreshing remote shares.
+- `0.6.4` uses normal page submit for Save Settings so the button cannot stay grayed out.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -680,7 +681,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.6.3.
+- Current version: 0.6.4.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -731,7 +732,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.6.3`.
+- Current version is `0.6.4`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -741,7 +742,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `0.6.3`, refresh remote shares, and confirm Remote LAN mirror stays selected.
+- Push to GitHub, update both Unraid servers to `0.6.4`, and confirm Save Settings completes without staying disabled.
 
 ### Chat Handoff
 
@@ -752,7 +753,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `0.6.3`
+- Current version: `0.6.4`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -770,7 +771,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-0.6.3.txz`.
+- Versioned package build exists at `packages/mirror-0.6.4.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -798,7 +799,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `0.6.3`.
+2. On both Unraid servers, update Mirror to `0.6.4`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1503,6 +1504,16 @@ Next suggested task:
 - Open questions: Confirm Refresh Remote Shares now populates the dropdown and leaves Remote LAN mirror selected.
 - Next suggested task: Push to GitHub, update both servers to `0.6.3`, click Refresh Remote Shares, select the local and remote shares, then save settings.
 
+#### 2026-06-26 - Save Settings Full Submit
+
+- Task completed: Prevented Save Settings from getting stuck grayed out during long save/restart operations.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.6.4.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Save Settings now uses a normal page submit instead of the AJAX panel-submit path, so the browser does not leave the button disabled while the backend saves config and restarts services.
+- New decisions: Long-running configuration saves should use full submit behavior for reliability.
+- Open questions: Confirm Save Settings completes and reloads normally on Unraid after updating to `0.6.4`.
+- Next suggested task: Push to GitHub, update both servers to `0.6.4`, save the remote share pair, then implement master-pushed remote configuration.
+
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
 - Task completed: Confirmed the plugin can sync two selected local Unraid shares.
@@ -1521,4 +1532,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.6.3`, refresh remote shares, select share pair using linked peer shares, then implement master-pushed remote configuration.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.6.4`, save the remote share pair, then implement master-pushed remote configuration.
