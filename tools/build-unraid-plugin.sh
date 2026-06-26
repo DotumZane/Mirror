@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Improves quick LAN peer discovery beyond cached ARP/neighbor entries.
-- Adds clearer guidance when a quick scan finds no peer.
+- Prevents cached pairing responder hello/version responses.
+- Reports peer responder version mismatches in scan results.
 - Not safe for important shares yet.
   </CHANGES>
 

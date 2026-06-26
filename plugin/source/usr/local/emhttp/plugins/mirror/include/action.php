@@ -244,6 +244,8 @@ function mirror_http_json($url, $timeout = 1.2, $payload = null) {
     $cmd = escapeshellarg($curl)
         . " -sS --connect-timeout " . escapeshellarg((string)$timeout)
         . " --max-time " . escapeshellarg((string)$timeout)
+        . " -H " . escapeshellarg("Cache-Control: no-cache")
+        . " -H " . escapeshellarg("Pragma: no-cache")
         . " -o " . escapeshellarg($bodyFile)
         . " -w " . escapeshellarg("%{http_code}");
     $payloadFile = null;
@@ -525,6 +527,7 @@ if ($action === "scan-peers") {
     $hosts = array_values(array_unique($hosts));
     $found = [];
     $misses = [];
+    $versionMismatches = [];
     foreach ($hosts as $host) {
         if ($host === "" || $host === $selfIp || !mirror_is_private_ip($host)) {
             continue;
@@ -543,6 +546,11 @@ if ($action === "scan-peers") {
         $peer["found_at"] = time();
         $peer["scan_nonce"] = $scanNonce;
         $found[$host] = $peer;
+        $peerVersion = (string)($peer["version"] ?? "");
+        $localVersion = is_file($versionFile) ? trim((string)file_get_contents($versionFile)) : "";
+        if ($peerVersion !== "" && $localVersion !== "" && $peerVersion !== $localVersion) {
+            $versionMismatches[] = "$host reports $peerVersion; local Mirror is $localVersion";
+        }
     }
     mirror_write_json_file($discoveryFile, [
         "subnet" => $subnet,
@@ -566,6 +574,9 @@ if ($action === "scan-peers") {
     }
     foreach ($misses as $miss) {
         $message .= "\nDirect host failed: " . $miss["host"] . " - " . $miss["error"];
+    }
+    foreach ($versionMismatches as $mismatch) {
+        $message .= "\nVersion mismatch: $mismatch. Restart Pairing Responder on that peer, then scan again.";
     }
     if ($pairOutput) {
         $message .= "\nResponder output:\n" . implode("\n", $pairOutput);

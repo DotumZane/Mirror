@@ -10,6 +10,8 @@ $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 function mirror_json_response($data, $status = 200) {
     http_response_code($status);
     header("Content-Type: application/json; charset=UTF-8");
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Pragma: no-cache");
     echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
     exit;
 }
@@ -103,6 +105,7 @@ function mirror_private_remote() {
 }
 
 $action = $_GET["action"] ?? "hello";
+clearstatcache(true, $versionFile);
 $version = is_file($versionFile) ? trim((string)file_get_contents($versionFile)) : "unknown";
 
 if ($action === "hello") {
