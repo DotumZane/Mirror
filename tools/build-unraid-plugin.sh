@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Sends Master Start and Stop to the linked remote.
-- Adds a responder control action for remote daemon start/stop.
+- Verifies daemon stop and force-stops lingering daemon processes.
+- Shows remote daemon control output and post-command status.
 - Not safe for important shares yet.
   </CHANGES>
 

@@ -275,6 +275,14 @@ if ($action === "control") {
     }
     $cmd = "/usr/local/sbin/mirrorctl " . escapeshellarg($command) . " 2>&1";
     exec($cmd, $output, $code);
+    exec("/usr/local/sbin/mirrorctl status 2>&1", $statusOutput, $statusCode);
+    mirror_write_action(
+        "Remote control received from " . ($_SERVER["REMOTE_ADDR"] ?? "unknown") . "."
+        . "\nCommand: $command"
+        . "\nResult code: $code"
+        . ($output ? "\nOutput:\n" . implode("\n", $output) : "")
+        . "\nStatus after command:\n" . implode("\n", $statusOutput)
+    );
     mirror_json_response([
         "status" => $code === 0 ? "ok" : "error",
         "name" => mirror_server_name(),
@@ -282,6 +290,8 @@ if ($action === "control") {
         "command" => $command,
         "code" => $code,
         "output" => implode("\n", $output),
+        "status_code" => $statusCode,
+        "status_after" => implode("\n", $statusOutput),
     ], $code === 0 ? 200 : 500);
 }
 

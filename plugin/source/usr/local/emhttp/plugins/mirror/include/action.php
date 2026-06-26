@@ -576,15 +576,23 @@ function mirror_control_linked_peer($command) {
     if ($peerHost === "") {
         return "\nRemote peer $command skipped: no linked private LAN peer.";
     }
-    $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "control"]), 4.0, [
+    $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "control"]), 6.0, [
         "command" => $command,
     ]);
+    if (!is_array($response) || ($response["status"] ?? "") !== "ok") {
+        $response = mirror_http_json(mirror_remote_url($peerHost, [
+            "action" => "control",
+            "command" => $command,
+            "transport" => "query",
+        ]), 6.0);
+    }
     if (!is_array($response)) {
         return "\nRemote peer $command failed: no response.";
     }
     $name = (string)($response["name"] ?? $peerHost);
     $code = (string)($response["code"] ?? "unknown");
     $output = trim((string)($response["output"] ?? ""));
+    $statusAfter = trim((string)($response["status_after"] ?? ""));
     if (($response["status"] ?? "") === "ok") {
         $message = "\nRemote peer $command sent to $name. Code: $code.";
     } else {
@@ -596,6 +604,9 @@ function mirror_control_linked_peer($command) {
     }
     if ($output !== "") {
         $message .= "\nRemote output:\n" . $output;
+    }
+    if ($statusAfter !== "") {
+        $message .= "\nRemote status after $command:\n" . $statusAfter;
     }
     return $message;
 }

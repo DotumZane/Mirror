@@ -26,6 +26,43 @@ is_running() {
   [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null
 }
 
+stop_daemon() {
+  if ! is_running; then
+    rm -f "$PID"
+    echo "Mirror daemon already stopped"
+    return 0
+  fi
+
+  daemon_pid="$(cat "$PID")"
+  child_pids="$(pgrep -P "$daemon_pid" 2>/dev/null | tr '\n' ' ' || true)"
+  kill "$daemon_pid" 2>/dev/null || true
+  for child_pid in $child_pids; do
+    kill "$child_pid" 2>/dev/null || true
+  done
+
+  for _ in 1 2 3 4 5; do
+    if ! kill -0 "$daemon_pid" 2>/dev/null; then
+      rm -f "$PID"
+      echo "Mirror daemon stopped"
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  kill -9 "$daemon_pid" 2>/dev/null || true
+  for child_pid in $child_pids; do
+    kill -9 "$child_pid" 2>/dev/null || true
+  done
+  sleep 0.1
+
+  if kill -0 "$daemon_pid" 2>/dev/null; then
+    echo "Mirror daemon stop requested, but pid ${daemon_pid} is still running"
+    return 1
+  fi
+  rm -f "$PID"
+  echo "Mirror daemon stopped"
+}
+
 pairing_running() {
   [ -f "$PAIR_PID" ] && kill -0 "$(cat "$PAIR_PID")" 2>/dev/null
 }
@@ -154,23 +191,14 @@ case "${1:-status}" in
     echo "Mirror daemon started with pid $(cat "$PID") at ${interval}s interval"
     ;;
   stop)
-    if is_running; then
-      kill "$(cat "$PID")"
-      rm -f "$PID"
-      echo "Mirror daemon stopped"
-    else
-      rm -f "$PID"
-      echo "Mirror daemon already stopped"
-    fi
+    stop_daemon
     ;;
   restart)
     ensure_config
     was_running=0
     if is_running; then
       was_running=1
-      kill "$(cat "$PID")"
-      rm -f "$PID"
-      echo "Mirror daemon stopped"
+      stop_daemon
     fi
     interval="$(sync_interval)"
     cd "$EMHTTP_DIR"

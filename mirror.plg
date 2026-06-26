@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.7.5">
+  <!ENTITY version    "0.7.6">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.5.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.6.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "4a6081e84cb3a6298334bc418d141083">
+  <!ENTITY md5        "b061ea5f8cd3c4b972664552e0d20af1">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.7.5
-- Sends Master Start and Stop to the linked remote.
-- Adds a responder control action for remote daemon start/stop.
+### 0.7.6
+- Verifies daemon stop and force-stops lingering daemon processes.
+- Shows remote daemon control output and post-command status.
 - Not safe for important shares yet.
   </CHANGES>
 
