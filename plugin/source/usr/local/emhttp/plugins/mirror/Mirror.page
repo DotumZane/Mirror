@@ -359,21 +359,38 @@ if (!empty($linkedPeer["host"]) && (
 .mirror-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 16px 0 10px;
+  gap: 0;
+  margin: 16px 0 0;
+  padding-left: 0;
+  border-bottom: 1px solid var(--border-color, #333);
 }
 .mirror-tab {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.025);
   border: 1px solid var(--border-color, #333);
-  border-radius: 6px;
-  background: transparent;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  color: rgba(221, 221, 221, 0.58);
   cursor: pointer;
-  padding: 8px 12px;
+  display: inline-flex;
+  gap: 8px;
+  margin: 0 4px 0 0;
+  min-height: 30px;
+  padding: 6px 11px;
 }
 .mirror-tab.is-active {
-  background: #ff6a2a;
-  border-color: #ff6a2a;
-  color: #111;
+  background: #1f1c1c;
+  border-color: #ff6a2a var(--border-color, #333) #1f1c1c;
+  color: #ddd;
   font-weight: 700;
+  margin-bottom: -1px;
+}
+.mirror-tab .fa {
+  color: rgba(221, 221, 221, 0.68);
+  font-size: 12px;
+}
+.mirror-tab.is-active .fa {
+  color: #fff;
 }
 .mirror-tab-panel {
   display: none;
@@ -440,11 +457,11 @@ if (!empty($linkedPeer["host"]) && (
   </div>
 
   <div class="mirror-tabs" role="tablist" aria-label="Mirror sections">
-    <button class="mirror-tab is-active" type="button" data-mirror-tab="status">Status/Control</button>
-    <button class="mirror-tab" type="button" data-mirror-tab="lan">LAN Setup</button>
-    <button class="mirror-tab" type="button" data-mirror-tab="shares">Shares</button>
-    <button class="mirror-tab" type="button" data-mirror-tab="config">Config</button>
-    <button class="mirror-tab" type="button" data-mirror-tab="log">Log</button>
+    <button class="mirror-tab is-active" type="button" data-mirror-tab="status"><i class="fa fa-tachometer" aria-hidden="true"></i><span>Status</span></button>
+    <button class="mirror-tab" type="button" data-mirror-tab="lan"><i class="fa fa-link" aria-hidden="true"></i><span>LAN Setup</span></button>
+    <button class="mirror-tab" type="button" data-mirror-tab="shares"><i class="fa fa-folder-open" aria-hidden="true"></i><span>Shares</span></button>
+    <button class="mirror-tab" type="button" data-mirror-tab="config"><i class="fa fa-cog" aria-hidden="true"></i><span>Config</span></button>
+    <button class="mirror-tab" type="button" data-mirror-tab="log"><i class="fa fa-list-alt" aria-hidden="true"></i><span>Log</span></button>
   </div>
 
   <div class="mirror-tab-panel is-active" data-mirror-tab-panel="status">

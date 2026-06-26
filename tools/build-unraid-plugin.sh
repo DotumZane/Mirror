@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Adds a background Initial Sync action for large shares.
-- Reorganizes the Mirror page into Status, LAN Setup, Shares, Config, and Log tabs.
+- Restyles the Mirror tabs to match Unraid's native plugin tab strip.
+- Adds compact tab icons and attached active-tab styling.
 - Not safe for important shares yet.
   </CHANGES>
 
