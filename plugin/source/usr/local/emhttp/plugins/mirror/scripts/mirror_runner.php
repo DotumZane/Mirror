@@ -124,38 +124,48 @@ function run_command(array $parts): string {
     return implode("\n", $output);
 }
 
-function http_json(string $url, array $payload, float $timeout = 4.0): array {
+function http_json(string $url, array $payload = [], float $timeout = 4.0, bool $post = true): array {
     $curl = trim((string)shell_exec("command -v curl 2>/dev/null"));
     if ($curl === "") {
         throw new RuntimeException("curl is required for peer setup but was not found");
     }
     $bodyFile = tempnam("/tmp", "mirror-body-");
-    $payloadFile = tempnam("/tmp", "mirror-json-");
-    if ($bodyFile === false || $payloadFile === false) {
+    $payloadFile = $post ? tempnam("/tmp", "mirror-json-") : false;
+    if ($bodyFile === false || ($post && $payloadFile === false)) {
         throw new RuntimeException("could not create temporary files for peer setup");
     }
-    file_put_contents($payloadFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
+    $requestUrl = $url;
+    if ($post) {
+        file_put_contents((string)$payloadFile, json_encode($payload, JSON_UNESCAPED_SLASHES));
+    } elseif ($payload) {
+        $separator = strpos($requestUrl, "?") === false ? "?" : "&";
+        $requestUrl .= $separator . http_build_query($payload);
+    }
     $cmd = escapeshellarg($curl)
         . " -sS --connect-timeout " . escapeshellarg((string)$timeout)
         . " --max-time " . escapeshellarg((string)$timeout)
-        . " -H " . escapeshellarg("Content-Type: application/json")
         . " -H " . escapeshellarg("Cache-Control: no-cache")
         . " -o " . escapeshellarg($bodyFile)
-        . " -w " . escapeshellarg("%{http_code}")
-        . " --data-binary @" . escapeshellarg($payloadFile)
-        . " " . escapeshellarg($url)
-        . " 2>&1";
+        . " -w " . escapeshellarg("%{http_code}");
+    if ($post) {
+        $cmd .= " -H " . escapeshellarg("Content-Type: application/json")
+            . " --data-binary @" . escapeshellarg((string)$payloadFile);
+    }
+    $cmd .= " " . escapeshellarg($requestUrl) . " 2>&1";
     exec($cmd, $output, $code);
     $httpCode = (int)trim((string)end($output));
     $body = is_file($bodyFile) ? (string)file_get_contents($bodyFile) : "";
     @unlink($bodyFile);
-    @unlink($payloadFile);
+    if ($payloadFile !== false) {
+        @unlink($payloadFile);
+    }
     if ($code !== 0 || $httpCode < 200 || $httpCode >= 300) {
         throw new RuntimeException("peer setup request failed (HTTP $httpCode): " . trim($body . "\n" . implode("\n", $output)));
     }
     $decoded = json_decode($body, true);
     if (!is_array($decoded)) {
-        throw new RuntimeException("peer setup returned invalid JSON: " . trim($body));
+        $snippet = trim(substr($body, 0, 500));
+        throw new RuntimeException("peer setup returned invalid JSON (HTTP $httpCode, " . strlen($body) . " bytes): " . ($snippet !== "" ? $snippet : "[empty body]"));
     }
     return $decoded;
 }
@@ -170,10 +180,15 @@ function ensure_remote_ssh_ready(array $config, string $configPath): void {
     if (!is_file($publicKeyFile)) {
         throw new RuntimeException("local transfer public key is missing");
     }
-    $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", [
+    $payload = [
         "public_key" => trim((string)file_get_contents($publicKeyFile)),
         "from_name" => mirror_server_name(),
-    ]);
+    ];
+    try {
+        $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", $payload, 4.0, true);
+    } catch (Throwable $postError) {
+        $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", $payload + ["transport" => "query"], 4.0, false);
+    }
     if (($response["status"] ?? "") !== "ok") {
         throw new RuntimeException("peer SSH setup failed: " . json_encode($response, JSON_UNESCAPED_SLASHES));
     }

@@ -2,20 +2,20 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.7.2">
+  <!ENTITY version    "0.7.3">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.2.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.7.3.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "265bef99688e1ad1cda7f72b4e8fa71b">
+  <!ENTITY md5        "279692c4a285bee340a82b9f3de203c3">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.7.2
-- Automatically prepares SSH on the linked peer before remote sync.
-- Starts sshd when peer keys are installed through pairing.
+### 0.7.3
+- Adds query fallback for automatic peer SSH setup.
+- Reports peer setup HTTP/body diagnostics when setup response is invalid.
 - Not safe for important shares yet.
   </CHANGES>
 

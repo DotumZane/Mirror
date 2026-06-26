@@ -44,8 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Automatically prepares SSH on the linked peer before remote sync.
-- Starts sshd when peer keys are installed through pairing.
+- Adds query fallback for automatic peer SSH setup.
+- Reports peer setup HTTP/body diagnostics when setup response is invalid.
 - Not safe for important shares yet.
   </CHANGES>
 
