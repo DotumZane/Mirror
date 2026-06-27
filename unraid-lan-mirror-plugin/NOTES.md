@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.9.7
+0.9.8
 ```
 
 Version source of truth:
@@ -496,6 +496,7 @@ Current release status:
 - `0.9.5` locks server role after it is set and preserves the sync index during factory reset.
 - `0.9.6` adds support for syncing multiple share pairs.
 - `0.9.7` replaces the extra share-pairs text box with dropdown rows and an Add Pair button.
+- `0.9.8` adds per-route sync behavior controls for each share pair.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -713,7 +714,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.9.7.
+- Current version: 0.9.8.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -764,7 +765,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.9.7`.
+- Current version is `0.9.8`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -774,7 +775,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `0.9.7`, and test multiple share pairs.
+- Push to GitHub, update both Unraid servers to `0.9.8`, and test multiple share pairs.
 
 ### Chat Handoff
 
@@ -785,7 +786,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `0.9.7`
+- Current version: `0.9.8`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -803,7 +804,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-0.9.7.txz`.
+- Versioned package build exists at `packages/mirror-0.9.8.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -831,7 +832,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `0.9.7`.
+2. On both Unraid servers, update Mirror to `0.9.8`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1836,6 +1837,16 @@ Next suggested task:
 - Open questions: Confirm factory reset leaves `/boot/config/plugins/mirror/mirror.sqlite3` in place on both servers.
 - Next suggested task: Push to GitHub, update both servers to `0.9.5`, set roles, and verify changing role requires factory reset.
 
+#### 2026-06-26 - Per-Route Sync Behaviors
+
+- Task completed: Added per-route sync behavior controls for each share pair.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.9.8.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Each share pair can now store its own conflict rule and delete behavior. The runner merges those pair-level values before syncing so different routes can have different safety settings.
+- New decisions: Behavior belongs to the sync route when multiple shares are configured.
+- Open questions: Confirm the row layout is not too wide in Unraid's remote browser view.
+- Next suggested task: Push to GitHub, update both servers to `0.9.8`, and test one pair with Restore missing files plus another with Mirror deletes.
+
 #### 2026-06-26 - Share Pair Dropdown Rows
 
 - Task completed: Replaced the additional share-pairs text box with dropdown rows and an Add Pair button.
@@ -1874,4 +1885,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.9.7`, and test multiple share pairs.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.9.8`, and test multiple share pairs.

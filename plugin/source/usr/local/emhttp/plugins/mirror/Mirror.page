@@ -123,6 +123,7 @@ $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
+$deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $configuredSharePairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
 $additionalSharePairs = [];
 foreach (array_slice($configuredSharePairs, 1) as $pair) {
@@ -132,7 +133,20 @@ foreach (array_slice($configuredSharePairs, 1) as $pair) {
   $pairAShare = (string)($pair["server_a"]["share"] ?? mirror_share_name_from_path((string)($pair["server_a"]["root"] ?? "")));
   $pairBShare = (string)($pair["server_b"]["share"] ?? mirror_share_name_from_path((string)($pair["server_b"]["root"] ?? "")));
   if ($pairAShare !== "" && $pairBShare !== "") {
-    $additionalSharePairs[] = ["local" => $pairAShare, "other" => $pairBShare];
+    $pairAuthority = (string)($pair["authority"] ?? ($config["authority"] ?? "server_a_preferred"));
+    $pairDeleteBehavior = (string)($pair["delete_behavior"] ?? (!empty($pair["delete_propagation"] ?? false) ? "mirror_deletes" : $deleteBehavior));
+    if (!in_array($pairAuthority, ["server_a_preferred", "equal_peers"], true)) {
+      $pairAuthority = "server_a_preferred";
+    }
+    if (!in_array($pairDeleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
+      $pairDeleteBehavior = "restore_missing";
+    }
+    $additionalSharePairs[] = [
+      "local" => $pairAShare,
+      "other" => $pairBShare,
+      "authority" => $pairAuthority,
+      "delete_behavior" => $pairDeleteBehavior,
+    ];
   }
 }
 $nodeRole = $config["node_role"] ?? "master";
@@ -140,7 +154,6 @@ if (!in_array($nodeRole, ["master", "managed_remote"], true)) {
   $nodeRole = "master";
 }
 $roleLocked = !array_key_exists("role_locked", $config) || !empty($config["role_locked"]);
-$deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $primaryIp = mirror_primary_ip();
 $defaultSubnet = $primaryIp ? preg_replace('/\.\d+$/', ".0/24", $primaryIp) : "";
@@ -354,7 +367,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) minmax(170px, 1fr) auto;
 }
 .mirror-share-pair-row .mirror-field {
   min-width: 0;
@@ -889,6 +902,20 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
                       <input id="additional_pair_other_remote_<?=mirror_value($index)?>" name="additional_pair_other_remote[]" type="text" value="<?=mirror_value($pair["other"])?>">
                     <?php endif; ?>
                   </div>
+                  <div class="mirror-field">
+                    <label for="additional_pair_authority_<?=mirror_value($index)?>">Conflict rule</label>
+                    <select id="additional_pair_authority_<?=mirror_value($index)?>" name="additional_pair_authority[]">
+                      <option value="server_a_preferred" <?=$pair["authority"] === "server_a_preferred" ? "selected" : ""?>>This server preferred</option>
+                      <option value="equal_peers" <?=$pair["authority"] === "equal_peers" ? "selected" : ""?>>Equal peers</option>
+                    </select>
+                  </div>
+                  <div class="mirror-field">
+                    <label for="additional_pair_delete_behavior_<?=mirror_value($index)?>">Delete behavior</label>
+                    <select id="additional_pair_delete_behavior_<?=mirror_value($index)?>" name="additional_pair_delete_behavior[]">
+                      <option value="restore_missing" <?=$pair["delete_behavior"] === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
+                      <option value="mirror_deletes" <?=$pair["delete_behavior"] === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
+                    </select>
+                  </div>
                   <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
                 </div>
               <?php endforeach; ?>
@@ -931,6 +958,20 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
                     <input name="additional_pair_other_remote[]" type="text" value="">
                   <?php endif; ?>
                 </div>
+                <div class="mirror-field">
+                  <label>Conflict rule</label>
+                  <select name="additional_pair_authority[]">
+                    <option value="server_a_preferred" <?=(($config["authority"] ?? "server_a_preferred") === "server_a_preferred") ? "selected" : ""?>>This server preferred</option>
+                    <option value="equal_peers" <?=(($config["authority"] ?? "server_a_preferred") === "equal_peers") ? "selected" : ""?>>Equal peers</option>
+                  </select>
+                </div>
+                <div class="mirror-field">
+                  <label>Delete behavior</label>
+                  <select name="additional_pair_delete_behavior[]">
+                    <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
+                    <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
+                  </select>
+                </div>
                 <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
               </div>
             </template>
@@ -942,7 +983,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
         <input type="hidden" name="peer_port" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
 
         <div class="mirror-share-group">
-          <strong class="mirror-share-group-title">Sync Behavior</strong>
+          <strong class="mirror-share-group-title">Primary Pair Sync Behavior</strong>
           <div class="mirror-form-grid">
             <div class="mirror-field">
               <label for="authority">Conflict rule</label>

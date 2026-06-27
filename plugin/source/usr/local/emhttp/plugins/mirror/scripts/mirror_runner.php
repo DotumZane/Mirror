@@ -533,6 +533,15 @@ function configured_pair_configs(array $config): array {
         $pairConfig = $config;
         $pairConfig["server_a"] = array_replace($config["server_a"] ?? [], is_array($pair["server_a"] ?? null) ? $pair["server_a"] : []);
         $pairConfig["server_b"] = array_replace($config["server_b"] ?? [], is_array($pair["server_b"] ?? null) ? $pair["server_b"] : []);
+        if (isset($pair["authority"])) {
+            $pairConfig["authority"] = $pair["authority"];
+        }
+        if (isset($pair["delete_behavior"])) {
+            $pairConfig["delete_behavior"] = $pair["delete_behavior"];
+            $pairConfig["delete_propagation"] = $pair["delete_behavior"] === "mirror_deletes";
+        } elseif (isset($pair["delete_propagation"])) {
+            $pairConfig["delete_propagation"] = !empty($pair["delete_propagation"]);
+        }
         $configs[] = ["key" => pair_key($pairConfig), "config" => $pairConfig];
     }
     return $configs ?: [["key" => "__default", "config" => $config]];

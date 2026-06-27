@@ -566,7 +566,18 @@ function mirror_apply_linked_peer_to_config($peer) {
     mirror_write_config($config);
 }
 
-function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort) {
+function mirror_normalize_authority($authority) {
+    $authority = (string)$authority;
+    return in_array($authority, ["server_a_preferred", "equal_peers"], true) ? $authority : "server_a_preferred";
+}
+
+function mirror_normalize_delete_behavior($deleteBehavior) {
+    $deleteBehavior = (string)$deleteBehavior;
+    return in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true) ? $deleteBehavior : "restore_missing";
+}
+
+function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority = "server_a_preferred", $deleteBehavior = "restore_missing") {
+    $deleteBehavior = mirror_normalize_delete_behavior($deleteBehavior);
     return [
         "server_a" => [
             "name" => "server-a",
@@ -582,6 +593,9 @@ function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerH
             "user" => $peerUser,
             "port" => $peerPort,
         ],
+        "authority" => mirror_normalize_authority($authority),
+        "delete_behavior" => $deleteBehavior,
+        "delete_propagation" => $deleteBehavior === "mirror_deletes",
     ];
 }
 
@@ -601,10 +615,12 @@ function mirror_parse_additional_pairs($text) {
     return $pairs;
 }
 
-function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $serverBType, $fallbackText) {
+function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $authorityRows, $deleteBehaviorRows, $serverBType, $fallbackText) {
     $locals = is_array($localRows) ? array_values($localRows) : [];
     $localOthers = is_array($localOtherRows) ? array_values($localOtherRows) : [];
     $remoteOthers = is_array($remoteOtherRows) ? array_values($remoteOtherRows) : [];
+    $authorities = is_array($authorityRows) ? array_values($authorityRows) : [];
+    $deleteBehaviors = is_array($deleteBehaviorRows) ? array_values($deleteBehaviorRows) : [];
     $others = $serverBType === "remote" ? $remoteOthers : $localOthers;
     $rowCount = max(count($locals), count($others));
     $pairs = [];
@@ -618,11 +634,18 @@ function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteO
         if ($localShare === "" || $otherShare === "") {
             throw new RuntimeException("Additional share pair rows need both dropdowns selected.");
         }
-        $pairs[] = [$localShare, $otherShare];
+        $pairs[] = [
+            $localShare,
+            $otherShare,
+            mirror_normalize_authority($authorities[$index] ?? "server_a_preferred"),
+            mirror_normalize_delete_behavior($deleteBehaviors[$index] ?? "restore_missing"),
+        ];
     }
 
     if (!$pairs && trim((string)$fallbackText) !== "") {
-        return mirror_parse_additional_pairs($fallbackText);
+        return array_map(function ($pair) {
+            return [$pair[0], $pair[1], "server_a_preferred", "restore_missing"];
+        }, mirror_parse_additional_pairs($fallbackText));
     }
     return $pairs;
 }
@@ -1034,15 +1057,14 @@ if ($action === "save-config") {
     $additionalPairLocalRows = $_POST["additional_pair_local"] ?? [];
     $additionalPairOtherLocalRows = $_POST["additional_pair_other_local"] ?? [];
     $additionalPairOtherRemoteRows = $_POST["additional_pair_other_remote"] ?? [];
+    $additionalPairAuthorityRows = $_POST["additional_pair_authority"] ?? [];
+    $additionalPairDeleteBehaviorRows = $_POST["additional_pair_delete_behavior"] ?? [];
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
-    $authority = $_POST["authority"] ?? "server_a_preferred";
-    $deleteBehavior = $_POST["delete_behavior"] ?? "restore_missing";
+    $authority = mirror_normalize_authority($_POST["authority"] ?? "server_a_preferred");
+    $deleteBehavior = mirror_normalize_delete_behavior($_POST["delete_behavior"] ?? "restore_missing");
     $interval = max(0, min(3600, (int)($_POST["sync_interval"] ?? 10)));
-    if (!in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
-        $deleteBehavior = "restore_missing";
-    }
     $deletePropagation = $deleteBehavior === "mirror_deletes";
     $shares = mirror_current_shares();
 
@@ -1090,17 +1112,13 @@ if ($action === "save-config") {
         $serverBRoot = $remoteShare !== "" ? "/mnt/user/" . $remoteShare : (string)($existingConfig["server_b"]["root"] ?? "/mnt/user/");
         $serverBConfiguredShare = $remoteShare;
     }
-    if (!in_array($authority, ["server_a_preferred", "equal_peers"], true)) {
-        $authority = "server_a_preferred";
-    }
-
     $sharePairs = [];
     if (!$errors) {
-        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort);
+        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior);
         try {
             $seenLocalShares = [$serverAShare => true];
-            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $serverBType, $additionalPairsText) as $pair) {
-                [$localShare, $otherShare] = $pair;
+            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText) as $pair) {
+                [$localShare, $otherShare, $pairAuthority, $pairDeleteBehavior] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
                     $errors[] = "Additional share pairs must use share names, not paths.";
                     continue;
@@ -1127,7 +1145,7 @@ if ($action === "save-config") {
                     continue;
                 }
                 $seenLocalShares[$localShare] = true;
-                $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort);
+                $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $pairAuthority, $pairDeleteBehavior);
             }
         } catch (Throwable $pairError) {
             $errors[] = $pairError->getMessage();
