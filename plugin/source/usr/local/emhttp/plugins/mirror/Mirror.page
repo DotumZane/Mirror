@@ -283,7 +283,7 @@ foreach ($mirrorRoutes as $route) {
 
 <style>
 .mirror-panel {
-  max-width: 1120px;
+  max-width: 1510px;
   transition: opacity 0.12s ease;
 }
 .mirror-panel.is-refreshing {
@@ -300,7 +300,8 @@ foreach ($mirrorRoutes as $route) {
   align-items: start;
   display: grid;
   gap: 16px;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(0, 1120px) minmax(320px, 360px);
+  justify-content: start;
 }
 .mirror-status-main {
   min-width: 0;
