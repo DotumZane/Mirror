@@ -119,6 +119,105 @@ function mirror_tab_class($tab, $activeTab) {
   return "mirror-tab" . ((string)$tab === (string)$activeTab ? " is-active" : "");
 }
 
+function mirror_state_path() {
+  return "/boot/config/plugins/mirror/state.json";
+}
+
+function mirror_route_key($routeConfig) {
+  $a = (string)($routeConfig["server_a"]["root"] ?? "");
+  $b = (string)($routeConfig["server_b"]["root"] ?? "");
+  return substr(hash("sha256", $a . "|" . $b), 0, 16);
+}
+
+function mirror_configured_routes($config) {
+  $pairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
+  if (!$pairs) {
+    return [["key" => "__default", "config" => $config]];
+  }
+  $routes = [];
+  foreach ($pairs as $pair) {
+    if (!is_array($pair)) {
+      continue;
+    }
+    $routeConfig = $config;
+    $routeConfig["server_a"] = array_replace($config["server_a"] ?? [], is_array($pair["server_a"] ?? null) ? $pair["server_a"] : []);
+    $routeConfig["server_b"] = array_replace($config["server_b"] ?? [], is_array($pair["server_b"] ?? null) ? $pair["server_b"] : []);
+    if (isset($pair["authority"])) {
+      $routeConfig["authority"] = $pair["authority"];
+    }
+    if (isset($pair["delete_behavior"])) {
+      $routeConfig["delete_behavior"] = $pair["delete_behavior"];
+      $routeConfig["delete_propagation"] = $pair["delete_behavior"] === "mirror_deletes";
+    }
+    $routes[] = ["key" => mirror_route_key($routeConfig), "config" => $routeConfig];
+  }
+  return $routes ?: [["key" => "__default", "config" => $config]];
+}
+
+function mirror_route_label($routeConfig) {
+  $a = mirror_share_name_from_path((string)($routeConfig["server_a"]["root"] ?? ""));
+  $b = (string)($routeConfig["server_b"]["share"] ?? mirror_share_name_from_path((string)($routeConfig["server_b"]["root"] ?? "")));
+  if ($a === "" && $b === "") {
+    return "Unconfigured route";
+  }
+  return ($a !== "" ? $a : "This server") . " -> " . ($b !== "" ? $b : "Other share");
+}
+
+function mirror_route_state($allState, $routeKey) {
+  if ($routeKey === "__default") {
+    return [
+      "files" => is_array($allState["files"] ?? null) ? $allState["files"] : [],
+      "conflicts" => is_array($allState["conflicts"] ?? null) ? $allState["conflicts"] : [],
+    ];
+  }
+  $routeState = is_array($allState["pairs"][$routeKey] ?? null) ? $allState["pairs"][$routeKey] : [];
+  return [
+    "files" => is_array($routeState["files"] ?? null) ? $routeState["files"] : [],
+    "conflicts" => is_array($routeState["conflicts"] ?? null) ? $routeState["conflicts"] : [],
+  ];
+}
+
+function mirror_route_summary($routeConfig, $routeState, $running) {
+  $files = is_array($routeState["files"] ?? null) ? $routeState["files"] : [];
+  $conflicts = is_array($routeState["conflicts"] ?? null) ? $routeState["conflicts"] : [];
+  $lastPath = "";
+  $lastStatus = "";
+  $lastUpdated = 0;
+  foreach ($files as $path => $entry) {
+    if (!is_array($entry)) {
+      continue;
+    }
+    $updated = (int)($entry["updated_at"] ?? 0);
+    if ($updated >= $lastUpdated) {
+      $lastUpdated = $updated;
+      $lastPath = (string)$path;
+      $lastStatus = (string)($entry["status"] ?? "");
+    }
+  }
+  $hasConflict = count($conflicts) > 0 || $lastStatus === "conflict";
+  $indexStatus = count($files) > 0 ? count($files) . " indexed" : "No index yet";
+  if ($lastUpdated > 0) {
+    $indexStatus .= " - " . mirror_age_label($lastUpdated);
+  }
+  if ($hasConflict) {
+    $mirrorStatus = "Needs attention";
+  } elseif (count($files) === 0) {
+    $mirrorStatus = "Waiting for initial sync";
+  } else {
+    $mirrorStatus = $running ? "Watching for changes" : "Indexed, daemon stopped";
+  }
+  return [
+    "label" => mirror_route_label($routeConfig),
+    "index" => $indexStatus,
+    "status" => $mirrorStatus,
+    "last_file" => $lastPath !== "" ? $lastPath : "No indexed files yet",
+    "last_status" => $lastStatus !== "" ? $lastStatus : "none",
+    "upload_rate" => "Idle",
+    "download_rate" => "Idle",
+    "conflicts" => count($conflicts),
+  ];
+}
+
 $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
@@ -173,6 +272,13 @@ $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
 $pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
 $linkedPeer = mirror_json_file($peerFile, []);
 $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["shares"] : [];
+$mirrorState = mirror_json_file(mirror_state_path(), ["files" => [], "conflicts" => [], "pairs" => []]);
+$mirrorRoutes = mirror_configured_routes($config);
+$mirrorRouteSummaries = [];
+foreach ($mirrorRoutes as $route) {
+  $routeState = mirror_route_state($mirrorState, $route["key"]);
+  $mirrorRouteSummaries[] = mirror_route_summary($route["config"], $routeState, $running);
+}
 ?>
 
 <style>
@@ -189,6 +295,56 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
   margin: 16px 0;
+}
+.mirror-status-layout {
+  align-items: start;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+.mirror-status-main {
+  min-width: 0;
+}
+.mirror-route-sidebar {
+  display: grid;
+  gap: 12px;
+}
+.mirror-route-card {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 12px;
+}
+.mirror-route-card h3 {
+  margin: 0 0 10px;
+}
+.mirror-route-title {
+  border-bottom: 1px solid var(--border-color, #333);
+  font-weight: 700;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+}
+.mirror-route-metric {
+  display: grid;
+  gap: 2px;
+  margin: 9px 0;
+}
+.mirror-route-metric strong {
+  font-size: 12px;
+  opacity: 0.72;
+  text-transform: uppercase;
+}
+.mirror-route-metric span {
+  overflow-wrap: anywhere;
+}
+.mirror-route-rate {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 980px) {
+  .mirror-status-layout {
+    grid-template-columns: 1fr;
+  }
 }
 .mirror-stat,
 .mirror-section {
@@ -549,82 +705,124 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   </div>
 
   <?php if ($mirrorTab === "status"): ?>
-  <div class="mirror-grid">
-    <div class="mirror-stat mirror-stat--version">
-      <strong>Version</strong>
-      <span class="mirror-version-value"><?=mirror_value($version)?></span>
-      <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="update-plugin">
-        <input type="hidden" name="popup" value="1">
-        <div class="mirror-update-compact">
-          <button type="submit">Update Plugin</button>
+  <div class="mirror-status-layout">
+    <div class="mirror-status-main">
+      <div class="mirror-grid">
+        <div class="mirror-stat mirror-stat--version">
+          <strong>Version</strong>
+          <span class="mirror-version-value"><?=mirror_value($version)?></span>
+          <form method="post" action="/plugins/mirror/include/action.php" target="mirror_update_frame" onsubmit="openMirrorUpdateModal();">
+            <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+            <input type="hidden" name="action" value="update-plugin">
+            <input type="hidden" name="popup" value="1">
+            <div class="mirror-update-compact">
+              <button type="submit">Update Plugin</button>
+            </div>
+          </form>
         </div>
-      </form>
-    </div>
-    <div class="mirror-stat">
-      <strong>Install State</strong>
-      <?=$installed ? "Installed" : "Missing mirrorctl"?>
-    </div>
-    <div class="mirror-stat">
-      <strong>Daemon</strong>
-      <?=$running ? "Running" : "Stopped"?>
-    </div>
-    <div class="mirror-stat">
-      <strong>Pairing</strong>
-      <?=$pairingRunning ? "Listening on 23891" : "Stopped"?>
-    </div>
-    <div class="mirror-stat">
-      <strong>Peer Link</strong>
-      <?php if (!empty($linkedPeer["host"])): ?>
-        Connected to <?=mirror_value($linkedPeer["name"] ?? "peer")?>
-      <?php elseif (count($pendingInvites) > 0): ?>
-        Pending invite
-      <?php else: ?>
-        Not linked
-      <?php endif; ?>
-    </div>
-    <div class="mirror-stat">
-      <strong>Pending Invites</strong>
-      <?=mirror_value(count($pendingInvites))?>
-    </div>
-    <div class="mirror-stat">
-      <strong>Role</strong>
-      <?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?>
-    </div>
-  </div>
-
-  <div class="mirror-warning">
-    Early test build. Use disposable test shares only.
-  </div>
-
-  <div class="mirror-section">
-    <h3>Control</h3>
-    <?php if ($nodeRole === "managed_remote"): ?>
-      <span class="mirror-help">Managed remote hides local sync settings. Factory reset Mirror if this server should become the master.</span>
-    <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <div class="mirror-actions">
-        <button type="submit" name="action" value="status">Status</button>
-        <button type="submit" name="action" value="initial-sync">Initial Sync</button>
-        <button type="submit" name="action" value="run-once">Run Once</button>
-        <button type="submit" name="action" value="start">Start</button>
-        <button type="submit" name="action" value="stop">Stop</button>
+        <div class="mirror-stat">
+          <strong>Install State</strong>
+          <?=$installed ? "Installed" : "Missing mirrorctl"?>
+        </div>
+        <div class="mirror-stat">
+          <strong>Daemon</strong>
+          <?=$running ? "Running" : "Stopped"?>
+        </div>
+        <div class="mirror-stat">
+          <strong>Pairing</strong>
+          <?=$pairingRunning ? "Listening on 23891" : "Stopped"?>
+        </div>
+        <div class="mirror-stat">
+          <strong>Peer Link</strong>
+          <?php if (!empty($linkedPeer["host"])): ?>
+            Connected to <?=mirror_value($linkedPeer["name"] ?? "peer")?>
+          <?php elseif (count($pendingInvites) > 0): ?>
+            Pending invite
+          <?php else: ?>
+            Not linked
+          <?php endif; ?>
+        </div>
+        <div class="mirror-stat">
+          <strong>Pending Invites</strong>
+          <?=mirror_value(count($pendingInvites))?>
+        </div>
+        <div class="mirror-stat">
+          <strong>Role</strong>
+          <?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?>
+        </div>
       </div>
-    </form>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="factory-reset">
-      <label class="mirror-check">
-        <input type="checkbox" name="confirm_factory_reset" value="1">
-        Confirm factory reset
-      </label>
-      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, LAN scan cache, transfer keys, trash, and logs. It preserves the sync index database and does not delete user shares or synced files.</span>
-      <div class="mirror-actions">
-        <button type="submit">Factory Reset Plugin</button>
+
+      <div class="mirror-warning">
+        Early test build. Use disposable test shares only.
       </div>
-    </form>
+
+      <div class="mirror-section">
+        <h3>Control</h3>
+        <?php if ($nodeRole === "managed_remote"): ?>
+          <span class="mirror-help">Managed remote hides local sync settings. Factory reset Mirror if this server should become the master.</span>
+        <?php endif; ?>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <div class="mirror-actions">
+            <button type="submit" name="action" value="status">Status</button>
+            <button type="submit" name="action" value="initial-sync">Initial Sync</button>
+            <button type="submit" name="action" value="run-once">Run Once</button>
+            <button type="submit" name="action" value="start">Start</button>
+            <button type="submit" name="action" value="stop">Stop</button>
+          </div>
+        </form>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="factory-reset">
+          <label class="mirror-check">
+            <input type="checkbox" name="confirm_factory_reset" value="1">
+            Confirm factory reset
+          </label>
+          <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, LAN scan cache, transfer keys, trash, and logs. It preserves the sync index database and does not delete user shares or synced files.</span>
+          <div class="mirror-actions">
+            <button type="submit">Factory Reset Plugin</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <aside class="mirror-route-sidebar" aria-label="Current mirror status">
+      <div class="mirror-route-card">
+        <h3>Current Mirrors</h3>
+        <span class="mirror-help">Live transfer rates show idle until a transfer reports progress.</span>
+      </div>
+      <?php foreach ($mirrorRouteSummaries as $routeSummary): ?>
+        <div class="mirror-route-card">
+          <div class="mirror-route-title"><?=mirror_value($routeSummary["label"])?></div>
+          <div class="mirror-route-rate">
+            <div class="mirror-route-metric">
+              <strong>Upload</strong>
+              <span><?=mirror_value($routeSummary["upload_rate"])?></span>
+            </div>
+            <div class="mirror-route-metric">
+              <strong>Download</strong>
+              <span><?=mirror_value($routeSummary["download_rate"])?></span>
+            </div>
+          </div>
+          <div class="mirror-route-metric">
+            <strong>Index Status</strong>
+            <span><?=mirror_value($routeSummary["index"])?></span>
+          </div>
+          <div class="mirror-route-metric">
+            <strong>Mirror Status</strong>
+            <span><?=mirror_value($routeSummary["status"])?></span>
+          </div>
+          <div class="mirror-route-metric">
+            <strong>Last File Changed</strong>
+            <span><?=mirror_value($routeSummary["last_file"])?></span>
+          </div>
+          <div class="mirror-route-metric">
+            <strong>Last State</strong>
+            <span><?=mirror_value($routeSummary["last_status"])?><?=((int)$routeSummary["conflicts"] > 0) ? " - " . mirror_value($routeSummary["conflicts"]) . " conflict(s)" : ""?></span>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </aside>
   </div>
   <?php endif; ?>
 
