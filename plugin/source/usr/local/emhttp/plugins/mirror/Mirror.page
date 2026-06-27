@@ -124,7 +124,7 @@ $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
 $configuredSharePairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
-$additionalPairLines = [];
+$additionalSharePairs = [];
 foreach (array_slice($configuredSharePairs, 1) as $pair) {
   if (!is_array($pair)) {
     continue;
@@ -132,10 +132,9 @@ foreach (array_slice($configuredSharePairs, 1) as $pair) {
   $pairAShare = (string)($pair["server_a"]["share"] ?? mirror_share_name_from_path((string)($pair["server_a"]["root"] ?? "")));
   $pairBShare = (string)($pair["server_b"]["share"] ?? mirror_share_name_from_path((string)($pair["server_b"]["root"] ?? "")));
   if ($pairAShare !== "" && $pairBShare !== "") {
-    $additionalPairLines[] = $pairAShare . "=" . $pairBShare;
+    $additionalSharePairs[] = ["local" => $pairAShare, "other" => $pairBShare];
   }
 }
-$additionalPairsText = implode("\n", $additionalPairLines);
 $nodeRole = $config["node_role"] ?? "master";
 if (!in_array($nodeRole, ["master", "managed_remote"], true)) {
   $nodeRole = "master";
@@ -345,6 +344,35 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
 }
 .mirror-share-pairs-extra {
   margin-top: 14px;
+}
+.mirror-share-pair-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.mirror-share-pair-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+}
+.mirror-share-pair-row .mirror-field {
+  min-width: 0;
+}
+.mirror-share-pair-remove {
+  min-height: 31px;
+  white-space: nowrap;
+}
+.mirror-share-pair-empty {
+  opacity: 0.78;
+}
+@media (max-width: 720px) {
+  .mirror-share-pair-row {
+    grid-template-columns: 1fr;
+  }
+  .mirror-share-pair-remove {
+    justify-self: start;
+  }
 }
 .mirror-share-group-title {
   border-bottom: 1px solid var(--border-color, #333);
@@ -824,10 +852,88 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
               <?php endif; ?>
             </div>
           </div>
-          <div class="mirror-field mirror-share-pairs-extra">
-            <label for="additional_share_pairs">Additional share pairs</label>
-            <textarea id="additional_share_pairs" name="additional_share_pairs" placeholder="photos=photos-backup&#10;media=media-backup"><?=mirror_value($additionalPairsText)?></textarea>
-            <span class="mirror-help">Optional. One pair per line as this-server-share=other-share. In Remote LAN mode, the right side is the remote server share.</span>
+          <div class="mirror-share-pairs-extra" data-share-pairs>
+            <strong class="mirror-share-group-title">Additional Share Pairs</strong>
+            <span class="mirror-help">Optional. Add another pair when you want more than one share synced by this Mirror setup.</span>
+            <div class="mirror-share-pair-list" data-share-pair-list>
+              <?php foreach ($additionalSharePairs as $index => $pair): ?>
+                <div class="mirror-share-pair-row" data-share-pair-row>
+                  <div class="mirror-field">
+                    <label for="additional_pair_local_<?=mirror_value($index)?>">This server share</label>
+                    <select id="additional_pair_local_<?=mirror_value($index)?>" name="additional_pair_local[]" <?=$shares ? "" : "disabled"?>>
+                      <option value="">Select a share</option>
+                      <?php foreach ($shares as $share): ?>
+                        <option value="<?=mirror_value($share)?>" <?=$share === $pair["local"] ? "selected" : ""?>><?=mirror_value($share)?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="mirror-field mirror-local-only">
+                    <label for="additional_pair_other_local_<?=mirror_value($index)?>">Second local share</label>
+                    <select id="additional_pair_other_local_<?=mirror_value($index)?>" name="additional_pair_other_local[]" <?=$shares ? "" : "disabled"?>>
+                      <option value="">Select a share</option>
+                      <?php foreach ($shares as $share): ?>
+                        <option value="<?=mirror_value($share)?>" <?=$share === $pair["other"] ? "selected" : ""?>><?=mirror_value($share)?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="mirror-field mirror-remote-only">
+                    <label for="additional_pair_other_remote_<?=mirror_value($index)?>">Remote server share</label>
+                    <?php if ($linkedPeerShares): ?>
+                      <select id="additional_pair_other_remote_<?=mirror_value($index)?>" name="additional_pair_other_remote[]">
+                        <option value="">Select a remote share</option>
+                        <?php foreach ($linkedPeerShares as $share): ?>
+                          <option value="<?=mirror_value($share)?>" <?=$share === $pair["other"] ? "selected" : ""?>><?=mirror_value($share)?></option>
+                        <?php endforeach; ?>
+                      </select>
+                    <?php else: ?>
+                      <input id="additional_pair_other_remote_<?=mirror_value($index)?>" name="additional_pair_other_remote[]" type="text" value="<?=mirror_value($pair["other"])?>">
+                    <?php endif; ?>
+                  </div>
+                  <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <p class="mirror-share-pair-empty" data-share-pair-empty <?=$additionalSharePairs ? "hidden" : ""?>>No extra share pairs yet.</p>
+            <div class="mirror-actions">
+              <button type="button" data-add-share-pair>Add Pair</button>
+            </div>
+
+            <template data-share-pair-template>
+              <div class="mirror-share-pair-row" data-share-pair-row>
+                <div class="mirror-field">
+                  <label>This server share</label>
+                  <select name="additional_pair_local[]" <?=$shares ? "" : "disabled"?>>
+                    <option value="">Select a share</option>
+                    <?php foreach ($shares as $share): ?>
+                      <option value="<?=mirror_value($share)?>"><?=mirror_value($share)?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mirror-field mirror-local-only">
+                  <label>Second local share</label>
+                  <select name="additional_pair_other_local[]" <?=$shares ? "" : "disabled"?>>
+                    <option value="">Select a share</option>
+                    <?php foreach ($shares as $share): ?>
+                      <option value="<?=mirror_value($share)?>"><?=mirror_value($share)?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mirror-field mirror-remote-only">
+                  <label>Remote server share</label>
+                  <?php if ($linkedPeerShares): ?>
+                    <select name="additional_pair_other_remote[]">
+                      <option value="">Select a remote share</option>
+                      <?php foreach ($linkedPeerShares as $share): ?>
+                        <option value="<?=mirror_value($share)?>"><?=mirror_value($share)?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  <?php else: ?>
+                    <input name="additional_pair_other_remote[]" type="text" value="">
+                  <?php endif; ?>
+                </div>
+                <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -1059,6 +1165,46 @@ function bindMirrorPage() {
       node.classList.toggle('mirror-hidden', remote);
     });
   }
+
+  function syncSharePairEmptyState(container) {
+    if (!container) {
+      return;
+    }
+    var empty = container.querySelector('[data-share-pair-empty]');
+    if (empty) {
+      empty.hidden = !!container.querySelector('[data-share-pair-row]');
+    }
+  }
+
+  document.querySelectorAll('[data-share-pairs]').forEach(function (container) {
+    if (container.dataset.sharePairsBound === "1") {
+      return;
+    }
+    container.dataset.sharePairsBound = "1";
+    var list = container.querySelector('[data-share-pair-list]');
+    var template = container.querySelector('[data-share-pair-template]');
+    var addButton = container.querySelector('[data-add-share-pair]');
+    if (addButton && list && template) {
+      addButton.addEventListener('click', function () {
+        var fragment = template.content.cloneNode(true);
+        list.appendChild(fragment);
+        syncModeVisibility();
+        syncSharePairEmptyState(container);
+      });
+    }
+    container.addEventListener('click', function (event) {
+      var removeButton = event.target.closest('[data-remove-share-pair]');
+      if (!removeButton) {
+        return;
+      }
+      var row = removeButton.closest('[data-share-pair-row]');
+      if (row) {
+        row.remove();
+        syncSharePairEmptyState(container);
+      }
+    });
+    syncSharePairEmptyState(container);
+  });
 
   document.querySelectorAll(".mirror-panel form").forEach(function (form) {
     if (form.dataset.mirrorBound === "1" || form.target === "mirror_update_frame" || form.dataset.mirrorFullSubmit === "1") {

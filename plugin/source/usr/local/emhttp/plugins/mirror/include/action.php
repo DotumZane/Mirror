@@ -601,6 +601,32 @@ function mirror_parse_additional_pairs($text) {
     return $pairs;
 }
 
+function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $serverBType, $fallbackText) {
+    $locals = is_array($localRows) ? array_values($localRows) : [];
+    $localOthers = is_array($localOtherRows) ? array_values($localOtherRows) : [];
+    $remoteOthers = is_array($remoteOtherRows) ? array_values($remoteOtherRows) : [];
+    $others = $serverBType === "remote" ? $remoteOthers : $localOthers;
+    $rowCount = max(count($locals), count($others));
+    $pairs = [];
+
+    for ($index = 0; $index < $rowCount; $index++) {
+        $localShare = trim((string)($locals[$index] ?? ""));
+        $otherShare = trim((string)($others[$index] ?? ""));
+        if ($localShare === "" && $otherShare === "") {
+            continue;
+        }
+        if ($localShare === "" || $otherShare === "") {
+            throw new RuntimeException("Additional share pair rows need both dropdowns selected.");
+        }
+        $pairs[] = [$localShare, $otherShare];
+    }
+
+    if (!$pairs && trim((string)$fallbackText) !== "") {
+        return mirror_parse_additional_pairs($fallbackText);
+    }
+    return $pairs;
+}
+
 function mirror_linked_peer_host() {
     global $peerFile;
     $peer = mirror_json_file($peerFile, []);
@@ -1005,6 +1031,9 @@ if ($action === "save-config") {
     $serverBShare = trim((string)($_POST["server_b_share"] ?? ""));
     $remoteShare = trim((string)($_POST["remote_share"] ?? ""));
     $additionalPairsText = (string)($_POST["additional_share_pairs"] ?? "");
+    $additionalPairLocalRows = $_POST["additional_pair_local"] ?? [];
+    $additionalPairOtherLocalRows = $_POST["additional_pair_other_local"] ?? [];
+    $additionalPairOtherRemoteRows = $_POST["additional_pair_other_remote"] ?? [];
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
@@ -1070,7 +1099,7 @@ if ($action === "save-config") {
         $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort);
         try {
             $seenLocalShares = [$serverAShare => true];
-            foreach (mirror_parse_additional_pairs($additionalPairsText) as $pair) {
+            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $serverBType, $additionalPairsText) as $pair) {
                 [$localShare, $otherShare] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
                     $errors[] = "Additional share pairs must use share names, not paths.";
