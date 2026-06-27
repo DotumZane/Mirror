@@ -769,7 +769,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   <?php if ($mirrorTab === "shares"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
     <div class="mirror-section">
-      <h3>Share Pair</h3>
+      <h3>Sync Routes</h3>
       <p class="mirror-share-lead">Choose which local share this server owns, then choose where Mirror should keep the matching copy.</p>
 
       <div class="mirror-share-status">
@@ -786,7 +786,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
           <span><?=mirror_value(count($linkedPeerShares))?></span>
         </div>
         <div class="mirror-share-status-item">
-          <strong>Configured pairs</strong>
+          <strong>Configured routes</strong>
           <span><?=mirror_value(max(1, count($configuredSharePairs)))?></span>
         </div>
       </div>
@@ -866,8 +866,8 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
             </div>
           </div>
           <div class="mirror-share-pairs-extra" data-share-pairs>
-            <strong class="mirror-share-group-title">Additional Share Pairs</strong>
-            <span class="mirror-help">Optional. Add another pair when you want more than one share synced by this Mirror setup.</span>
+            <strong class="mirror-share-group-title">Additional Sync Routes</strong>
+            <span class="mirror-help">Optional. Add another sync route when you want more than one share synced by this Mirror setup.</span>
             <div class="mirror-share-pair-list" data-share-pair-list>
               <?php foreach ($additionalSharePairs as $index => $pair): ?>
                 <div class="mirror-share-pair-row" data-share-pair-row>
@@ -920,9 +920,9 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
                 </div>
               <?php endforeach; ?>
             </div>
-            <p class="mirror-share-pair-empty" data-share-pair-empty <?=$additionalSharePairs ? "hidden" : ""?>>No extra share pairs yet.</p>
+            <p class="mirror-share-pair-empty" data-share-pair-empty <?=$additionalSharePairs ? "hidden" : ""?>>No extra sync routes yet.</p>
             <div class="mirror-actions">
-              <button type="button" data-add-share-pair>Add Pair</button>
+              <button type="button" data-add-share-pair>Add Sync Route</button>
             </div>
 
             <div hidden>
@@ -983,7 +983,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
         <input type="hidden" name="peer_port" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
 
         <div class="mirror-share-group">
-          <strong class="mirror-share-group-title">Primary Pair Sync Behavior</strong>
+          <strong class="mirror-share-group-title">Primary Sync Route Behavior</strong>
           <div class="mirror-form-grid">
             <div class="mirror-field">
               <label for="authority">Conflict rule</label>

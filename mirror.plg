@@ -2,19 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "0.9.9">
+  <!ENTITY version    "0.10.0">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.9.9.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-0.10.0.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "8df5b60463e8843d18a966a47f1b5442">
+  <!ENTITY md5        "fb21c50247b425c31a7a9e57e0a84329">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### 0.9.9
-- Fixes the Add Pair button in Unraid browser contexts.
+### 0.10.0
+- Renames share-pair UI language to sync routes.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>

@@ -608,7 +608,7 @@ function mirror_parse_additional_pairs($text) {
         }
         $parts = preg_split('/\s*(?:=|,|:)\s*/', $line, 2);
         if (!is_array($parts) || count($parts) !== 2 || trim($parts[0]) === "" || trim($parts[1]) === "") {
-            throw new RuntimeException("Additional share pair must look like local-share=other-share: $line");
+            throw new RuntimeException("Additional sync route must look like local-share=other-share: $line");
         }
         $pairs[] = [trim($parts[0]), trim($parts[1])];
     }
@@ -632,7 +632,7 @@ function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteO
             continue;
         }
         if ($localShare === "" || $otherShare === "") {
-            throw new RuntimeException("Additional share pair rows need both dropdowns selected.");
+            throw new RuntimeException("Additional sync route rows need both dropdowns selected.");
         }
         $pairs[] = [
             $localShare,
@@ -938,7 +938,7 @@ if ($action === "invite-peer") {
             . "\nReceiving host: $peerHost"
             . "\nInvite ID: " . ($response["id"] ?? "unknown")
             . "\nNow open Mirror on the peer server and click Accept under Pending Invites."
-            . "\nAfter it is accepted, choose shares in Share Pair."
+            . "\nAfter it is accepted, choose shares in Sync Routes."
         );
     } catch (Throwable $error) {
         $extra = "";
@@ -975,7 +975,7 @@ if ($action === "accept-invite") {
             "Invite accepted."
             . "\nThis server is now paired with " . ($invite["from_name"] ?? $invite["from_host"] ?? "peer") . "."
             . "\nRemote host: " . ($invite["from_host"] ?? "")
-            . "\nNow choose shares in Share Pair."
+            . "\nNow choose shares in Sync Routes."
         );
     } catch (Throwable $error) {
         mirror_write_action("Invite accept failed:\n" . $error->getMessage());
@@ -1010,7 +1010,7 @@ if ($action === "use-linked-peer") {
         mirror_redirect();
     }
     mirror_apply_linked_peer_to_config($peer);
-    mirror_write_action("Linked peer applied to Share Pair. Choose local and remote shares, then Save Settings.");
+    mirror_write_action("Linked peer applied to Sync Routes. Choose local and remote shares, then Save Settings.");
     mirror_redirect();
 }
 
@@ -1120,7 +1120,7 @@ if ($action === "save-config") {
             foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText) as $pair) {
                 [$localShare, $otherShare, $pairAuthority, $pairDeleteBehavior] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
-                    $errors[] = "Additional share pairs must use share names, not paths.";
+                    $errors[] = "Additional sync routes must use share names, not paths.";
                     continue;
                 }
                 if (!isset($shares[$localShare])) {
@@ -1128,7 +1128,7 @@ if ($action === "save-config") {
                     continue;
                 }
                 if (isset($seenLocalShares[$localShare])) {
-                    $errors[] = "Additional share pair repeats local share: $localShare";
+                    $errors[] = "Additional sync route repeats local share: $localShare";
                     continue;
                 }
                 if ($serverBType === "local") {

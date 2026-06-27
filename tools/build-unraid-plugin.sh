@@ -44,7 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Fixes the Add Pair button in Unraid browser contexts.
+- Renames share-pair UI language to sync routes.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>
