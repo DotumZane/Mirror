@@ -558,6 +558,39 @@ function add_summary(array &$target, array $source): void {
     }
 }
 
+function log_event(string $message): void {
+    echo date("c") . " " . $message . "\n";
+    flush();
+}
+
+function route_label(array $config): string {
+    $aRoot = (string)($config["server_a"]["root"] ?? "");
+    $bShare = (string)($config["server_b"]["share"] ?? "");
+    $bRoot = (string)($config["server_b"]["root"] ?? "");
+    $a = basename(rtrim($aRoot, "/")) ?: "server-a";
+    $b = $bShare !== "" ? $bShare : (basename(rtrim($bRoot, "/")) ?: "server-b");
+    return $a . " -> " . $b;
+}
+
+function log_route_action(array $config, string $action, string $rel, string $detail = ""): void {
+    $line = "route " . route_label($config) . ": " . $action;
+    if ($rel !== "") {
+        $line .= " " . $rel;
+    }
+    if ($detail !== "") {
+        $line .= " (" . $detail . ")";
+    }
+    log_event($line);
+}
+
+function log_route_progress(array $config, int $processed, int $total, string $rel): void {
+    if ($total <= 0) {
+        return;
+    }
+    $percent = (int)floor(($processed / $total) * 100);
+    log_route_action($config, "index progress {$processed}/{$total} ({$percent}%)", $rel);
+}
+
 function mark_progress(array &$state, string $phase, int $processed, int $total, string $currentPath = ""): void {
     $state["_meta"] = [
         "phase" => $phase,
@@ -606,7 +639,11 @@ function load_scoped_state(string $configPath, string $stateKey): array {
     if ($stateKey === "__default") {
         return [
             "all" => $allState,
-            "current" => ["files" => $allState["files"], "conflicts" => $allState["conflicts"]],
+            "current" => [
+                "files" => $allState["files"],
+                "conflicts" => $allState["conflicts"],
+                "_meta" => is_array($allState["_meta"] ?? null) ? $allState["_meta"] : [],
+            ],
         ];
     }
     $current = is_array($allState["pairs"][$stateKey] ?? null) ? $allState["pairs"][$stateKey] : [];
@@ -619,6 +656,7 @@ function save_scoped_state(string $configPath, string $stateKey, array $allState
     if ($stateKey === "__default") {
         $allState["files"] = $state["files"];
         $allState["conflicts"] = $state["conflicts"];
+        $allState["_meta"] = is_array($state["_meta"] ?? null) ? $state["_meta"] : [];
     } else {
         $allState["pairs"] = is_array($allState["pairs"] ?? null) ? $allState["pairs"] : [];
         $allState["pairs"][$stateKey] = $state;
@@ -632,6 +670,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
     $stateScope = load_scoped_state($configPath, $stateKey);
     $allState = $stateScope["all"];
     $state = $stateScope["current"];
+    log_event("route " . route_label($config) . ": scan starting local {$aRoot} -> local {$bRoot}");
     mark_progress($state, "scanning", 0, 0);
     save_scoped_state($configPath, $stateKey, $allState, $state);
     $scanA = scan_files($aRoot);
@@ -641,6 +680,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
     $summary = empty_summary();
     $totalPaths = count($paths);
     $processedPaths = 0;
+    log_event("route " . route_label($config) . ": scan found server-a=" . count($scanA) . " server-b=" . count($scanB) . " indexed=" . count($state["files"]) . " total={$totalPaths}");
     mark_progress($state, "syncing", $processedPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
 
@@ -665,43 +705,55 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
             }
             if (!$prev) {
                 if ($a["exists"] && !$b["exists"]) {
+                    log_route_action($config, "copy server-a to server-b", $rel, "new on server-a");
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($b["exists"] && !$a["exists"]) {
+                    log_route_action($config, "copy server-b to server-a", $rel, "new on server-b");
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($a["exists"] && $b["exists"]) {
+                    log_route_action($config, "conflict", $rel, "new path differs on both servers");
                     record_conflict($state, $rel, "new_path_differs_on_both_servers", $aRoot, $bRoot, $summary);
                 }
                 continue;
             }
             if ($a["exists"] && $b["exists"]) {
                 if ($aChanged && !$bChanged) {
+                    log_route_action($config, "copy server-a to server-b", $rel, "server-a changed");
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($bChanged && !$aChanged) {
+                    log_route_action($config, "copy server-b to server-a", $rel, "server-b changed");
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($aChanged && $bChanged) {
+                    log_route_action($config, "conflict", $rel, "both changed");
                     record_conflict($state, $rel, "both_changed", $aRoot, $bRoot, $summary);
                 } else {
+                    log_route_action($config, "conflict", $rel, "state mismatch without change");
                     record_conflict($state, $rel, "state_mismatch_without_change", $aRoot, $bRoot, $summary);
                 }
             } elseif ($a["exists"] && !$b["exists"]) {
                 if (!$aChanged && equal_peer_delete_enabled($config)) {
+                    log_route_action($config, "delete server-a", $rel, "equal peer delete mirrored");
                     delete_file($config, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "deleted");
                 } else {
+                    log_route_action($config, "copy server-a to server-b", $rel, "missing on server-b");
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 }
             } elseif ($b["exists"] && !$a["exists"]) {
                 if ($bChanged) {
+                    log_route_action($config, "conflict", $rel, "server-a deleted and server-b changed");
                     record_conflict($state, $rel, "server_a_deleted_server_b_changed", $aRoot, $bRoot, $summary);
                 } elseif (delete_mirroring_enabled($config)) {
+                    log_route_action($config, "delete server-b", $rel, "delete mirrored");
                     delete_file($config, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "deleted");
                 } else {
+                    log_route_action($config, "copy server-b to server-a", $rel, "missing on server-a");
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 }
@@ -714,12 +766,14 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
             if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
                 mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
                 save_scoped_state($configPath, $stateKey, $allState, $state);
+                log_route_progress($config, $processedPaths, $totalPaths, $rel);
             }
         }
     }
 
     mark_progress($state, "complete", $totalPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
+    log_event("route " . route_label($config) . ": complete indexed={$totalPaths} copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}");
     return $summary;
 }
 
@@ -744,6 +798,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
     $stateScope = load_scoped_state($configPath, $stateKey);
     $allState = $stateScope["all"];
     $state = $stateScope["current"];
+    log_event("route " . route_label($config) . ": scan starting local {$aRoot} -> remote {$bRoot}");
     mark_progress($state, "scanning", 0, 0);
     save_scoped_state($configPath, $stateKey, $allState, $state);
     $scanA = scan_files($aRoot);
@@ -753,6 +808,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
     $summary = empty_summary();
     $totalPaths = count($paths);
     $processedPaths = 0;
+    log_event("route " . route_label($config) . ": scan found local=" . count($scanA) . " remote=" . count($scanB) . " indexed=" . count($state["files"]) . " total={$totalPaths}");
     mark_progress($state, "syncing", $processedPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
 
@@ -777,44 +833,56 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
             }
             if (!$prev) {
                 if ($a["exists"] && !$b["exists"]) {
+                    log_route_action($config, "copy local to remote", $rel, "new locally");
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 } elseif ($b["exists"] && !$a["exists"]) {
+                    log_route_action($config, "copy remote to local", $rel, "new remotely");
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 } elseif ($a["exists"] && $b["exists"]) {
+                    log_route_action($config, "conflict", $rel, "new path differs on both servers");
                     record_conflict_states($state, $rel, "new_path_differs_on_both_servers", $a, $b, $summary);
                 }
                 continue;
             }
             if ($a["exists"] && $b["exists"]) {
                 if ($aChanged && !$bChanged) {
+                    log_route_action($config, "copy local to remote", $rel, "local changed");
                     trash_remote_file($config, $configPath, $bRoot, $rel, "overwritten", $summary);
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 } elseif ($bChanged && !$aChanged) {
+                    log_route_action($config, "copy remote to local", $rel, "remote changed");
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 } elseif ($aChanged && $bChanged) {
+                    log_route_action($config, "conflict", $rel, "both changed");
                     record_conflict_states($state, $rel, "both_changed", $a, $b, $summary);
                 } else {
+                    log_route_action($config, "conflict", $rel, "state mismatch without change");
                     record_conflict_states($state, $rel, "state_mismatch_without_change", $a, $b, $summary);
                 }
             } elseif ($a["exists"] && !$b["exists"]) {
                 if (!$aChanged && equal_peer_delete_enabled($config)) {
+                    log_route_action($config, "delete local", $rel, "equal peer delete mirrored");
                     delete_file($config, "server-a", $aRoot, $rel, $summary);
                     record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
                 } else {
+                    log_route_action($config, "copy local to remote", $rel, "missing remotely");
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 }
             } elseif ($b["exists"] && !$a["exists"]) {
                 if ($bChanged) {
+                    log_route_action($config, "conflict", $rel, "local deleted and remote changed");
                     record_conflict_states($state, $rel, "server_a_deleted_server_b_changed", $a, $b, $summary);
                 } elseif (delete_mirroring_enabled($config)) {
+                    log_route_action($config, "delete remote", $rel, "delete mirrored");
                     delete_remote_file($config, $configPath, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
                 } else {
+                    log_route_action($config, "copy remote to local", $rel, "missing locally");
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 }
@@ -827,12 +895,14 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
             if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
                 mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
                 save_scoped_state($configPath, $stateKey, $allState, $state);
+                log_route_progress($config, $processedPaths, $totalPaths, $rel);
             }
         }
     }
 
     mark_progress($state, "complete", $totalPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
+    log_event("route " . route_label($config) . ": complete indexed={$totalPaths} copied={$summary["copied"]} deleted={$summary["deleted"]} trashed={$summary["trashed"]} conflicts={$summary["conflicts"]} unchanged={$summary["unchanged"]}");
     return $summary;
 }
 
