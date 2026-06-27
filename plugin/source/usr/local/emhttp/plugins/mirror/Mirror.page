@@ -17,7 +17,7 @@ $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unkn
 $installed = is_file("/usr/local/sbin/mirrorctl");
 $running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
 $pairingRunning = is_file($pairPidFile) && posix_kill((int)trim(file_get_contents($pairPidFile)), 0);
-$logTail = is_file($logFile) ? shell_exec("tail -n 40 " . escapeshellarg($logFile)) : "";
+$logTail = is_file($logFile) ? shell_exec("tail -n 160 " . escapeshellarg($logFile)) : "";
 
 $defaultConfig = [
   "server_a" => ["name" => "server-a", "root" => "/mnt/user/mirror-test-a"],
@@ -463,7 +463,8 @@ foreach ($mirrorRoutes as $route) {
   overflow: auto;
 }
 .mirror-log {
-  max-height: 320px;
+  min-height: 560px;
+  max-height: 70vh;
 }
 .mirror-code {
   max-height: 260px;
