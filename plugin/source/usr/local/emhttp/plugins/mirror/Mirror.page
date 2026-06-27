@@ -341,6 +341,39 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   margin-top: 22px;
   padding-top: 14px;
 }
+.mirror-lan-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0 18px;
+}
+.mirror-lan-card {
+  border: 1px solid var(--border-color, #333);
+  border-radius: 6px;
+  padding: 12px;
+}
+.mirror-lan-card strong {
+  display: block;
+  margin-bottom: 5px;
+}
+.mirror-lan-card span {
+  opacity: 0.82;
+}
+.mirror-lan-step {
+  margin-top: 20px;
+}
+.mirror-lan-step h4 {
+  margin: 0 0 8px;
+}
+.mirror-diagnostics {
+  border-top: 1px solid var(--border-color, #333);
+  margin-top: 18px;
+  padding-top: 12px;
+}
+.mirror-diagnostics summary {
+  cursor: pointer;
+  font-weight: 700;
+}
 .mirror-hidden {
   display: none;
 }
@@ -544,42 +577,59 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   <?php endif; ?>
 
   <?php if ($mirrorTab === "lan"): ?>
-  <?php if ($nodeRole !== "managed_remote"): ?>
-    <div class="mirror-section">
-      <h3>Server Role</h3>
-      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="save-role">
-        <div class="mirror-mode-switch" role="group" aria-label="Server role">
-          <input id="node_role_master" type="radio" name="node_role" value="master" checked>
-          <label for="node_role_master">Master</label>
-          <input id="node_role_remote" type="radio" name="node_role" value="managed_remote">
-          <label for="node_role_remote">Managed remote</label>
-        </div>
-        <span class="mirror-help">Use Master on the server where you choose shares and rules. Use Managed remote on the other server so it only accepts pairing and waits for master-controlled setup.</span>
-        <div class="mirror-actions">
-          <button type="submit">Save Role</button>
-        </div>
-      </form>
-    </div>
-  <?php endif; ?>
-
-  <?php if ($nodeRole === "managed_remote"): ?>
-    <div class="mirror-warning">
-      This server is in Managed remote mode. Pair it from the master server, then control share pairing and sync rules on the master.
-    </div>
-  <?php endif; ?>
-
-  <?php if (!$shares && $nodeRole !== "managed_remote"): ?>
-    <div class="mirror-warning">
-      No user shares were found under /mnt/user. Create two disposable test
-      shares first, then return here.
-    </div>
-  <?php endif; ?>
-
   <div class="mirror-section">
-    <h3>LAN Peer Setup</h3>
-    <div class="mirror-help">Enter the other server's LAN IP and send an invite. After the invite is accepted, choose shares in Share Pair.</div>
+    <h3>LAN Setup</h3>
+    <p class="mirror-share-lead">Link this server with the other Unraid server on your LAN. The master chooses shares and sync rules; the managed remote waits for the master.</p>
+
+    <div class="mirror-lan-summary">
+      <div class="mirror-lan-card">
+        <strong>This server</strong>
+        <span><?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?></span>
+      </div>
+      <div class="mirror-lan-card">
+        <strong>Peer link</strong>
+        <span><?=!empty($linkedPeer["host"]) ? mirror_value(($linkedPeer["name"] ?? "Peer") . " at " . $linkedPeer["host"]) : "Not linked"?></span>
+      </div>
+      <div class="mirror-lan-card">
+        <strong>Pairing responder</strong>
+        <span><?=$pairingRunning ? "Listening on 23891" : "Stopped"?></span>
+      </div>
+    </div>
+
+    <?php if ($nodeRole !== "managed_remote"): ?>
+      <div class="mirror-lan-step">
+        <h4>Role</h4>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="save-role">
+          <div class="mirror-mode-switch" role="group" aria-label="Server role">
+            <input id="node_role_master" type="radio" name="node_role" value="master" checked>
+            <label for="node_role_master">Master</label>
+            <input id="node_role_remote" type="radio" name="node_role" value="managed_remote">
+            <label for="node_role_remote">Managed remote</label>
+          </div>
+          <span class="mirror-help">Keep this server as Master if it should choose shares and control the linked remote.</span>
+          <div class="mirror-actions">
+            <button type="submit">Save Role</button>
+          </div>
+        </form>
+      </div>
+    <?php else: ?>
+      <div class="mirror-warning">
+        This server is in Managed remote mode. Send the invite from the master server, then choose shares on the master.
+      </div>
+    <?php endif; ?>
+
+    <?php if (!$shares && $nodeRole !== "managed_remote"): ?>
+      <div class="mirror-warning">
+        No user shares were found under /mnt/user. Create disposable test shares first, then return here.
+      </div>
+    <?php endif; ?>
+
+    <div class="mirror-lan-step">
+      <h4>Connect To Peer</h4>
+      <div class="mirror-help">Enter the other server's LAN IP, then send an invite. Accept the invite on the other server to finish linking.</div>
+    </div>
     <?php if (!empty($linkedPeer["host"])): ?>
       <div class="mirror-success">
         Connected to <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
@@ -588,62 +638,69 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
         <?php endif; ?>
       </div>
     <?php endif; ?>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="invite-peer">
-      <div class="mirror-form-grid">
-        <div class="mirror-field">
-          <label for="peer_host">Peer IP address</label>
-          <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($linkedPeer["host"] ?? $discoveryDirectHost)?>">
-          <span class="mirror-help">Use the other Unraid server's LAN IP. Its Mirror pairing responder must be listening on TCP port 23891.</span>
-        </div>
-      </div>
-      <div class="mirror-actions">
-        <button type="submit">Send Invite</button>
-      </div>
-    </form>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="pair-restart">
-      <div class="mirror-actions">
-        <button type="submit">Restart Pairing Responder</button>
-      </div>
-    </form>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="check-responder">
-      <div class="mirror-actions">
-        <button type="submit">Check Local Responder</button>
-      </div>
-    </form>
-    <h3>Pending Invites</h3>
-    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-      <input type="hidden" name="action" value="check-invites">
-      <div class="mirror-actions">
-        <button type="submit">Check Pending Invites</button>
-      </div>
-    </form>
-    <?php if ($pendingInvites): ?>
-      <div class="mirror-peer-list">
-        <?php foreach ($pendingInvites as $invite): ?>
-          <div class="mirror-peer-card">
-            <strong><?=mirror_value($invite["from_name"] ?? "Mirror peer")?></strong>
-            <div class="mirror-peer-meta"><?=mirror_value($invite["from_host"] ?? "")?> wants to link Mirror for later share setup.</div>
-            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-              <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-              <input type="hidden" name="invite_id" value="<?=mirror_value($invite["id"] ?? "")?>">
-              <div class="mirror-actions">
-                <button type="submit" name="action" value="accept-invite">Accept</button>
-                <button type="submit" name="action" value="reject-invite">Reject</button>
-              </div>
-            </form>
+      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+        <input type="hidden" name="action" value="invite-peer">
+        <div class="mirror-form-grid">
+          <div class="mirror-field">
+            <label for="peer_host">Other server IP address</label>
+            <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($linkedPeer["host"] ?? $discoveryDirectHost)?>">
+            <span class="mirror-help">Use the other Unraid server's LAN IP. Mirror listens on TCP port 23891.</span>
           </div>
-        <?php endforeach; ?>
+        </div>
+        <div class="mirror-actions">
+          <button type="submit">Send Invite</button>
+        </div>
+      </form>
+
+      <div class="mirror-lan-step">
+        <h4>Pending Invites</h4>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="check-invites">
+          <div class="mirror-actions">
+            <button type="submit">Check Invites</button>
+          </div>
+        </form>
+        <?php if ($pendingInvites): ?>
+          <div class="mirror-peer-list">
+            <?php foreach ($pendingInvites as $invite): ?>
+              <div class="mirror-peer-card">
+                <strong><?=mirror_value($invite["from_name"] ?? "Mirror peer")?></strong>
+                <div class="mirror-peer-meta"><?=mirror_value($invite["from_host"] ?? "")?> wants to link Mirror for later share setup.</div>
+                <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+                  <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+                  <input type="hidden" name="invite_id" value="<?=mirror_value($invite["id"] ?? "")?>">
+                  <div class="mirror-actions">
+                    <button type="submit" name="action" value="accept-invite">Accept</button>
+                    <button type="submit" name="action" value="reject-invite">Reject</button>
+                  </div>
+                </form>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        <?php else: ?>
+          <div class="mirror-help">No pending invites. If the other server sent one, click Check Invites.</div>
+        <?php endif; ?>
       </div>
-    <?php else: ?>
-      <div class="mirror-help">No pending invites on this server yet. Send an invite from the other server, then refresh or click Check Pending Invites.</div>
-    <?php endif; ?>
+
+      <details class="mirror-diagnostics">
+        <summary>Diagnostics</summary>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="pair-restart">
+          <div class="mirror-actions">
+            <button type="submit">Restart Pairing Responder</button>
+          </div>
+        </form>
+        <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+          <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+          <input type="hidden" name="action" value="check-responder">
+          <div class="mirror-actions">
+            <button type="submit">Check Local Responder</button>
+          </div>
+        </form>
+      </details>
   </div>
   <?php endif; ?>
 
