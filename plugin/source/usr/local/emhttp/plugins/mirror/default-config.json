@@ -19,5 +19,6 @@
   "authority": "server_a_preferred",
   "delete_propagation": false,
   "delete_behavior": "restore_missing",
+  "share_pairs": [],
   "sync_interval": 10
 }

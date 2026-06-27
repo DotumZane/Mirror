@@ -449,6 +449,10 @@ function mirror_plugin_manifest_version($path) {
 function mirror_existing_config() {
     global $configFile;
     $default = [
+        "server_a" => [
+            "name" => "server-a",
+            "root" => "/mnt/user/mirror-test-a",
+        ],
         "server_b" => [
             "type" => "local",
             "root" => "/mnt/user/mirror-test-b",
@@ -458,6 +462,7 @@ function mirror_existing_config() {
             "port" => 22,
         ],
         "node_role" => "master",
+        "share_pairs" => [],
     ];
     if (!is_file($configFile)) {
         return $default;
@@ -499,6 +504,9 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
         $deleteBehavior = "mirror_deletes";
     }
     $existing = mirror_existing_config();
+    $sharePairs = [
+        mirror_share_pair_config($localShare, $peerShare, "remote", $peerHost, "root", 22),
+    ];
     $config = [
         "server_a" => ["name" => mirror_server_name(), "root" => "/mnt/user/" . $localShare],
         "server_b" => [
@@ -517,6 +525,7 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
         "delete_behavior" => $deleteBehavior,
         "node_role" => (string)($existing["node_role"] ?? "master"),
         "role_locked" => mirror_role_locked($existing),
+        "share_pairs" => $sharePairs,
         "sync_interval" => max(0, min(3600, (int)($existing["sync_interval"] ?? 10))),
     ];
     mirror_write_config($config);
@@ -555,6 +564,41 @@ function mirror_apply_linked_peer_to_config($peer) {
     $config["server_b"]["user"] = (string)($config["server_b"]["user"] ?? "root");
     $config["server_b"]["port"] = (int)($config["server_b"]["port"] ?? 22);
     mirror_write_config($config);
+}
+
+function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort) {
+    return [
+        "server_a" => [
+            "name" => "server-a",
+            "root" => "/mnt/user/" . $localShare,
+            "share" => $localShare,
+        ],
+        "server_b" => [
+            "name" => "server-b",
+            "type" => $serverBType,
+            "root" => "/mnt/user/" . $otherShare,
+            "share" => $otherShare,
+            "host" => $peerHost,
+            "user" => $peerUser,
+            "port" => $peerPort,
+        ],
+    ];
+}
+
+function mirror_parse_additional_pairs($text) {
+    $pairs = [];
+    foreach (preg_split("/\r\n|\n|\r/", (string)$text) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === "") {
+            continue;
+        }
+        $parts = preg_split('/\s*(?:=|,|:)\s*/', $line, 2);
+        if (!is_array($parts) || count($parts) !== 2 || trim($parts[0]) === "" || trim($parts[1]) === "") {
+            throw new RuntimeException("Additional share pair must look like local-share=other-share: $line");
+        }
+        $pairs[] = [trim($parts[0]), trim($parts[1])];
+    }
+    return $pairs;
 }
 
 function mirror_linked_peer_host() {
@@ -960,6 +1004,7 @@ if ($action === "save-config") {
     $serverBType = $mirrorMode !== "" ? $mirrorMode : trim((string)($_POST["server_b_type"] ?? "local"));
     $serverBShare = trim((string)($_POST["server_b_share"] ?? ""));
     $remoteShare = trim((string)($_POST["remote_share"] ?? ""));
+    $additionalPairsText = (string)($_POST["additional_share_pairs"] ?? "");
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
@@ -1020,6 +1065,46 @@ if ($action === "save-config") {
         $authority = "server_a_preferred";
     }
 
+    $sharePairs = [];
+    if (!$errors) {
+        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort);
+        try {
+            $seenLocalShares = [$serverAShare => true];
+            foreach (mirror_parse_additional_pairs($additionalPairsText) as $pair) {
+                [$localShare, $otherShare] = $pair;
+                if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
+                    $errors[] = "Additional share pairs must use share names, not paths.";
+                    continue;
+                }
+                if (!isset($shares[$localShare])) {
+                    $errors[] = "Additional local share does not exist: $localShare";
+                    continue;
+                }
+                if (isset($seenLocalShares[$localShare])) {
+                    $errors[] = "Additional share pair repeats local share: $localShare";
+                    continue;
+                }
+                if ($serverBType === "local") {
+                    if (!isset($shares[$otherShare])) {
+                        $errors[] = "Additional second local share does not exist: $otherShare";
+                        continue;
+                    }
+                    if ($localShare === $otherShare) {
+                        $errors[] = "Additional pair cannot mirror a share to itself: $localShare";
+                        continue;
+                    }
+                } elseif ($peerShares && !in_array($otherShare, $peerShares, true)) {
+                    $errors[] = "Additional remote share must be selected from the linked peer's current shares: $otherShare";
+                    continue;
+                }
+                $seenLocalShares[$localShare] = true;
+                $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort);
+            }
+        } catch (Throwable $pairError) {
+            $errors[] = $pairError->getMessage();
+        }
+    }
+
     if ($errors) {
         mirror_write_action("Settings not saved:\n" . implode("\n", $errors));
         mirror_redirect();
@@ -1045,6 +1130,7 @@ if ($action === "save-config") {
         "authority" => $authority,
         "delete_propagation" => $deletePropagation,
         "delete_behavior" => $deleteBehavior,
+        "share_pairs" => $sharePairs,
         "sync_interval" => $interval,
     ];
 

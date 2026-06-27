@@ -293,6 +293,7 @@ function load_state(string $configPath): array {
     }
     $state["files"] = is_array($state["files"] ?? null) ? $state["files"] : [];
     $state["conflicts"] = is_array($state["conflicts"] ?? null) ? $state["conflicts"] : [];
+    $state["pairs"] = is_array($state["pairs"] ?? null) ? $state["pairs"] : [];
     return $state;
 }
 
@@ -387,8 +388,17 @@ function copy_remote_to_local(array $config, string $configPath, string $sourceR
 function initial_sync(string $configPath): array {
     $config = load_config($configPath);
     if (node_is_managed_remote($config)) {
-        return ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+        return empty_summary();
     }
+    $summary = empty_summary();
+    foreach (configured_pair_configs($config) as $pairConfig) {
+        $pairSummary = initial_sync_pair($configPath, $pairConfig["config"], $pairConfig["key"]);
+        add_summary($summary, $pairSummary);
+    }
+    return $summary;
+}
+
+function initial_sync_pair(string $configPath, array $config, string $stateKey): array {
     $aRoot = rtrim((string)$config["server_a"]["root"], "/");
     $bRoot = rtrim((string)$config["server_b"]["root"], "/");
     if ($aRoot === "" || $bRoot === "") {
@@ -421,7 +431,9 @@ function initial_sync(string $configPath): array {
         ]);
     }
     echo date("c") . " initial sync copy finished; recording baseline state\n";
-    return sync_once($configPath);
+    return endpoint_is_remote($config)
+        ? sync_once_remote($configPath, $config, $stateKey)
+        : sync_once_pair($configPath, $config, $stateKey);
 }
 
 function trash_remote_file(array $config, string $configPath, string $root, string $rel, string $reason, array &$summary): void {
@@ -492,22 +504,76 @@ function record_conflict_states(array &$state, string $rel, string $reason, arra
     $summary["conflicts"]++;
 }
 
-function sync_once(string $configPath): array {
-    $config = load_config($configPath);
-    if (node_is_managed_remote($config)) {
-        return ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+function empty_summary(): array {
+    return ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+}
+
+function add_summary(array &$target, array $source): void {
+    foreach (["copied", "deleted", "trashed", "conflicts", "unchanged"] as $key) {
+        $target[$key] += (int)($source[$key] ?? 0);
     }
-    if (endpoint_is_remote($config)) {
-        return sync_once_remote($configPath, $config);
+}
+
+function pair_key(array $pair): string {
+    $a = (string)($pair["server_a"]["root"] ?? "");
+    $b = (string)($pair["server_b"]["root"] ?? "");
+    return substr(hash("sha256", $a . "|" . $b), 0, 16);
+}
+
+function configured_pair_configs(array $config): array {
+    $pairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
+    if (!$pairs) {
+        return [["key" => "__default", "config" => $config]];
     }
+    $configs = [];
+    foreach ($pairs as $index => $pair) {
+        if (!is_array($pair)) {
+            continue;
+        }
+        $pairConfig = $config;
+        $pairConfig["server_a"] = array_replace($config["server_a"] ?? [], is_array($pair["server_a"] ?? null) ? $pair["server_a"] : []);
+        $pairConfig["server_b"] = array_replace($config["server_b"] ?? [], is_array($pair["server_b"] ?? null) ? $pair["server_b"] : []);
+        $configs[] = ["key" => pair_key($pairConfig), "config" => $pairConfig];
+    }
+    return $configs ?: [["key" => "__default", "config" => $config]];
+}
+
+function load_scoped_state(string $configPath, string $stateKey): array {
+    $allState = load_state($configPath);
+    if ($stateKey === "__default") {
+        return [
+            "all" => $allState,
+            "current" => ["files" => $allState["files"], "conflicts" => $allState["conflicts"]],
+        ];
+    }
+    $current = is_array($allState["pairs"][$stateKey] ?? null) ? $allState["pairs"][$stateKey] : [];
+    $current["files"] = is_array($current["files"] ?? null) ? $current["files"] : [];
+    $current["conflicts"] = is_array($current["conflicts"] ?? null) ? $current["conflicts"] : [];
+    return ["all" => $allState, "current" => $current];
+}
+
+function save_scoped_state(string $configPath, string $stateKey, array $allState, array $state): void {
+    if ($stateKey === "__default") {
+        $allState["files"] = $state["files"];
+        $allState["conflicts"] = $state["conflicts"];
+    } else {
+        $allState["pairs"] = is_array($allState["pairs"] ?? null) ? $allState["pairs"] : [];
+        $allState["pairs"][$stateKey] = $state;
+    }
+    save_state($configPath, $allState);
+}
+
+function sync_once_pair(string $configPath, array $config, string $stateKey): array {
     $aRoot = (string)$config["server_a"]["root"];
     $bRoot = (string)$config["server_b"]["root"];
-    $state = load_state($configPath);
+    $stateScope = load_scoped_state($configPath, $stateKey);
+    $allState = $stateScope["all"];
+    $state = $stateScope["current"];
     $scanA = scan_files($aRoot);
     $scanB = scan_files($bRoot);
     $paths = array_unique(array_merge(array_keys($scanA), array_keys($scanB), array_keys($state["files"])));
     sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
-    $summary = ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+    $summary = empty_summary();
 
     foreach ($paths as $rel) {
         $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
@@ -575,19 +641,36 @@ function sync_once(string $configPath): array {
         }
     }
 
-    save_state($configPath, $state);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
     return $summary;
 }
 
-function sync_once_remote(string $configPath, array $config): array {
+function sync_once(string $configPath): array {
+    $config = load_config($configPath);
+    if (node_is_managed_remote($config)) {
+        return empty_summary();
+    }
+    $summary = empty_summary();
+    foreach (configured_pair_configs($config) as $pairConfig) {
+        $pairSummary = endpoint_is_remote($pairConfig["config"])
+            ? sync_once_remote($configPath, $pairConfig["config"], $pairConfig["key"])
+            : sync_once_pair($configPath, $pairConfig["config"], $pairConfig["key"]);
+        add_summary($summary, $pairSummary);
+    }
+    return $summary;
+}
+
+function sync_once_remote(string $configPath, array $config, string $stateKey = "__default"): array {
     $aRoot = (string)$config["server_a"]["root"];
     $bRoot = (string)$config["server_b"]["root"];
-    $state = load_state($configPath);
+    $stateScope = load_scoped_state($configPath, $stateKey);
+    $allState = $stateScope["all"];
+    $state = $stateScope["current"];
     $scanA = scan_files($aRoot);
     $scanB = scan_remote_files($config, $configPath, $bRoot);
     $paths = array_unique(array_merge(array_keys($scanA), array_keys($scanB), array_keys($state["files"])));
     sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
-    $summary = ["copied" => 0, "deleted" => 0, "trashed" => 0, "conflicts" => 0, "unchanged" => 0];
+    $summary = empty_summary();
 
     foreach ($paths as $rel) {
         $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
@@ -656,7 +739,7 @@ function sync_once_remote(string $configPath, array $config): array {
         }
     }
 
-    save_state($configPath, $state);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
     return $summary;
 }
 

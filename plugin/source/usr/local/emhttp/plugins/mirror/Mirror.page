@@ -37,6 +37,7 @@ $defaultConfig = [
   "authority" => "server_a_preferred",
   "delete_propagation" => false,
   "delete_behavior" => "restore_missing",
+  "share_pairs" => [],
   "sync_interval" => 10,
 ];
 $config = $defaultConfig;
@@ -122,6 +123,19 @@ $shares = mirror_current_shares();
 $serverAShare = mirror_share_name_from_path($config["server_a"]["root"]);
 $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
+$configuredSharePairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
+$additionalPairLines = [];
+foreach (array_slice($configuredSharePairs, 1) as $pair) {
+  if (!is_array($pair)) {
+    continue;
+  }
+  $pairAShare = (string)($pair["server_a"]["share"] ?? mirror_share_name_from_path((string)($pair["server_a"]["root"] ?? "")));
+  $pairBShare = (string)($pair["server_b"]["share"] ?? mirror_share_name_from_path((string)($pair["server_b"]["root"] ?? "")));
+  if ($pairAShare !== "" && $pairBShare !== "") {
+    $additionalPairLines[] = $pairAShare . "=" . $pairBShare;
+  }
+}
+$additionalPairsText = implode("\n", $additionalPairLines);
 $nodeRole = $config["node_role"] ?? "master";
 if (!in_array($nodeRole, ["master", "managed_remote"], true)) {
   $nodeRole = "master";
@@ -328,6 +342,9 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
 }
 .mirror-share-group {
   margin-top: 20px;
+}
+.mirror-share-pairs-extra {
+  margin-top: 14px;
 }
 .mirror-share-group-title {
   border-bottom: 1px solid var(--border-color, #333);
@@ -727,6 +744,10 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
           <strong>Remote shares loaded</strong>
           <span><?=mirror_value(count($linkedPeerShares))?></span>
         </div>
+        <div class="mirror-share-status-item">
+          <strong>Configured pairs</strong>
+          <span><?=mirror_value(max(1, count($configuredSharePairs)))?></span>
+        </div>
       </div>
 
       <?php if (!empty($linkedPeer["host"])): ?>
@@ -802,6 +823,11 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
                 <span class="mirror-help">Refresh Remote Shares after pairing to choose from a dropdown.</span>
               <?php endif; ?>
             </div>
+          </div>
+          <div class="mirror-field mirror-share-pairs-extra">
+            <label for="additional_share_pairs">Additional share pairs</label>
+            <textarea id="additional_share_pairs" name="additional_share_pairs" placeholder="photos=photos-backup&#10;media=media-backup"><?=mirror_value($additionalPairsText)?></textarea>
+            <span class="mirror-help">Optional. One pair per line as this-server-share=other-share. In Remote LAN mode, the right side is the remote server share.</span>
           </div>
         </div>
 
