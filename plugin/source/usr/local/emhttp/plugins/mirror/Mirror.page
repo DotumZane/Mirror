@@ -168,18 +168,21 @@ function mirror_route_state($allState, $routeKey) {
     return [
       "files" => is_array($allState["files"] ?? null) ? $allState["files"] : [],
       "conflicts" => is_array($allState["conflicts"] ?? null) ? $allState["conflicts"] : [],
+      "_meta" => is_array($allState["_meta"] ?? null) ? $allState["_meta"] : [],
     ];
   }
   $routeState = is_array($allState["pairs"][$routeKey] ?? null) ? $allState["pairs"][$routeKey] : [];
   return [
     "files" => is_array($routeState["files"] ?? null) ? $routeState["files"] : [],
     "conflicts" => is_array($routeState["conflicts"] ?? null) ? $routeState["conflicts"] : [],
+    "_meta" => is_array($routeState["_meta"] ?? null) ? $routeState["_meta"] : [],
   ];
 }
 
 function mirror_route_summary($routeConfig, $routeState, $running) {
   $files = is_array($routeState["files"] ?? null) ? $routeState["files"] : [];
   $conflicts = is_array($routeState["conflicts"] ?? null) ? $routeState["conflicts"] : [];
+  $meta = is_array($routeState["_meta"] ?? null) ? $routeState["_meta"] : [];
   $lastPath = "";
   $lastStatus = "";
   $lastUpdated = 0;
@@ -202,16 +205,32 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
       $attentionCount++;
     }
   }
+  $phase = (string)($meta["phase"] ?? "");
+  $processed = max(0, (int)($meta["processed"] ?? 0));
+  $total = max(0, (int)($meta["total"] ?? 0));
+  $metaUpdated = (int)($meta["updated_at"] ?? 0);
+  $progressPercent = $total > 0 ? min(100, (int)floor(($processed / $total) * 100)) : 0;
   $cleanCount = max(0, $indexedCount - $attentionCount);
   $completePercent = $indexedCount > 0 ? (int)floor(($cleanCount / $indexedCount) * 100) : 0;
   $indexStatus = count($files) > 0 ? count($files) . " indexed" : "No index yet";
   if ($lastUpdated > 0) {
     $indexStatus .= " - " . mirror_age_label($lastUpdated);
+  } elseif ($metaUpdated > 0) {
+    $indexStatus .= " - " . mirror_age_label($metaUpdated);
   }
   if ($hasConflict) {
     $mirrorStatus = $completePercent . "% complete - needs attention";
+  } elseif ($phase !== "" && $phase !== "complete" && $total > 0) {
+    $indexStatus = "Indexing " . $processed . "/" . $total . " files";
+    $mirrorStatus = $progressPercent . "% complete - " . str_replace("_", " ", $phase);
+  } elseif ($phase !== "" && $phase !== "complete") {
+    $indexStatus = "Scanning files";
+    if ($metaUpdated > 0) {
+      $indexStatus .= " - " . mirror_age_label($metaUpdated);
+    }
+    $mirrorStatus = "Counting files - " . str_replace("_", " ", $phase);
   } elseif (count($files) === 0) {
-    $mirrorStatus = "0% complete";
+    $mirrorStatus = $running ? "Index pending - waiting for first pass" : "0% complete";
   } else {
     $mirrorStatus = $completePercent . "% complete";
     $mirrorStatus .= $running ? " - watching for changes" : " - daemon stopped";
@@ -220,8 +239,8 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
     "label" => mirror_route_label($routeConfig),
     "index" => $indexStatus,
     "status" => $mirrorStatus,
-    "last_file" => $lastPath !== "" ? $lastPath : "No indexed files yet",
-    "last_status" => $lastStatus !== "" ? $lastStatus : "none",
+    "last_file" => $lastPath !== "" ? $lastPath : ((string)($meta["current_path"] ?? "") ?: "No indexed files yet"),
+    "last_status" => $lastStatus !== "" ? $lastStatus : ($phase !== "" ? str_replace("_", " ", $phase) : "none"),
     "upload_rate" => "Idle",
     "download_rate" => "Idle",
     "conflicts" => count($conflicts),

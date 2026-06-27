@@ -558,6 +558,16 @@ function add_summary(array &$target, array $source): void {
     }
 }
 
+function mark_progress(array &$state, string $phase, int $processed, int $total, string $currentPath = ""): void {
+    $state["_meta"] = [
+        "phase" => $phase,
+        "processed" => max(0, $processed),
+        "total" => max(0, $total),
+        "current_path" => $currentPath,
+        "updated_at" => time(),
+    ];
+}
+
 function pair_key(array $pair): string {
     $a = (string)($pair["server_a"]["root"] ?? "");
     $b = (string)($pair["server_b"]["root"] ?? "");
@@ -622,78 +632,93 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
     $stateScope = load_scoped_state($configPath, $stateKey);
     $allState = $stateScope["all"];
     $state = $stateScope["current"];
+    mark_progress($state, "scanning", 0, 0);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
     $scanA = scan_files($aRoot);
     $scanB = scan_files($bRoot);
     $paths = array_unique(array_merge(array_keys($scanA), array_keys($scanB), array_keys($state["files"])));
     sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
     $summary = empty_summary();
+    $totalPaths = count($paths);
+    $processedPaths = 0;
+    mark_progress($state, "syncing", $processedPaths, $totalPaths);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
 
     foreach ($paths as $rel) {
-        $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
-        $b = $scanB[$rel] ?? ["exists" => false, "sig" => null];
-        $prev = $state["files"][$rel] ?? null;
-        $prevA = $prev["a_sig"] ?? null;
-        $prevB = $prev["b_sig"] ?? null;
-        $aChanged = $a["sig"] !== $prevA;
-        $bChanged = $b["sig"] !== $prevB;
+        try {
+            $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
+            $b = $scanB[$rel] ?? ["exists" => false, "sig" => null];
+            $prev = $state["files"][$rel] ?? null;
+            $prevA = $prev["a_sig"] ?? null;
+            $prevB = $prev["b_sig"] ?? null;
+            $aChanged = $a["sig"] !== $prevA;
+            $bChanged = $b["sig"] !== $prevB;
 
-        if ($prev && ($prev["status"] ?? "") === "conflict" && !$aChanged && !$bChanged) {
-            $summary["unchanged"]++;
-            continue;
-        }
-        if ($a["exists"] && $b["exists"] && $a["sig"] === $b["sig"]) {
-            record_file($state, $rel, $aRoot, $bRoot, "synced");
-            $summary["unchanged"]++;
-            continue;
-        }
-        if (!$prev) {
-            if ($a["exists"] && !$b["exists"]) {
-                copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+            if ($prev && ($prev["status"] ?? "") === "conflict" && !$aChanged && !$bChanged) {
+                $summary["unchanged"]++;
+                continue;
+            }
+            if ($a["exists"] && $b["exists"] && $a["sig"] === $b["sig"]) {
                 record_file($state, $rel, $aRoot, $bRoot, "synced");
+                $summary["unchanged"]++;
+                continue;
+            }
+            if (!$prev) {
+                if ($a["exists"] && !$b["exists"]) {
+                    copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                } elseif ($b["exists"] && !$a["exists"]) {
+                    copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                } elseif ($a["exists"] && $b["exists"]) {
+                    record_conflict($state, $rel, "new_path_differs_on_both_servers", $aRoot, $bRoot, $summary);
+                }
+                continue;
+            }
+            if ($a["exists"] && $b["exists"]) {
+                if ($aChanged && !$bChanged) {
+                    copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                } elseif ($bChanged && !$aChanged) {
+                    copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                } elseif ($aChanged && $bChanged) {
+                    record_conflict($state, $rel, "both_changed", $aRoot, $bRoot, $summary);
+                } else {
+                    record_conflict($state, $rel, "state_mismatch_without_change", $aRoot, $bRoot, $summary);
+                }
+            } elseif ($a["exists"] && !$b["exists"]) {
+                if (!$aChanged && equal_peer_delete_enabled($config)) {
+                    delete_file($config, "server-a", $aRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "deleted");
+                } else {
+                    copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                }
             } elseif ($b["exists"] && !$a["exists"]) {
-                copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "synced");
-            } elseif ($a["exists"] && $b["exists"]) {
-                record_conflict($state, $rel, "new_path_differs_on_both_servers", $aRoot, $bRoot, $summary);
-            }
-            continue;
-        }
-        if ($a["exists"] && $b["exists"]) {
-            if ($aChanged && !$bChanged) {
-                copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "synced");
-            } elseif ($bChanged && !$aChanged) {
-                copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "synced");
-            } elseif ($aChanged && $bChanged) {
-                record_conflict($state, $rel, "both_changed", $aRoot, $bRoot, $summary);
+                if ($bChanged) {
+                    record_conflict($state, $rel, "server_a_deleted_server_b_changed", $aRoot, $bRoot, $summary);
+                } elseif (delete_mirroring_enabled($config)) {
+                    delete_file($config, "server-b", $bRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "deleted");
+                } else {
+                    copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
+                    record_file($state, $rel, $aRoot, $bRoot, "synced");
+                }
             } else {
-                record_conflict($state, $rel, "state_mismatch_without_change", $aRoot, $bRoot, $summary);
-            }
-        } elseif ($a["exists"] && !$b["exists"]) {
-            if (!$aChanged && equal_peer_delete_enabled($config)) {
-                delete_file($config, "server-a", $aRoot, $rel, $summary);
                 record_file($state, $rel, $aRoot, $bRoot, "deleted");
-            } else {
-                copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "synced");
+                $summary["unchanged"]++;
             }
-        } elseif ($b["exists"] && !$a["exists"]) {
-            if ($bChanged) {
-                record_conflict($state, $rel, "server_a_deleted_server_b_changed", $aRoot, $bRoot, $summary);
-            } elseif (delete_mirroring_enabled($config)) {
-                delete_file($config, "server-b", $bRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "deleted");
-            } else {
-                copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
-                record_file($state, $rel, $aRoot, $bRoot, "synced");
+        } finally {
+            $processedPaths++;
+            if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
+                mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
+                save_scoped_state($configPath, $stateKey, $allState, $state);
             }
-        } else {
-            record_file($state, $rel, $aRoot, $bRoot, "deleted");
-            $summary["unchanged"]++;
         }
     }
 
+    mark_progress($state, "complete", $totalPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
     return $summary;
 }
@@ -719,79 +744,94 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
     $stateScope = load_scoped_state($configPath, $stateKey);
     $allState = $stateScope["all"];
     $state = $stateScope["current"];
+    mark_progress($state, "scanning", 0, 0);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
     $scanA = scan_files($aRoot);
     $scanB = scan_remote_files($config, $configPath, $bRoot);
     $paths = array_unique(array_merge(array_keys($scanA), array_keys($scanB), array_keys($state["files"])));
     sort($paths, SORT_NATURAL | SORT_FLAG_CASE);
     $summary = empty_summary();
+    $totalPaths = count($paths);
+    $processedPaths = 0;
+    mark_progress($state, "syncing", $processedPaths, $totalPaths);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
 
     foreach ($paths as $rel) {
-        $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
-        $b = $scanB[$rel] ?? ["exists" => false, "sig" => null];
-        $prev = $state["files"][$rel] ?? null;
-        $prevA = $prev["a_sig"] ?? null;
-        $prevB = $prev["b_sig"] ?? null;
-        $aChanged = $a["sig"] !== $prevA;
-        $bChanged = $b["sig"] !== $prevB;
+        try {
+            $a = $scanA[$rel] ?? ["exists" => false, "sig" => null];
+            $b = $scanB[$rel] ?? ["exists" => false, "sig" => null];
+            $prev = $state["files"][$rel] ?? null;
+            $prevA = $prev["a_sig"] ?? null;
+            $prevB = $prev["b_sig"] ?? null;
+            $aChanged = $a["sig"] !== $prevA;
+            $bChanged = $b["sig"] !== $prevB;
 
-        if ($prev && ($prev["status"] ?? "") === "conflict" && !$aChanged && !$bChanged) {
-            $summary["unchanged"]++;
-            continue;
-        }
-        if ($a["exists"] && $b["exists"] && $a["sig"] === $b["sig"]) {
-            record_file_states($state, $rel, $a, $b, "synced");
-            $summary["unchanged"]++;
-            continue;
-        }
-        if (!$prev) {
-            if ($a["exists"] && !$b["exists"]) {
-                copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
-                record_file_states($state, $rel, $a, $a, "synced");
+            if ($prev && ($prev["status"] ?? "") === "conflict" && !$aChanged && !$bChanged) {
+                $summary["unchanged"]++;
+                continue;
+            }
+            if ($a["exists"] && $b["exists"] && $a["sig"] === $b["sig"]) {
+                record_file_states($state, $rel, $a, $b, "synced");
+                $summary["unchanged"]++;
+                continue;
+            }
+            if (!$prev) {
+                if ($a["exists"] && !$b["exists"]) {
+                    copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
+                    record_file_states($state, $rel, $a, $a, "synced");
+                } elseif ($b["exists"] && !$a["exists"]) {
+                    copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
+                    record_file_states($state, $rel, $b, $b, "synced");
+                } elseif ($a["exists"] && $b["exists"]) {
+                    record_conflict_states($state, $rel, "new_path_differs_on_both_servers", $a, $b, $summary);
+                }
+                continue;
+            }
+            if ($a["exists"] && $b["exists"]) {
+                if ($aChanged && !$bChanged) {
+                    trash_remote_file($config, $configPath, $bRoot, $rel, "overwritten", $summary);
+                    copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
+                    record_file_states($state, $rel, $a, $a, "synced");
+                } elseif ($bChanged && !$aChanged) {
+                    copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
+                    record_file_states($state, $rel, $b, $b, "synced");
+                } elseif ($aChanged && $bChanged) {
+                    record_conflict_states($state, $rel, "both_changed", $a, $b, $summary);
+                } else {
+                    record_conflict_states($state, $rel, "state_mismatch_without_change", $a, $b, $summary);
+                }
+            } elseif ($a["exists"] && !$b["exists"]) {
+                if (!$aChanged && equal_peer_delete_enabled($config)) {
+                    delete_file($config, "server-a", $aRoot, $rel, $summary);
+                    record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
+                } else {
+                    copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
+                    record_file_states($state, $rel, $a, $a, "synced");
+                }
             } elseif ($b["exists"] && !$a["exists"]) {
-                copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
-                record_file_states($state, $rel, $b, $b, "synced");
-            } elseif ($a["exists"] && $b["exists"]) {
-                record_conflict_states($state, $rel, "new_path_differs_on_both_servers", $a, $b, $summary);
-            }
-            continue;
-        }
-        if ($a["exists"] && $b["exists"]) {
-            if ($aChanged && !$bChanged) {
-                trash_remote_file($config, $configPath, $bRoot, $rel, "overwritten", $summary);
-                copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
-                record_file_states($state, $rel, $a, $a, "synced");
-            } elseif ($bChanged && !$aChanged) {
-                copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
-                record_file_states($state, $rel, $b, $b, "synced");
-            } elseif ($aChanged && $bChanged) {
-                record_conflict_states($state, $rel, "both_changed", $a, $b, $summary);
+                if ($bChanged) {
+                    record_conflict_states($state, $rel, "server_a_deleted_server_b_changed", $a, $b, $summary);
+                } elseif (delete_mirroring_enabled($config)) {
+                    delete_remote_file($config, $configPath, $bRoot, $rel, $summary);
+                    record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
+                } else {
+                    copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
+                    record_file_states($state, $rel, $b, $b, "synced");
+                }
             } else {
-                record_conflict_states($state, $rel, "state_mismatch_without_change", $a, $b, $summary);
+                record_file_states($state, $rel, $a, $b, "deleted");
+                $summary["unchanged"]++;
             }
-        } elseif ($a["exists"] && !$b["exists"]) {
-            if (!$aChanged && equal_peer_delete_enabled($config)) {
-                delete_file($config, "server-a", $aRoot, $rel, $summary);
-                record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
-            } else {
-                copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
-                record_file_states($state, $rel, $a, $a, "synced");
+        } finally {
+            $processedPaths++;
+            if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
+                mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
+                save_scoped_state($configPath, $stateKey, $allState, $state);
             }
-        } elseif ($b["exists"] && !$a["exists"]) {
-            if ($bChanged) {
-                record_conflict_states($state, $rel, "server_a_deleted_server_b_changed", $a, $b, $summary);
-            } elseif (delete_mirroring_enabled($config)) {
-                delete_remote_file($config, $configPath, $bRoot, $rel, $summary);
-                record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
-            } else {
-                copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
-                record_file_states($state, $rel, $b, $b, "synced");
-            }
-        } else {
-            record_file_states($state, $rel, $a, $b, "deleted");
-            $summary["unchanged"]++;
         }
     }
 
+    mark_progress($state, "complete", $totalPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
     return $summary;
 }
