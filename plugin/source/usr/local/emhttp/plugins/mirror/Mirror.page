@@ -925,8 +925,8 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
               <button type="button" data-add-share-pair>Add Pair</button>
             </div>
 
-            <template data-share-pair-template>
-              <div class="mirror-share-pair-row" data-share-pair-row>
+            <div hidden>
+              <div class="mirror-share-pair-row" data-share-pair-template>
                 <div class="mirror-field">
                   <label>This server share</label>
                   <select name="additional_pair_local[]" <?=$shares ? "" : "disabled"?>>
@@ -974,7 +974,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
                 </div>
                 <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
               </div>
-            </template>
+            </div>
           </div>
         </div>
 
@@ -1227,8 +1227,16 @@ function bindMirrorPage() {
     var addButton = container.querySelector('[data-add-share-pair]');
     if (addButton && list && template) {
       addButton.addEventListener('click', function () {
-        var fragment = template.content.cloneNode(true);
-        list.appendChild(fragment);
+        var row = template.cloneNode(true);
+        row.removeAttribute('data-share-pair-template');
+        row.setAttribute('data-share-pair-row', '1');
+        row.querySelectorAll('select').forEach(function (select) {
+          select.selectedIndex = 0;
+        });
+        row.querySelectorAll('input[type="text"]').forEach(function (input) {
+          input.value = '';
+        });
+        list.appendChild(row);
         syncModeVisibility();
         syncSharePairEmptyState(container);
       });

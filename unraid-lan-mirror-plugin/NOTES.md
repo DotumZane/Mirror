@@ -497,6 +497,7 @@ Current release status:
 - `0.9.6` adds support for syncing multiple share pairs.
 - `0.9.7` replaces the extra share-pairs text box with dropdown rows and an Add Pair button.
 - `0.9.8` adds per-route sync behavior controls for each share pair.
+- `0.9.9` fixes the Add Pair button in Unraid browser contexts.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -1836,6 +1837,16 @@ Next suggested task:
 - New decisions: Role changes should require factory reset, but factory reset should not wipe share sync indexes.
 - Open questions: Confirm factory reset leaves `/boot/config/plugins/mirror/mirror.sqlite3` in place on both servers.
 - Next suggested task: Push to GitHub, update both servers to `0.9.5`, set roles, and verify changing role requires factory reset.
+
+#### 2026-06-26 - Add Pair Button Fix
+
+- Task completed: Fixed the Add Pair button on the Shares tab.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.9.9.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Replaced the HTML `<template>` clone path with a hidden real DOM row, then clone that row when Add Pair is clicked. This should work in Unraid browser contexts that do not handle `template.content` reliably.
+- New decisions: Avoid `<template>` for critical interactive UI in this plugin page.
+- Open questions: Confirm Add Pair adds a row on both local and remote Mirror setups.
+- Next suggested task: Push to GitHub, update both servers to `0.9.9`, and click Add Pair on the Shares tab.
 
 #### 2026-06-26 - Per-Route Sync Behaviors
 
