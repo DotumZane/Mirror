@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.02
+V1.00.03
 ```
 
 Version source of truth:
@@ -502,6 +502,7 @@ Current release status:
 - `V1.00.00` bumps the plugin package to the required release version format.
 - `V1.00.01` adds current mirror status cards to the Status tab.
 - `V1.00.02` moves current mirror status cards into the right-side empty space.
+- `V1.00.03` shows mirror completeness percentage in status cards.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -719,7 +720,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.02.
+- Current version: V1.00.03.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -770,7 +771,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.02`.
+- Current version is `V1.00.03`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -780,7 +781,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `V1.00.02`, and test multiple share pairs.
+- Push to GitHub, update both Unraid servers to `V1.00.03`, and test multiple share pairs.
 
 ### Chat Handoff
 
@@ -791,7 +792,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.02`
+- Current version: `V1.00.03`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -809,7 +810,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-V1.00.02.txz`.
+- Versioned package build exists at `packages/mirror-V1.00.03.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -837,7 +838,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `V1.00.02`.
+2. On both Unraid servers, update Mirror to `V1.00.03`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1842,6 +1843,16 @@ Next suggested task:
 - Open questions: Confirm factory reset leaves `/boot/config/plugins/mirror/mirror.sqlite3` in place on both servers.
 - Next suggested task: Push to GitHub, update both servers to `0.9.5`, set roles, and verify changing role requires factory reset.
 
+#### 2026-06-26 - Mirror Completeness Percent
+
+- Task completed: Replaced the waiting-for-initial-sync message with a completeness percentage.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.03.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Current Mirrors cards now show `0% complete` before anything is indexed, `100% complete` when indexed paths are clean, and a lower percentage when indexed paths need attention.
+- New decisions: Use the sync index for completeness so the Status page stays fast on very large shares.
+- Open questions: Later, add a live scan/transfer progress source if the user needs true initial-copy progress while rsync is still running.
+- Next suggested task: Push to GitHub, update both servers to `V1.00.03`, and verify the Current Mirrors status text.
+
 #### 2026-06-26 - Right-Side Mirror Status Placement
 
 - Task completed: Moved the current mirror status cards into the right-side empty space on the Status tab.
@@ -1940,4 +1951,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `V1.00.02`, and test multiple share pairs.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `V1.00.03`, and test multiple share pairs.

@@ -6,7 +6,7 @@ The goal is an Unraid plugin installed on two servers that can pair over the loc
 
 Current status: planning and specification.
 
-Current version: `V1.00.02`
+Current version: `V1.00.03`
 
 ## Test Install On Unraid
 

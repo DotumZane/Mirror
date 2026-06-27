@@ -195,16 +195,26 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
     }
   }
   $hasConflict = count($conflicts) > 0 || $lastStatus === "conflict";
+  $indexedCount = count($files);
+  $attentionCount = count($conflicts);
+  foreach ($files as $entry) {
+    if (is_array($entry) && (string)($entry["status"] ?? "") === "conflict") {
+      $attentionCount++;
+    }
+  }
+  $cleanCount = max(0, $indexedCount - $attentionCount);
+  $completePercent = $indexedCount > 0 ? (int)floor(($cleanCount / $indexedCount) * 100) : 0;
   $indexStatus = count($files) > 0 ? count($files) . " indexed" : "No index yet";
   if ($lastUpdated > 0) {
     $indexStatus .= " - " . mirror_age_label($lastUpdated);
   }
   if ($hasConflict) {
-    $mirrorStatus = "Needs attention";
+    $mirrorStatus = $completePercent . "% complete - needs attention";
   } elseif (count($files) === 0) {
-    $mirrorStatus = "Waiting for initial sync";
+    $mirrorStatus = "0% complete";
   } else {
-    $mirrorStatus = $running ? "Watching for changes" : "Indexed, daemon stopped";
+    $mirrorStatus = $completePercent . "% complete";
+    $mirrorStatus .= $running ? " - watching for changes" : " - daemon stopped";
   }
   return [
     "label" => mirror_route_label($routeConfig),
