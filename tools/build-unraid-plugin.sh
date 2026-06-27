@@ -44,7 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
-- Shows mirror completeness percentage in status cards.
+- Uses Mirror-owned SSH known_hosts for linked peers.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
   </CHANGES>

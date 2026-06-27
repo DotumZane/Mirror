@@ -55,6 +55,10 @@ function ssh_key_path(string $configPath): string {
     return dirname($configPath) . "/ssh/mirror_ed25519";
 }
 
+function ssh_known_hosts_path(string $configPath): string {
+    return dirname($configPath) . "/ssh/known_hosts";
+}
+
 function mirror_server_name(): string {
     $ident = "/boot/config/ident.cfg";
     if (is_file($ident)) {
@@ -92,6 +96,19 @@ function ensure_ssh_key(string $configPath): string {
     return $key;
 }
 
+function ensure_ssh_known_hosts_file(string $configPath): string {
+    $knownHosts = ssh_known_hosts_path($configPath);
+    $knownHostsDir = dirname($knownHosts);
+    if (!is_dir($knownHostsDir) && !mkdir($knownHostsDir, 0700, true) && !is_dir($knownHostsDir)) {
+        throw new RuntimeException("could not create known hosts directory: $knownHostsDir");
+    }
+    if (!is_file($knownHosts)) {
+        file_put_contents($knownHosts, "");
+    }
+    chmod($knownHosts, 0600);
+    return $knownHosts;
+}
+
 function ssh_target(array $config): string {
     $user = (string)($config["server_b"]["user"] ?? "root");
     $host = (string)($config["server_b"]["host"] ?? "");
@@ -104,12 +121,14 @@ function ssh_target(array $config): string {
 function ssh_base_args(array $config, string $configPath): array {
     $port = max(1, min(65535, (int)($config["server_b"]["port"] ?? 22)));
     $key = ensure_ssh_key($configPath);
+    $knownHosts = ensure_ssh_known_hosts_file($configPath);
     ensure_remote_ssh_ready($config, $configPath);
     return [
         "ssh",
         "-i", $key,
         "-p", (string)$port,
         "-o", "BatchMode=yes",
+        "-o", "UserKnownHostsFile=" . $knownHosts,
         "-o", "StrictHostKeyChecking=accept-new",
         "-o", "ConnectTimeout=8",
     ];
@@ -183,10 +202,34 @@ function http_json(string $url, array $payload = [], float $timeout = 4.0, bool 
     return $decoded;
 }
 
+function refresh_peer_known_host(array $config, string $configPath): void {
+    $host = (string)($config["server_b"]["host"] ?? "");
+    if ($host === "") {
+        return;
+    }
+    $port = max(1, min(65535, (int)($config["server_b"]["port"] ?? 22)));
+    $knownHosts = ensure_ssh_known_hosts_file($configPath);
+    $removeTarget = $port === 22 ? $host : "[" . $host . "]:" . $port;
+    $sshKeygen = trim((string)shell_exec("command -v ssh-keygen 2>/dev/null"));
+    if ($sshKeygen !== "") {
+        shell_exec(escapeshellarg($sshKeygen) . " -R " . escapeshellarg($removeTarget) . " -f " . escapeshellarg($knownHosts) . " >/dev/null 2>&1");
+    }
+    $sshKeyscan = trim((string)shell_exec("command -v ssh-keyscan 2>/dev/null"));
+    if ($sshKeyscan !== "") {
+        $scan = shell_exec(escapeshellarg($sshKeyscan) . " -T 5 -p " . escapeshellarg((string)$port) . " -H " . escapeshellarg($host) . " 2>/dev/null");
+        if (is_string($scan) && trim($scan) !== "") {
+            file_put_contents($knownHosts, $scan, FILE_APPEND);
+            chmod($knownHosts, 0600);
+        }
+    }
+}
+
 function ensure_remote_ssh_ready(array $config, string $configPath): void {
     static $ready = [];
     $host = (string)($config["server_b"]["host"] ?? "");
-    if ($host === "" || isset($ready[$host])) {
+    $port = max(1, min(65535, (int)($config["server_b"]["port"] ?? 22)));
+    $readyKey = $host . ":" . $port;
+    if ($host === "" || isset($ready[$readyKey])) {
         return;
     }
     $publicKeyFile = ensure_ssh_key($configPath) . ".pub";
@@ -205,7 +248,8 @@ function ensure_remote_ssh_ready(array $config, string $configPath): void {
     if (($response["status"] ?? "") !== "ok") {
         throw new RuntimeException("peer SSH setup failed: " . json_encode($response, JSON_UNESCAPED_SLASHES));
     }
-    $ready[$host] = true;
+    refresh_peer_known_host($config, $configPath);
+    $ready[$readyKey] = true;
 }
 
 function remote_path(string $root, string $rel = ""): string {
