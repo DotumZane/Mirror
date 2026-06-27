@@ -250,7 +250,6 @@ if (!empty($linkedPeer["host"]) && (
   margin-top: 24px;
 }
 .mirror-warning,
-.mirror-message,
 .mirror-success,
 .mirror-client-message {
   border-radius: 6px;
@@ -260,11 +259,6 @@ if (!empty($linkedPeer["host"]) && (
 .mirror-warning {
   border: 1px solid #c9892b;
   background: rgba(201, 137, 43, 0.12);
-}
-.mirror-message {
-  border: 1px solid #3b82f6;
-  background: rgba(59, 130, 246, 0.12);
-  white-space: pre-wrap;
 }
 .mirror-success {
   border: 1px solid #2f9e44;
@@ -517,10 +511,6 @@ if (!empty($linkedPeer["host"]) && (
       <?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?>
     </div>
   </div>
-
-  <?php if ($lastAction): ?>
-    <div class="mirror-message"><?=mirror_value($lastAction)?></div>
-  <?php endif; ?>
 
   <div class="mirror-warning">
     Early test build. Use disposable test shares only.

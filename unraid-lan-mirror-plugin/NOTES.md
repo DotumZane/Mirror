@@ -374,7 +374,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-0.9.1
+0.9.2
 ```
 
 Version source of truth:
@@ -490,6 +490,7 @@ Current release status:
 - `0.8.9` shows managed-remote Shares guidance and keeps Config and Log tabs visible.
 - `0.9.0` allows daemon scan interval `0` for automatic local change detection.
 - `0.9.1` improves the Shares tab layout and setup guidance.
+- `0.9.2` removes the last action output block from the Status tab.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -707,7 +708,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: 0.9.1.
+- Current version: 0.9.2.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -758,7 +759,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `0.9.1`.
+- Current version is `0.9.2`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -768,7 +769,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `0.9.1`, and review the Shares tab flow.
+- Push to GitHub, update both Unraid servers to `0.9.2`, and confirm the Status tab no longer shows the blue action output block.
 
 ### Chat Handoff
 
@@ -779,7 +780,7 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `0.9.1`
+- Current version: `0.9.2`
 - Current branch: `main`
 - Push workflow: User normally pushes from GitHub Desktop.
 - Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
@@ -797,7 +798,7 @@ Current product direction:
 What currently works:
 
 - Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-0.9.1.txz`.
+- Versioned package build exists at `packages/mirror-0.9.2.txz`.
 - Local same-server share sync has been confirmed by the user on disposable shares.
 - Equal-peer delete behavior was fixed in earlier builds.
 - Settings saves restart the daemon when needed.
@@ -825,7 +826,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `0.9.1`.
+2. On both Unraid servers, update Mirror to `0.9.2`.
 3. Factory reset both plugins if pairing state looks stale.
 4. Set the intended receiver server to Managed remote.
 5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
@@ -1790,6 +1791,16 @@ Next suggested task:
 - Open questions: Confirm the new layout feels easier to follow on both master and managed remote screens.
 - Next suggested task: Push to GitHub, update both servers to `0.9.1`, and review the Shares tab flow.
 
+#### 2026-06-26 - Status Action Output Removed
+
+- Task completed: Removed the blue last-action output block from the Status tab.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-0.9.2.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: The Status tab no longer renders the last action output panel, keeping detailed command output in the Log tab instead.
+- New decisions: Status should stay compact and not show verbose command output by default.
+- Open questions: Confirm the Status tab no longer shows the blue section after remote control actions.
+- Next suggested task: Push to GitHub, update both servers to `0.9.2`, and confirm the Status tab stays clean.
+
 #### 2026-06-25 - Local Unraid Share Sync Confirmed
 
 - Task completed: Confirmed the plugin can sync two selected local Unraid shares.
@@ -1808,4 +1819,4 @@ Next suggested task:
 - What changed: Recorded current repo/version/install state, product direction, working pieces, known weak spots, recommended next implementation, and test flow.
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
-- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.9.1`, and review the Shares tab flow.
+- Next suggested task: Push local commits to GitHub, update both Unraid servers to `0.9.2`, and confirm the Status tab stays clean.
