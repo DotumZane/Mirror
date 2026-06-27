@@ -52,6 +52,10 @@ function mirror_write_action($message) {
     file_put_contents($actionFile, trim($message));
 }
 
+function mirror_role_locked(array $config): bool {
+    return !array_key_exists("role_locked", $config) || !empty($config["role_locked"]);
+}
+
 function mirror_output_window($title, $message) {
     header("Content-Type: text/html; charset=UTF-8");
     $safeTitle = htmlspecialchars($title, ENT_QUOTES, "UTF-8");
@@ -512,6 +516,7 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
         "delete_propagation" => $deleteBehavior === "mirror_deletes",
         "delete_behavior" => $deleteBehavior,
         "node_role" => (string)($existing["node_role"] ?? "master"),
+        "role_locked" => mirror_role_locked($existing),
         "sync_interval" => max(0, min(3600, (int)($existing["sync_interval"] ?? 10))),
     ];
     mirror_write_config($config);
@@ -763,7 +768,16 @@ if ($action === "save-role") {
         $role = "master";
     }
     $config = mirror_existing_config();
+    $currentRole = (string)($config["node_role"] ?? "master");
+    if (!in_array($currentRole, ["master", "managed_remote"], true)) {
+        $currentRole = "master";
+    }
+    if (mirror_role_locked($config) && $role !== $currentRole) {
+        mirror_write_action("Server role not changed. Factory reset Mirror before switching between Master and Managed remote.");
+        mirror_redirect();
+    }
     $config["node_role"] = $role;
+    $config["role_locked"] = true;
     mirror_write_config($config);
     mirror_write_action($role === "managed_remote"
         ? "Server role saved: Managed remote. Configure shares and sync rules from the master server."
@@ -1025,6 +1039,7 @@ if ($action === "save-config") {
             "port" => $peerPort,
         ],
         "node_role" => (string)($existingConfig["node_role"] ?? "master"),
+        "role_locked" => mirror_role_locked($existingConfig),
         "state_db" => "$configDir/mirror.sqlite3",
         "trash_root" => "$configDir/trash",
         "authority" => $authority,
@@ -1062,7 +1077,6 @@ if ($action === "factory-reset") {
         $discoveryFile,
         $pendingInvitesFile,
         $peerFile,
-        "$configDir/mirror.sqlite3",
         "$configDir/last-action.txt",
         "/var/log/mirror.log",
         "/var/log/mirror-pairing.log",
@@ -1085,8 +1099,8 @@ if ($action === "factory-reset") {
     }
     exec("/usr/local/sbin/mirrorctl pair-start 2>&1", $startPairOutput, $startPairCode);
     $message = "Factory reset complete."
-        . "\nCleared Mirror config, pairing state, scan cache, transfer keys, database, trash, and logs."
-        . "\nUser shares and synced files were not touched.";
+        . "\nCleared Mirror config, pairing state, LAN scan cache, transfer keys, trash, and logs."
+        . "\nPreserved the sync index database and did not touch user shares or synced files.";
     $outputs = array_merge($stopOutput ?: [], $pairOutput ?: [], $startPairOutput ?: []);
     if ($outputs) {
         $message .= "\nCommand output:\n" . implode("\n", $outputs);

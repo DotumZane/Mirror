@@ -13,6 +13,7 @@
     "port": 22
   },
   "node_role": "master",
+  "role_locked": false,
   "state_db": "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root": "/boot/config/plugins/mirror/trash",
   "authority": "server_a_preferred",

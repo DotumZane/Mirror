@@ -31,6 +31,7 @@ $defaultConfig = [
     "port" => 22,
   ],
   "node_role" => "master",
+  "role_locked" => false,
   "state_db" => "/boot/config/plugins/mirror/mirror.sqlite3",
   "trash_root" => "/boot/config/plugins/mirror/trash",
   "authority" => "server_a_preferred",
@@ -125,6 +126,7 @@ $nodeRole = $config["node_role"] ?? "master";
 if (!in_array($nodeRole, ["master", "managed_remote"], true)) {
   $nodeRole = "master";
 }
+$roleLocked = !array_key_exists("role_locked", $config) || !empty($config["role_locked"]);
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $trashRoot = $config["trash_root"] ?? "/boot/config/plugins/mirror/trash";
 $primaryIp = mirror_primary_ip();
@@ -541,15 +543,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
   <div class="mirror-section">
     <h3>Control</h3>
     <?php if ($nodeRole === "managed_remote"): ?>
-      <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
-        <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-        <input type="hidden" name="action" value="save-role">
-        <input type="hidden" name="node_role" value="master">
-        <div class="mirror-actions">
-          <button type="submit">Switch Back To Master</button>
-        </div>
-      </form>
-      <span class="mirror-help">Managed remote hides local sync settings. Switch back to Master or factory reset if this server should control share pairing.</span>
+      <span class="mirror-help">Managed remote hides local sync settings. Factory reset Mirror if this server should become the master.</span>
     <?php endif; ?>
     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
@@ -568,7 +562,7 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
         <input type="checkbox" name="confirm_factory_reset" value="1">
         Confirm factory reset
       </label>
-      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, scan cache, transfer keys, database, trash, and logs. It does not delete user shares or synced files.</span>
+      <span class="mirror-help">Stops Mirror and clears plugin config, pairing state, LAN scan cache, transfer keys, trash, and logs. It preserves the sync index database and does not delete user shares or synced files.</span>
       <div class="mirror-actions">
         <button type="submit">Factory Reset Plugin</button>
       </div>
@@ -596,25 +590,35 @@ $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["share
       </div>
     </div>
 
-    <?php if ($nodeRole !== "managed_remote"): ?>
+    <?php if ($roleLocked): ?>
+      <div class="mirror-lan-step">
+        <h4>Role</h4>
+        <div class="mirror-warning">
+          This server is locked as <?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?>. Factory reset Mirror to choose a different role.
+        </div>
+      </div>
+    <?php else: ?>
       <div class="mirror-lan-step">
         <h4>Role</h4>
         <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
           <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
           <input type="hidden" name="action" value="save-role">
           <div class="mirror-mode-switch" role="group" aria-label="Server role">
-            <input id="node_role_master" type="radio" name="node_role" value="master" checked>
+            <input id="node_role_master" type="radio" name="node_role" value="master" <?=$nodeRole === "master" ? "checked" : ""?>>
             <label for="node_role_master">Master</label>
-            <input id="node_role_remote" type="radio" name="node_role" value="managed_remote">
+            <input id="node_role_remote" type="radio" name="node_role" value="managed_remote" <?=$nodeRole === "managed_remote" ? "checked" : ""?>>
             <label for="node_role_remote">Managed remote</label>
           </div>
           <span class="mirror-help">Keep this server as Master if it should choose shares and control the linked remote.</span>
           <div class="mirror-actions">
-            <button type="submit">Save Role</button>
+            <button type="submit">Set Role</button>
           </div>
         </form>
+        <span class="mirror-help">After you set the role, changing it requires a factory reset.</span>
       </div>
-    <?php else: ?>
+    <?php endif; ?>
+
+    <?php if ($nodeRole === "managed_remote"): ?>
       <div class="mirror-warning">
         This server is in Managed remote mode. Send the invite from the master server, then choose shares on the master.
       </div>
