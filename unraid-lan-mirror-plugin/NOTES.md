@@ -1,5 +1,77 @@
 # Unraid LAN Mirror Plugin Notes
 
+## Chat Handoff - 2026-06-27
+
+Use this when continuing the project in a new chat.
+
+Current repo state:
+
+- Workspace: `/Users/zane/Documents/Unraid`
+- GitHub repository: `https://github.com/DotumZane/Mirror`
+- Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
+- Current version: `V1.00.16`
+- Current package: `packages/mirror-V1.00.16.txz`
+- Current branch: `main`
+- Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
+- Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
+- Terminal push can fail on this Mac with `fatal: could not read Username for 'https://github.com': Device not configured`; if it happens, have the user push with GitHub Desktop.
+
+Current product direction:
+
+- Mirror is an Unraid plugin, not Docker.
+- It is still an early LAN-only disposable-share prototype.
+- The goal is two or more Unraid servers with selected shares mirrored over LAN.
+- The user wants true two-way sync, trash/version safety, fast operation on very large shares, useful logging, and eventually Tailscale-style remote support.
+- One server can act as Master and may link to multiple managed remotes.
+- Managed remotes should be controlled by the Master and should not expose local share-route editing.
+- Role changes require Factory Reset, but Factory Reset must preserve the sync index database.
+
+What currently works:
+
+- Plugin installs from `mirror.plg`.
+- Current package is generated and referenced by `mirror.plg`.
+- Direct LAN invite/accept pairing is in place.
+- Linked peers can load remote shares.
+- Master can start/stop the linked remote daemon.
+- Mirror-owned SSH known_hosts is used instead of `/root/.ssh/known_hosts`.
+- Automatic change detection is supported when daemon scan interval is `0`.
+- Multiple sync routes are supported.
+- Sync routes can be named, edited without being removed from the saved list, removed, and paused per route.
+- Each route has its own conflict rule and delete behavior.
+- Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
+- Log page is taller and runner logging is more detailed.
+- Shares page has the current card-style Sync Routes layout.
+- The latest fix hides the "No sync routes configured" empty-state card whenever a real route row exists.
+
+Known weak spots / likely next pain:
+
+- This is not production-safe yet; keep using disposable test shares.
+- PHP linting was not available in the Mac workspace because local `php` was not installed.
+- Live transfer rate is still mostly placeholder/idle unless the runner records transfer progress.
+- Initial index progress is based on the local sync index and may need more visibility for very large shares.
+- The Shares page is visually close to the requested mockup but still may need exact spacing/width polish in the Unraid Connect remote browser.
+- Multi-remote support exists in config/UI direction, but real multi-remote workflow testing is still needed.
+- Master-controlled remote config is still evolving; verify managed remotes do not allow conflicting local edits.
+
+Recommended next implementation:
+
+1. Re-test the Shares page after installing `V1.00.16` and confirm the empty state is gone when routes exist.
+2. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
+3. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
+4. Continue widening/polishing the Shares page so it uses the full available browser width without losing the Unraid-native feel.
+5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
+6. Improve index progress for very large shares with explicit scan state, current path, indexed count, and total/estimated count when available.
+
+Recommended test flow:
+
+1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
+2. On both Unraid servers, update Mirror to `V1.00.16`.
+3. Use disposable shares only.
+4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
+5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
+6. Pause and unpause the route, then save and confirm the runner skips paused routes.
+7. Run Initial Sync on a small disposable share before testing large folders.
+
 ## Goal
 
 Build an Unraid plugin that can be installed on two Unraid servers and keep selected shares mirrored across the local network.
@@ -374,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.04
+V1.00.16
 ```
 
 Version source of truth:
@@ -504,6 +576,18 @@ Current release status:
 - `V1.00.02` moves current mirror status cards into the right-side empty space.
 - `V1.00.03` shows mirror completeness percentage in status cards.
 - `V1.00.04` uses Mirror-owned SSH known_hosts for linked peers.
+- `V1.00.05` makes the Mirror log view taller.
+- `V1.00.06` shows Mirror index progress.
+- `V1.00.07` adds more detailed Mirror sync logging.
+- `V1.00.08` adds support for multiple Mirror remotes.
+- `V1.00.09` restyles the Shares page.
+- `V1.00.10` moves the Shares page closer to the requested Sync Routes mockup.
+- `V1.00.11` forces the Shares page card layout in Unraid's browser context.
+- `V1.00.12` adds an editable sync route list and packages the Mirror icon.
+- `V1.00.13` adds per-route pause control.
+- `V1.00.14` adds route names and lets editing load route values without removing the saved route.
+- `V1.00.15` hides the no-routes empty state whenever sync routes exist.
+- `V1.00.16` refreshes the project notes for chat handoff.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -721,11 +805,11 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.04.
+- Current version: V1.00.16.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
-- UI started: Basic Unraid Settings page with peer settings.
+- UI started: Tabbed Unraid Settings page with Status, LAN Setup, Shares, Config, and Log tabs.
 
 ### Completed So Far
 
@@ -772,7 +856,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.04`.
+- Current version is `V1.00.16`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -782,69 +866,24 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Push to GitHub, update both Unraid servers to `V1.00.04`, and test multiple share pairs.
+- Update both Unraid servers to `V1.00.16`, confirm the Sync Routes empty-state box hides when a route exists, and keep polishing route editing/naming.
 
 ### Chat Handoff
 
 Use this section when continuing the project in a new chat.
 
-Current repo state:
+The current full handoff is at the top of this file under `Chat Handoff - 2026-06-27`.
+
+Quick snapshot:
 
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.04`
+- Current version: `V1.00.16`
+- Current package: `packages/mirror-V1.00.16.txz`
 - Current branch: `main`
-- Push workflow: User normally pushes from GitHub Desktop.
-- Important: If `git status` says `main` is ahead of `origin/main`, remind the user to push before testing updates in Unraid.
-
-Current product direction:
-
-- Mirror is an Unraid plugin, not Docker.
-- It is still an early LAN-only disposable-share prototype.
-- The goal is two Unraid servers with selected shares mirrored both ways.
-- The user wants true two-way sync, trash/version safety, fast operation, and eventually Tailscale-style remote support.
-- One server should be configurable as Master.
-- The other server can be set as Managed remote.
-- Managed remote should behave like a receiver and should not expose local share-pair settings.
-
-What currently works:
-
-- Plugin installs from `mirror.plg`.
-- Versioned package build exists at `packages/mirror-V1.00.04.txz`.
-- Local same-server share sync has been confirmed by the user on disposable shares.
-- Equal-peer delete behavior was fixed in earlier builds.
-- Settings saves restart the daemon when needed.
-- In-page plugin update works through a popup command window and uses the GitHub API before raw GitHub to avoid stale branch-cache manifests.
-- Factory Reset Plugin exists in Control and clears Mirror state without touching user shares.
-- LAN Pair Setup can scan/restart responder/check pending invites.
-- Managed remote view now hides local configuration sections, and Update Plugin lives in the Version status box.
-
-Known weak spots / likely next pain:
-
-- Pairing has been unreliable during rapid iteration, especially stale responder state and cached discovery.
-- The managed remote mode is currently a UI/config guardrail, not a full master-pushed configuration system.
-- Master does not yet push selected share pairs, authority rules, delete behavior, or daemon settings to the managed remote.
-- The plugin is not production-safe and should only be pointed at disposable test shares.
-- PHP linting was not available in the Mac workspace during recent commits because local `php` was not installed.
-
-Recommended next implementation:
-
-1. Add a master-to-managed-remote configuration API to the pairing responder.
-2. Let the master send the selected remote share, authority rule, delete behavior, and sync interval to the managed remote after pairing.
-3. Make the managed remote accept that config only from the linked peer.
-4. Add a clear Paired With / Managed By status card on both servers.
-5. Keep Factory Reset as the escape hatch for broken pairing state.
-
-Recommended test flow:
-
-1. Push local commits to GitHub from GitHub Desktop.
-2. On both Unraid servers, update Mirror to `V1.00.04`.
-3. Factory reset both plugins if pairing state looks stale.
-4. Set the intended receiver server to Managed remote.
-5. Confirm the managed server shows Update Plugin in the Version status box, plus LAN Peer Setup and Control.
-6. Leave the controlling server as Master.
-7. Build and test the next master-controlled config push using disposable shares only.
+- Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
+- Next suggested task: install/update `V1.00.16`, confirm the Sync Routes empty-state placeholder is gone when routes exist, then continue route-name/editing polish.
 
 ### Tracker Update Template
 
@@ -1963,3 +2002,13 @@ Next suggested task:
 - New decisions: Managed remote is treated as a receiver UI mode until master-controlled remote configuration is implemented.
 - Open questions: The master-to-managed-remote configuration API still needs to be designed and built.
 - Next suggested task: Push local commits to GitHub, update both Unraid servers to `V1.00.04`, and test multiple share pairs.
+
+#### 2026-06-27 - Chat Handoff Refreshed
+
+- Task completed: Updated the project notes for a clean chat handoff.
+- Files changed: `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a current top-level handoff for `V1.00.16`, updated tracker version fields, added release notes for `V1.00.05` through `V1.00.16`, and replaced the stale lower handoff with a pointer to the current handoff.
+- New decisions: Keep the newest handoff at the top of the notes so future chats can resume quickly.
+- Open questions: Confirm the `V1.00.16` Shares page hides the no-routes empty state after update, then continue route editing/naming polish.
+- Next suggested task: Update both Unraid servers to `V1.00.16` and verify the Sync Routes page behavior with one configured route.
