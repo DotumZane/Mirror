@@ -4,6 +4,8 @@ Planning repository for an Unraid LAN mirror plugin.
 
 The goal is an Unraid plugin installed on two servers that can pair over the local network, watch selected shares, and keep them mirrored with true two-way sync, trash/version retention, conflict protection, and fast event-driven transfers.
 
+Mirror is an early test Unraid plugin for pairing two Unraid servers on a local network, selecting shares, and preparing mirrored file synchronization workflows with peer setup, share discovery, delete behavior controls, and test-safe configuration. This build is intended for disposable test shares while the sync engine and safety features continue to mature.
+
 Current status: planning and specification.
 
 Current version: `V1.00.04`

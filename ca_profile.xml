@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommunityApplications>
+  <Profile>
+Mirror contains the Unraid Community Apps metadata and plugin manifest for the Mirror plugin, an early test utility for pairing local Unraid servers and preparing mirrored share synchronization workflows. Support and source code are available through the project repository.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/DotumZane/Mirror/main/icon.png</Icon>
+  <WebPage>https://github.com/DotumZane/Mirror</WebPage>
+</CommunityApplications>

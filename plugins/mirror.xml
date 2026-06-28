@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Plugin>
+  <Name>Mirror</Name>
+  <Repository>DotumZane/Mirror</Repository>
+  <PluginURL>https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg</PluginURL>
+  <Icon>https://raw.githubusercontent.com/DotumZane/Mirror/main/icon.png</Icon>
+  <Support>https://github.com/DotumZane/Mirror/issues</Support>
+  <Project>https://github.com/DotumZane/Mirror</Project>
+  <License>MIT</License>
+  <Beta>True</Beta>
+  <Category>Tools:Utilities</Category>
+  <Overview>
+Mirror is an early test Unraid plugin for pairing two Unraid servers on a local network, selecting shares, and preparing mirrored file synchronization workflows with peer setup, share discovery, delete behavior controls, and test-safe configuration. This build is intended for disposable test shares while the sync engine and safety features continue to mature.
+  </Overview>
+</Plugin>
