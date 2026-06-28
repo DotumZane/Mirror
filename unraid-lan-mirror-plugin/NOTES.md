@@ -9,11 +9,11 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.23`
-- Current package: `packages/mirror-V1.00.23.txz`
+- Current version: `V1.00.24`
+- Current package: `packages/mirror-V1.00.24.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
-- Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
+- Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
 - Terminal push can fail on this Mac with `fatal: could not read Username for 'https://github.com': Device not configured`; if it happens, have the user push with GitHub Desktop.
 
 Current product direction:
@@ -42,7 +42,7 @@ What currently works:
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
 - All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
-- The latest fix hides the "No sync routes configured" empty-state card whenever a real route row exists and lets the Shares page use more available browser width.
+- The latest fix speeds up indexing by using native `find` scans on Unraid and batching progress checkpoints during large sync/index runs.
 
 Known weak spots / likely next pain:
 
@@ -56,17 +56,16 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.23` and confirm route names persist after Save Settings.
-2. Confirm the Mirror page reaches the wider Unraid content edges without a horizontal scrollbar.
-3. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
-4. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
-5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
-6. Improve index progress for very large shares with explicit scan state, current path, indexed count, and total/estimated count when available.
+1. Re-test after installing `V1.00.24` and confirm large-folder indexing advances faster without new sync errors.
+2. Confirm route names still persist after Save Settings.
+3. Confirm the Mirror page reaches the wider Unraid content edges without a horizontal scrollbar.
+4. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
+5. Improve index progress for very large shares with explicit scan state, current path, indexed count, and total/estimated count when available.
 
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.23`.
+2. On both Unraid servers, update Mirror to `V1.00.24`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -447,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.23
+V1.00.24
 ```
 
 Version source of truth:
@@ -596,6 +595,7 @@ Current release status:
 - `V1.00.21` removes viewport-width layout math that caused horizontal scrolling in Unraid Connect.
 - `V1.00.22` fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.
 - `V1.00.23` preserves route names when saving sync routes from the configuration editor.
+- `V1.00.24` speeds up large-share indexing with native local scans and batched progress checkpoints.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -813,7 +813,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.23.
+- Current version: V1.00.24.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -864,7 +864,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.23`.
+- Current version is `V1.00.24`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -874,7 +874,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.23`, confirm route names persist after saving, and verify automatic detection watches configured route paths.
+- Update both Unraid servers to `V1.00.24`, run Initial Sync on a larger disposable share, and confirm indexing finishes faster without new sync errors.
 
 ### Chat Handoff
 
@@ -887,11 +887,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.23`
-- Current package: `packages/mirror-V1.00.23.txz`
+- Current version: `V1.00.24`
+- Current package: `packages/mirror-V1.00.24.txz`
 - Current branch: `main`
-- Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
-- Next suggested task: install/update `V1.00.23`, save a named sync route, and confirm the route name remains visible after refresh.
+- Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
+- Next suggested task: install/update `V1.00.24`, run Initial Sync on a larger disposable share, and confirm indexing finishes faster without new sync errors.
 
 ### Tracker Update Template
 
@@ -2090,3 +2090,13 @@ Next suggested task:
 - New decisions: The visible route editor is the source of truth at submit time; the route-list row should be synchronized automatically before save.
 - Open questions: Confirm named routes stay visible after saving and refreshing the Shares tab.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.23`, save a route name, and verify the route list and Current Mirrors card use it.
+
+#### 2026-06-27 - Indexing Speed Improvements
+
+- Task completed: Made large-share indexing faster while keeping the PHP scanner fallback.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.24.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Local scans now use Unraid's native `find -printf` path when available, remote and local scan parsing share the same parser, and sync/index progress writes are checkpointed every 250 files or two seconds instead of every 25 files.
+- New decisions: Progress updates should be batched enough to avoid slowing large runs, but still frequent enough that the UI shows steady movement and interrupted runs can resume safely.
+- Open questions: Confirm indexing speed on a large disposable share and watch for filenames with unusual control characters.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.24`, and run Initial Sync on a larger disposable share.

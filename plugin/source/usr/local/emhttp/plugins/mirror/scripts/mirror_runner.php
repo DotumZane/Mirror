@@ -270,7 +270,25 @@ function remote_spec(array $config, string $path): string {
     return ssh_target($config) . ":" . $path;
 }
 
-function scan_files(string $root): array {
+function parse_find_listing(string $output): array {
+    $files = [];
+    foreach (explode("\n", rtrim($output, "\r\n")) as $line) {
+        if ($line === "") {
+            continue;
+        }
+        $parts = explode("\t", $line);
+        if (count($parts) < 3 || $parts[0] === "" || strpos($parts[0], ".mirror") === 0) {
+            continue;
+        }
+        $files[$parts[0]] = [
+            "exists" => true,
+            "sig" => $parts[1] . ":" . (string)((int)floor((float)$parts[2])),
+        ];
+    }
+    return $files;
+}
+
+function scan_files_php(string $root): array {
     $files = [];
     if (!is_dir($root)) {
         return $files;
@@ -295,26 +313,28 @@ function scan_files(string $root): array {
     return $files;
 }
 
+function scan_files(string $root): array {
+    if (!is_dir($root)) {
+        return [];
+    }
+    $find = trim((string)shell_exec("command -v find 2>/dev/null"));
+    if ($find !== "") {
+        try {
+            $output = run_command([$find, $root, "-type", "f", "-printf", "%P\t%s\t%T@\n"]);
+            return parse_find_listing($output);
+        } catch (Throwable $findError) {
+            log_event("local find scan unavailable, falling back to PHP scanner: " . $findError->getMessage());
+        }
+    }
+    return scan_files_php($root);
+}
+
 function scan_remote_files(array $config, string $configPath, string $root): array {
     $ssh = ssh_base_args($config, $configPath);
     $target = ssh_target($config);
     $script = "[ -d " . escapeshellarg($root) . " ] && find " . escapeshellarg($root) . " -type f -printf '%P\\t%s\\t%T@\\n' || true";
     $output = run_command(array_merge($ssh, [$target, $script]));
-    $files = [];
-    foreach (explode("\n", trim($output)) as $line) {
-        if ($line === "") {
-            continue;
-        }
-        $parts = explode("\t", $line);
-        if (count($parts) < 3 || $parts[0] === "" || strpos($parts[0], ".mirror") === 0) {
-            continue;
-        }
-        $files[$parts[0]] = [
-            "exists" => true,
-            "sig" => $parts[1] . ":" . (string)((int)floor((float)$parts[2])),
-        ];
-    }
-    return $files;
+    return parse_find_listing($output);
 }
 
 function state_for(string $path): array {
@@ -615,6 +635,22 @@ function mark_progress(array &$state, string $phase, int $processed, int $total,
     ];
 }
 
+function should_checkpoint_progress(int $processed, int $total, float &$lastCheckpointAt): bool {
+    if ($processed >= $total) {
+        return true;
+    }
+    if ($processed > 0 && $processed % 250 === 0) {
+        $lastCheckpointAt = microtime(true);
+        return true;
+    }
+    $now = microtime(true);
+    if (($now - $lastCheckpointAt) >= 2.0) {
+        $lastCheckpointAt = $now;
+        return true;
+    }
+    return false;
+}
+
 function pair_key(array $pair): string {
     $a = (string)($pair["server_a"]["root"] ?? "");
     $b = (string)($pair["server_b"]["root"] ?? "");
@@ -699,6 +735,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
     $summary = empty_summary();
     $totalPaths = count($paths);
     $processedPaths = 0;
+    $lastCheckpointAt = microtime(true);
     log_event("route " . route_label($config) . ": scan found server-a=" . count($scanA) . " server-b=" . count($scanB) . " indexed=" . count($state["files"]) . " total={$totalPaths}");
     mark_progress($state, "syncing", $processedPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
@@ -782,7 +819,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
             }
         } finally {
             $processedPaths++;
-            if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
+            if (should_checkpoint_progress($processedPaths, $totalPaths, $lastCheckpointAt)) {
                 mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
                 save_scoped_state($configPath, $stateKey, $allState, $state);
                 log_route_progress($config, $processedPaths, $totalPaths, $rel);
@@ -845,6 +882,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
     $summary = empty_summary();
     $totalPaths = count($paths);
     $processedPaths = 0;
+    $lastCheckpointAt = microtime(true);
     log_event("route " . route_label($config) . ": scan found local=" . count($scanA) . " remote=" . count($scanB) . " indexed=" . count($state["files"]) . " total={$totalPaths}");
     mark_progress($state, "syncing", $processedPaths, $totalPaths);
     save_scoped_state($configPath, $stateKey, $allState, $state);
@@ -929,7 +967,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
             }
         } finally {
             $processedPaths++;
-            if ($processedPaths === $totalPaths || $processedPaths % 25 === 0) {
+            if (should_checkpoint_progress($processedPaths, $totalPaths, $lastCheckpointAt)) {
                 mark_progress($state, "syncing", $processedPaths, $totalPaths, $rel);
                 save_scoped_state($configPath, $stateKey, $allState, $state);
                 log_route_progress($config, $processedPaths, $totalPaths, $rel);

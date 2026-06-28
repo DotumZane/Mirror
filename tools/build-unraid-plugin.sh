@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Speeds up indexing with native local file scans and batched progress checkpoints.
 - Preserves the Route Name field when saving sync routes.
 - Fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.
 - Removes viewport-width layout math that caused horizontal scrolling in Unraid Connect.
