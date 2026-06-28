@@ -1319,6 +1319,9 @@ body .mirror-panel {
   width: 100% !important;
   overflow-x: hidden !important;
 }
+body .mirror-panel.is-edge-fitted {
+  max-width: none !important;
+}
 body .mirror-title-strip-hidden {
   display: none !important;
 }
@@ -2420,6 +2423,41 @@ function refreshMirrorPanel(url, pushHistory) {
 }
 
 function bindMirrorPage() {
+  function fitMirrorToContentEdges() {
+    var panel = document.querySelector(".mirror-panel");
+    if (!panel) {
+      return;
+    }
+    panel.style.marginLeft = "";
+    panel.style.width = "";
+    panel.classList.remove("is-edge-fitted");
+
+    var viewportWidth = document.documentElement.clientWidth || window.innerWidth || 0;
+    var panelRect = panel.getBoundingClientRect();
+    var target = panel.parentElement;
+    var targetRect = target ? target.getBoundingClientRect() : null;
+    var node = panel.parentElement;
+
+    while (node && node !== document.body && node !== document.documentElement) {
+      var rect = node.getBoundingClientRect();
+      var fitsViewport = viewportWidth <= 0 || (rect.left >= -1 && rect.right <= viewportWidth + 1);
+      if (fitsViewport && rect.width > (targetRect ? targetRect.width : 0)) {
+        target = node;
+        targetRect = rect;
+      }
+      node = node.parentElement;
+    }
+
+    if (!targetRect || targetRect.width <= panelRect.width + 4) {
+      return;
+    }
+
+    var leftGap = Math.max(0, Math.round(panelRect.left - targetRect.left));
+    panel.style.marginLeft = "-" + leftGap + "px";
+    panel.style.width = Math.floor(targetRect.width) + "px";
+    panel.classList.add("is-edge-fitted");
+  }
+
   function hideGeneratedMirrorTitle() {
     var panel = document.querySelector(".mirror-panel");
     var candidate = panel ? panel.previousElementSibling : null;
@@ -2432,6 +2470,11 @@ function bindMirrorPage() {
   }
 
   hideGeneratedMirrorTitle();
+  fitMirrorToContentEdges();
+  if (window.mirrorEdgeFitResizeBound !== "1") {
+    window.mirrorEdgeFitResizeBound = "1";
+    window.addEventListener("resize", fitMirrorToContentEdges);
+  }
 
   document.querySelectorAll(".mirror-tabs a").forEach(function (link) {
     if (link.dataset.mirrorTabBound === "1") {

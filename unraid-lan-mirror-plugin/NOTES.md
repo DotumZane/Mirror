@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.21`
-- Current package: `packages/mirror-V1.00.21.txz`
+- Current version: `V1.00.22`
+- Current package: `packages/mirror-V1.00.22.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
@@ -56,7 +56,7 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.21` and confirm the Mirror page has no horizontal scrollbar in Unraid Connect.
+1. Re-test after installing `V1.00.22` and confirm the Mirror page reaches the wider Unraid content edges without a horizontal scrollbar.
 2. Confirm a powered-off/offline peer shows as offline without crashing the daemon loop.
 3. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
 4. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
@@ -66,7 +66,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.21`.
+2. On both Unraid servers, update Mirror to `V1.00.22`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -447,7 +447,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.21
+V1.00.22
 ```
 
 Version source of truth:
@@ -594,6 +594,7 @@ Current release status:
 - `V1.00.19` removes the generated Mirror title strip and makes the Mirror UI full-bleed in the Unraid content area.
 - `V1.00.20` keeps the daemon running when a remote peer responder is offline and watches sync-route local paths.
 - `V1.00.21` removes viewport-width layout math that caused horizontal scrolling in Unraid Connect.
+- `V1.00.22` fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -811,7 +812,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.21.
+- Current version: V1.00.22.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -862,7 +863,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.21`.
+- Current version is `V1.00.22`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -872,7 +873,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.21`, confirm the horizontal scrollbar is gone, and verify automatic detection watches configured route paths.
+- Update both Unraid servers to `V1.00.22`, confirm the panel reaches the wider Unraid content edges without a scrollbar, and verify automatic detection watches configured route paths.
 
 ### Chat Handoff
 
@@ -885,11 +886,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.21`
-- Current package: `packages/mirror-V1.00.21.txz`
+- Current version: `V1.00.22`
+- Current package: `packages/mirror-V1.00.22.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
-- Next suggested task: install/update `V1.00.21`, confirm the page fills the available content width without a bottom scrollbar, and restart the remote pairing responder.
+- Next suggested task: install/update `V1.00.22`, confirm the page reaches the wider Unraid content edges without a bottom scrollbar, and restart the remote pairing responder.
 
 ### Tracker Update Template
 
@@ -2068,3 +2069,13 @@ Next suggested task:
 - New decisions: Use the Unraid content container as the layout boundary; do not size Mirror against the browser viewport directly.
 - Open questions: Confirm `V1.00.21` fills the available settings content width without clipping the left edge or showing a bottom scrollbar.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.21`, and re-check the Status and Shares tabs in Unraid Connect.
+
+#### 2026-06-27 - Ancestor Edge Fit
+
+- Task completed: Expanded the Mirror panel to the wider Unraid content ancestor without returning to viewport-width sizing.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.22.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a runtime edge-fit helper that finds the widest non-body Unraid ancestor containing the Mirror panel and expands the panel to that ancestor with a measured negative left margin and pixel width. This keeps the page within Unraid's actual content boundary instead of using viewport width.
+- New decisions: Edge-to-edge fitting should be based on measured Unraid content containers, not fixed viewport math.
+- Open questions: Confirm `V1.00.22` removes the remaining left/right inset without bringing back the bottom scrollbar.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.22`, and compare the Status page against the intended edge-to-edge layout.
