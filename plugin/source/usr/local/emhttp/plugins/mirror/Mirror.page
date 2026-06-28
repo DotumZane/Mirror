@@ -234,7 +234,7 @@ function mirror_route_key($routeConfig) {
 function mirror_configured_routes($config) {
   $pairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
   if (!$pairs) {
-    return [["key" => "__default", "config" => $config]];
+    return [];
   }
   $routes = [];
   foreach ($pairs as $pair) {
@@ -257,7 +257,7 @@ function mirror_configured_routes($config) {
     $routeConfig["paused"] = !empty($pair["paused"]);
     $routes[] = ["key" => mirror_route_key($routeConfig), "config" => $routeConfig];
   }
-  return $routes ?: [["key" => "__default", "config" => $config]];
+  return $routes;
 }
 
 function mirror_route_label($routeConfig) {
@@ -1904,6 +1904,12 @@ body .mirror-panel .mirror-shares-page {
           </div>
         </div>
       <?php endforeach; ?>
+      <?php if (!$mirrorRouteSummaries): ?>
+        <div class="mirror-route-card">
+          <div class="mirror-route-title">No sync routes configured</div>
+          <span class="mirror-help">Add a route on the Shares tab to start mirroring.</span>
+        </div>
+      <?php endif; ?>
     </aside>
   </div>
   <?php endif; ?>

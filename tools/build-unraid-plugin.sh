@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Stops removed sync routes from reappearing as phantom Status cards or runner work.
 - Fully detaches conflict resolution workers so buttons return immediately.
 - Removes automatic Status refresh and adds a manual Refresh Status button.
 - Makes automatic Status refresh silent so the page no longer dims every few seconds.

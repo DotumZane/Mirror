@@ -1257,7 +1257,7 @@ if ($action === "save-config") {
         $primaryPeerName = $serverBType === "remote" && is_array($peer ?? null) ? (string)($peer["name"] ?? "server-b") : "server-b";
         try {
             $rowPairs = mirror_parse_additional_pair_rows($additionalPairNameRows, $additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $additionalPairPausedRows, $serverBType, $additionalPairsText);
-            if (!$routesFromList || !$rowPairs) {
+            if (!$routesFromList) {
                 $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName, false, $routeName);
             }
             $seenLocalShares = [];

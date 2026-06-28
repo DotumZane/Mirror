@@ -793,7 +793,7 @@ function pair_key(array $pair): string {
 function configured_pair_configs(array $config): array {
     $pairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
     if (!$pairs) {
-        return [["key" => "__default", "config" => $config]];
+        return [];
     }
     $configs = [];
     foreach ($pairs as $index => $pair) {
@@ -818,7 +818,7 @@ function configured_pair_configs(array $config): array {
         $pairConfig["paused"] = !empty($pair["paused"]);
         $configs[] = ["key" => pair_key($pairConfig), "config" => $pairConfig];
     }
-    return $configs ?: [["key" => "__default", "config" => $config]];
+    return $configs;
 }
 
 function load_scoped_state(string $configPath, string $stateKey): array {

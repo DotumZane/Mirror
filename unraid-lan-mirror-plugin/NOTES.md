@@ -1,6 +1,6 @@
 # Unraid LAN Mirror Plugin Notes
 
-## Chat Handoff - 2026-06-27
+## Chat Handoff - 2026-06-28
 
 Use this when continuing the project in a new chat.
 
@@ -9,11 +9,11 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.33`
-- Current package: `packages/mirror-V1.00.33.txz`
+- Current version: `V1.00.34`
+- Current package: `packages/mirror-V1.00.34.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
-- Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
+- Latest plugin behavior commit before this notes refresh: `f487516 Detach Mirror conflict resolution workers`
 - Terminal push can fail on this Mac with `fatal: could not read Username for 'https://github.com': Device not configured`; if it happens, have the user push with GitHub Desktop.
 
 Current product direction:
@@ -42,7 +42,7 @@ What currently works:
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
 - All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
-- The latest fix fully detaches conflict resolution workers so buttons return immediately.
+- The latest fix stops deleted sync routes from reappearing as phantom Status cards or daemon work.
 
 Known weak spots / likely next pain:
 
@@ -56,7 +56,7 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.33` and confirm Keep Local changes to Started without timing out.
+1. Re-test after installing `V1.00.34` and confirm deleting the final sync route leaves the Status card at "No sync routes configured."
 2. Use Refresh Status or Log to watch the background conflict resolver finish.
 3. Confirm rsync temp files such as `.filename.random` are not listed or copied back.
 4. Confirm route names still persist after Save Settings.
@@ -65,7 +65,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.33`.
+2. On both Unraid servers, update Mirror to `V1.00.34`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.33
+V1.00.34
 ```
 
 Version source of truth:
@@ -822,7 +822,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.33.
+- Current version: V1.00.34.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -873,7 +873,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.33`.
+- Current version is `V1.00.34`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -883,24 +883,24 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.33`, test conflict resolution on disposable data, and verify manual Status refresh during a large transfer.
+- Update both Unraid servers to `V1.00.34`, remove the final test route, and confirm Status shows "No sync routes configured."
 
 ### Chat Handoff
 
 Use this section when continuing the project in a new chat.
 
-The current full handoff is at the top of this file under `Chat Handoff - 2026-06-27`.
+The current full handoff is at the top of this file under `Chat Handoff - 2026-06-28`.
 
 Quick snapshot:
 
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.33`
-- Current package: `packages/mirror-V1.00.33.txz`
+- Current version: `V1.00.34`
+- Current package: `packages/mirror-V1.00.34.txz`
 - Current branch: `main`
-- Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
-- Next suggested task: install/update `V1.00.33`, click Keep Local, and confirm the background resolver starts immediately.
+- Latest plugin behavior commit before this notes refresh: `f487516 Detach Mirror conflict resolution workers`
+- Next suggested task: install/update `V1.00.34`, remove the final test route, and confirm the stale Status card stays gone.
 
 ### Tracker Update Template
 
@@ -2199,3 +2199,13 @@ Next suggested task:
 - New decisions: Conflict actions should acknowledge job start only; progress/finish should be observed through Status refresh or Log.
 - Open questions: Confirm the resolver starts without a browser timeout and then clears the conflict after the copy.
 - Next suggested task: Push to GitHub, update both servers to `V1.00.33`, click Keep Local, and inspect Log if the conflict remains.
+
+#### 2026-06-28 - Removed Route Status Cleanup
+
+- Task completed: Stopped deleted sync routes from reappearing on the Status page or in daemon work.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.34.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Empty `share_pairs` now means no configured routes. The Status sidebar shows a "No sync routes configured" placeholder, the runner skips work when there are no routes, and route-list saves no longer rebuild the deleted primary route.
+- New decisions: The route table is the source of truth once the UI submits `routes_from_list=1`.
+- Open questions: Confirm removing the final route, saving settings, and refreshing Status removes the old `isos -> Test / isos` card.
+- Next suggested task: Push to GitHub, update both servers to `V1.00.34`, remove the test route again, and confirm the daemon stays idle.
