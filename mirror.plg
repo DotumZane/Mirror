@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.22">
+  <!ENTITY version    "V1.00.23">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.22.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.23.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "00bf8c635228dfa35715f7e5fc787666">
+  <!ENTITY md5        "a841ca1a72022519f35487bb4e672877">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.22
+### V1.00.23
+- Preserves the Route Name field when saving sync routes.
 - Fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.
 - Removes viewport-width layout math that caused horizontal scrolling in Unraid Connect.
 - Keeps the daemon running when a remote peer responder is offline and watches sync-route local paths.

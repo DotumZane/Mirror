@@ -2567,6 +2567,46 @@ function bindMirrorPage() {
         addButtonLabel.textContent = editingRow ? 'Update Sync Route' : 'Add Sync Route';
       }
     }
+    function syncEditorToRouteRow() {
+      if (!list) {
+        return;
+      }
+      var remote = selectedMode() === 'remote';
+      var localShare = controlValue('#server_a_share');
+      var otherShare = remote ? controlValue('#remote_share') : controlValue('#server_b_share');
+      if (!localShare || !otherShare || (remote && !controlValue('#primary_peer_id'))) {
+        return;
+      }
+      var row = editingRow || list.querySelector('[data-share-pair-row]');
+      if (!row && template) {
+        row = template.cloneNode(true);
+        row.removeAttribute('data-share-pair-template');
+        row.setAttribute('data-share-pair-row', '1');
+        row.querySelectorAll('select').forEach(function (select) {
+          select.selectedIndex = 0;
+        });
+        row.querySelectorAll('input[type="text"]').forEach(function (input) {
+          input.value = '';
+        });
+        setRowControl(row, 'additional_pair_paused[]', '0');
+        list.appendChild(row);
+      }
+      if (!row) {
+        return;
+      }
+      setRowControl(row, 'additional_pair_name[]', controlValue('#route_name'));
+      setRowControl(row, 'additional_pair_local[]', localShare);
+      setRowControl(row, 'additional_pair_other_local[]', remote ? '' : otherShare);
+      setRowControl(row, 'additional_pair_peer_id[]', remote ? controlValue('#primary_peer_id') : '');
+      setRowControl(row, 'additional_pair_other_remote[]', remote ? otherShare : '');
+      setRowControl(row, 'additional_pair_authority[]', controlValue('#authority'));
+      setRowControl(row, 'additional_pair_delete_behavior[]', controlValue('#delete_behavior'));
+      if (row === editingRow) {
+        setEditingRow(null);
+      }
+      syncModeVisibility();
+      syncSharePairEmptyState(container);
+    }
     if (addButton && list && template) {
       addButton.addEventListener('click', function () {
         var remote = selectedMode() === 'remote';
@@ -2606,6 +2646,11 @@ function bindMirrorPage() {
         syncModeVisibility();
         syncSharePairEmptyState(container);
       });
+    }
+    var saveForm = container.closest('form');
+    if (saveForm && saveForm.dataset.routeSubmitBound !== '1') {
+      saveForm.dataset.routeSubmitBound = '1';
+      saveForm.addEventListener('submit', syncEditorToRouteRow);
     }
     container.addEventListener('click', function (event) {
       var editButton = event.target.closest('[data-edit-share-pair]');
