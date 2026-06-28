@@ -568,6 +568,10 @@ function log_event(string $message): void {
 }
 
 function route_label(array $config): string {
+    $name = trim((string)($config["name"] ?? ""));
+    if ($name !== "") {
+        return $name;
+    }
     $aRoot = (string)($config["server_a"]["root"] ?? "");
     $bShare = (string)($config["server_b"]["share"] ?? "");
     $bRoot = (string)($config["server_b"]["root"] ?? "");
@@ -633,6 +637,9 @@ function configured_pair_configs(array $config): array {
             $pairConfig["delete_propagation"] = $pair["delete_behavior"] === "mirror_deletes";
         } elseif (isset($pair["delete_propagation"])) {
             $pairConfig["delete_propagation"] = !empty($pair["delete_propagation"]);
+        }
+        if (isset($pair["name"])) {
+            $pairConfig["name"] = $pair["name"];
         }
         $pairConfig["paused"] = !empty($pair["paused"]);
         $configs[] = ["key" => pair_key($pairConfig), "config" => $pairConfig];

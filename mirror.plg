@@ -2,18 +2,18 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.13">
+  <!ENTITY version    "V1.00.14">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.13.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.14.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "ee2094a36351dca312a727bc834a4bec">
+  <!ENTITY md5        "f816997a4f3ccaf1cd2e718932d464d4">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.13
+### V1.00.14
 - Adds the Mirror icon to the plugin package and settings page metadata.
 - Uses Mirror-owned SSH known_hosts for linked peers.
 - Keeps real tab URLs with soft navigation.

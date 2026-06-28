@@ -194,6 +194,9 @@ function mirror_configured_routes($config) {
       $routeConfig["delete_behavior"] = $pair["delete_behavior"];
       $routeConfig["delete_propagation"] = $pair["delete_behavior"] === "mirror_deletes";
     }
+    if (isset($pair["name"])) {
+      $routeConfig["name"] = $pair["name"];
+    }
     $routeConfig["paused"] = !empty($pair["paused"]);
     $routes[] = ["key" => mirror_route_key($routeConfig), "config" => $routeConfig];
   }
@@ -201,6 +204,10 @@ function mirror_configured_routes($config) {
 }
 
 function mirror_route_label($routeConfig) {
+  $name = trim((string)($routeConfig["name"] ?? ""));
+  if ($name !== "") {
+    return $name;
+  }
   $a = mirror_share_name_from_path((string)($routeConfig["server_a"]["root"] ?? ""));
   $b = (string)($routeConfig["server_b"]["share"] ?? mirror_share_name_from_path((string)($routeConfig["server_b"]["root"] ?? "")));
   $peer = (string)($routeConfig["server_b"]["name"] ?? "");
@@ -333,6 +340,7 @@ foreach ($configuredSharePairs as $pair) {
       $pairDeleteBehavior = "restore_missing";
     }
     $syncRouteRows[] = [
+      "name" => (string)($pair["name"] ?? ""),
       "local" => $pairAShare,
       "other" => $pairBShare,
       "peer_id" => (string)($pair["server_b"]["peer_id"] ?? ""),
@@ -379,7 +387,7 @@ foreach ($mirrorRoutes as $route) {
   $routeState = mirror_route_state($mirrorState, $route["key"]);
   $mirrorRouteSummaries[] = mirror_route_summary($route["config"], $routeState, $running);
 }
-$sharePageStyle = "background:radial-gradient(circle at 8% 0%,rgba(255,106,42,.08),transparent 28%),linear-gradient(145deg,#091017 0%,#10151b 40%,#070b0f 100%);border:1px solid rgba(255,255,255,.07);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 18px 60px rgba(0,0,0,.24);box-sizing:border-box;color:#e8edf2;margin:0;padding:26px;width:100%;max-width:1540px;";
+$sharePageStyle = "background:radial-gradient(circle at 8% 0%,rgba(255,106,42,.08),transparent 28%),linear-gradient(145deg,#091017 0%,#10151b 40%,#070b0f 100%);border:1px solid rgba(255,255,255,.07);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 18px 60px rgba(0,0,0,.24);box-sizing:border-box;color:#e8edf2;margin:0;padding:26px;width:100%;max-width:none;";
 $shareHeaderStyle = "align-items:flex-start;display:flex;gap:18px;justify-content:space-between;margin:0 0 22px;";
 $shareTitleStyle = "align-items:center;display:flex;gap:14px;min-width:0;";
 $shareTopActionsStyle = "display:flex;gap:10px;justify-content:flex-end;";
@@ -387,7 +395,7 @@ $shareButtonStyle = "align-items:center;background:rgba(255,255,255,.045);border
 $sharePrimaryButtonStyle = "align-items:center;background:linear-gradient(180deg,#ff7b22 0%,#ff5f1f 100%);border:1px solid #ff7b22;border-radius:6px;box-shadow:0 10px 28px rgba(255,106,42,.24);color:#fff;display:inline-flex;font-size:13px;font-weight:800;gap:8px;justify-content:center;letter-spacing:0;line-height:1;min-height:42px;padding:0 22px;text-decoration:none;text-transform:none;";
 $shareStatsStyle = "display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 18px;width:100%;";
 $shareStatStyle = "align-items:center;background:radial-gradient(circle at 8% 0%,rgba(255,255,255,.055),transparent 34%),linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.09);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);display:grid;gap:15px;grid-template-columns:52px minmax(0,1fr);min-height:104px;padding:18px 20px;";
-$shareLayoutStyle = "align-items:start;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 300px;margin:0;";
+$shareLayoutStyle = "align-items:start;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 320px;margin:0;";
 $shareMainStyle = "display:grid;gap:16px;min-width:0;";
 $shareCardStyle = "background:radial-gradient(circle at 0% 0%,rgba(255,255,255,.055),transparent 35%),linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.09);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);margin:0;padding:24px;";
 $shareModeStyle = "border:1px solid rgba(255,255,255,.09);border-radius:6px;display:grid;grid-template-columns:1fr 1fr;margin:16px 0 24px;overflow:hidden;width:100%;";
@@ -400,7 +408,8 @@ $shareSaveStyle = "align-items:center;background:radial-gradient(circle at 0% 0%
 
 <style>
 .mirror-panel {
-  max-width: 1510px;
+  max-width: none;
+  width: 100%;
   transition: opacity 0.12s ease;
 }
 .mirror-panel.is-refreshing {
@@ -1203,8 +1212,13 @@ body .mirror-panel .mirror-shares-page .mirror-share-pair-row {
   border-top: 1px solid rgba(255, 255, 255, 0.075) !important;
   display: grid !important;
   gap: 12px !important;
-  grid-template-columns: repeat(6, minmax(0, 1fr)) auto !important;
+  grid-template-columns: repeat(8, minmax(0, 1fr)) auto !important;
   padding: 14px 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-pair-row[data-editing-route="1"] {
+  border: 1px solid rgba(255, 122, 34, 0.52) !important;
+  border-radius: 6px !important;
+  padding: 14px !important;
 }
 body .mirror-panel .mirror-shares-page .mirror-share-pair-empty {
   align-items: center !important;
@@ -1645,7 +1659,7 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                   <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Sync Route Configuration</h4>
                   <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Set up a route, then add it to the Sync Routes list below.</p>
                 </div>
-                <button type="button" data-add-share-pair style="<?=mirror_value($sharePrimaryButtonStyle)?>"><i class="fa fa-plus" aria-hidden="true"></i> Add Sync Route</button>
+                <button type="button" data-add-share-pair style="<?=mirror_value($sharePrimaryButtonStyle)?>"><i class="fa fa-plus" aria-hidden="true"></i> <span data-add-share-pair-label>Add Sync Route</span></button>
               </div>
 
               <div class="mirror-mode-switch" role="group" aria-label="Mirror mode" style="<?=mirror_value($shareModeStyle)?>">
@@ -1656,6 +1670,11 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
               </div>
 
               <div class="mirror-form-grid" style="<?=mirror_value($shareFormGridStyle)?>">
+                <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="route_name" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Route Name</label>
+                  <input id="route_name" name="route_name" type="text" style="<?=mirror_value($shareControlStyle)?>" value="">
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Give this sync route a friendly name.</span>
+                </div>
                 <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
                   <label for="server_a_share" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Local Share (This Server)</label>
                   <select id="server_a_share" name="server_a_share" style="<?=mirror_value($shareControlStyle)?>" <?=$shares ? "" : "disabled"?>>
@@ -1742,6 +1761,10 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                 <?php foreach ($syncRouteRows as $index => $pair): ?>
                   <div class="mirror-share-pair-row" data-share-pair-row>
                     <div class="mirror-field">
+                      <label for="additional_pair_name_<?=mirror_value($index)?>">Route Name</label>
+                      <input id="additional_pair_name_<?=mirror_value($index)?>" name="additional_pair_name[]" type="text" value="<?=mirror_value($pair["name"])?>">
+                    </div>
+                    <div class="mirror-field">
                       <label for="additional_pair_local_<?=mirror_value($index)?>">Local Share</label>
                       <select id="additional_pair_local_<?=mirror_value($index)?>" name="additional_pair_local[]" <?=$shares ? "" : "disabled"?>>
                         <option value="">Select a share</option>
@@ -1818,6 +1841,10 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
+                  <div class="mirror-field">
+                    <label>Route Name</label>
+                    <input name="additional_pair_name[]" type="text" value="">
+                  </div>
                   <div class="mirror-field">
                     <label>Local Share</label>
                     <select name="additional_pair_local[]" <?=$shares ? "" : "disabled"?>>
@@ -2145,6 +2172,8 @@ function bindMirrorPage() {
     var list = container.querySelector('[data-share-pair-list]');
     var template = container.querySelector('[data-share-pair-template]');
     var addButton = document.querySelector('[data-add-share-pair]');
+    var addButtonLabel = document.querySelector('[data-add-share-pair-label]');
+    var editingRow = null;
     function setControlValue(selector, value) {
       var control = document.querySelector(selector);
       if (control) {
@@ -2169,6 +2198,18 @@ function bindMirrorPage() {
       var control = rowControl(row, name);
       return control ? control.value : '';
     }
+    function setEditingRow(row) {
+      if (editingRow) {
+        editingRow.removeAttribute('data-editing-route');
+      }
+      editingRow = row || null;
+      if (editingRow) {
+        editingRow.setAttribute('data-editing-route', '1');
+      }
+      if (addButtonLabel) {
+        addButtonLabel.textContent = editingRow ? 'Update Sync Route' : 'Add Sync Route';
+      }
+    }
     if (addButton && list && template) {
       addButton.addEventListener('click', function () {
         var remote = selectedMode() === 'remote';
@@ -2182,23 +2223,29 @@ function bindMirrorPage() {
           alert('Choose the linked remote server before adding this route.');
           return;
         }
-        var row = template.cloneNode(true);
-        row.removeAttribute('data-share-pair-template');
-        row.setAttribute('data-share-pair-row', '1');
-        row.querySelectorAll('select').forEach(function (select) {
-          select.selectedIndex = 0;
-        });
-        row.querySelectorAll('input[type="text"]').forEach(function (input) {
-          input.value = '';
-        });
+        var row = editingRow || template.cloneNode(true);
+        if (!editingRow) {
+          row.removeAttribute('data-share-pair-template');
+          row.setAttribute('data-share-pair-row', '1');
+          row.querySelectorAll('select').forEach(function (select) {
+            select.selectedIndex = 0;
+          });
+          row.querySelectorAll('input[type="text"]').forEach(function (input) {
+            input.value = '';
+          });
+        }
+        setRowControl(row, 'additional_pair_name[]', controlValue('#route_name'));
         setRowControl(row, 'additional_pair_local[]', localShare);
         setRowControl(row, 'additional_pair_other_local[]', remote ? '' : otherShare);
         setRowControl(row, 'additional_pair_peer_id[]', remote ? controlValue('#primary_peer_id') : '');
         setRowControl(row, 'additional_pair_other_remote[]', remote ? otherShare : '');
         setRowControl(row, 'additional_pair_authority[]', controlValue('#authority'));
         setRowControl(row, 'additional_pair_delete_behavior[]', controlValue('#delete_behavior'));
-        setRowControl(row, 'additional_pair_paused[]', '0');
-        list.appendChild(row);
+        if (!editingRow) {
+          setRowControl(row, 'additional_pair_paused[]', '0');
+          list.appendChild(row);
+        }
+        setEditingRow(null);
         syncModeVisibility();
         syncSharePairEmptyState(container);
       });
@@ -2219,13 +2266,14 @@ function bindMirrorPage() {
         if (modeInput) {
           modeInput.checked = true;
         }
+        setControlValue('#route_name', rowValue(editRow, 'additional_pair_name[]'));
         setControlValue('#server_a_share', rowValue(editRow, 'additional_pair_local[]'));
         setControlValue('#server_b_share', localOtherValue);
         setControlValue('#primary_peer_id', peerId);
         setControlValue('#remote_share', remoteShareValue);
         setControlValue('#authority', rowValue(editRow, 'additional_pair_authority[]'));
         setControlValue('#delete_behavior', rowValue(editRow, 'additional_pair_delete_behavior[]'));
-        editRow.remove();
+        setEditingRow(editRow);
         syncModeVisibility();
         syncSharePairEmptyState(container);
         var editor = document.querySelector('.mirror-route-config-card');
@@ -2240,6 +2288,9 @@ function bindMirrorPage() {
       }
       var row = removeButton.closest('[data-share-pair-row]');
       if (row) {
+        if (row === editingRow) {
+          setEditingRow(null);
+        }
         row.remove();
         syncSharePairEmptyState(container);
       }
