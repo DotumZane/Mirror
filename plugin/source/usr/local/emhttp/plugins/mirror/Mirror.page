@@ -1307,15 +1307,18 @@ body .mirror-panel {
   background:
     radial-gradient(circle at 8% 0%, rgba(255, 106, 42, 0.08), transparent 28%),
     linear-gradient(145deg, #091017 0%, #10151b 40%, #070b0f 100%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  border-radius: 8px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 60px rgba(0, 0, 0, 0.24) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
   box-sizing: border-box !important;
   color: #e8edf2 !important;
   margin: 0 !important;
   max-width: none !important;
   padding: 26px !important;
   width: 100% !important;
+}
+body .mirror-title-strip-hidden {
+  display: none !important;
 }
 body .mirror-panel,
 body .mirror-panel * {
@@ -1578,7 +1581,7 @@ body .mirror-panel .mirror-shares-page {
 }
 @media (min-width: 1221px) {
   body .mirror-panel {
-    width: calc(100vw - 180px) !important;
+    width: var(--mirror-full-bleed-width, calc(100vw - 124px)) !important;
   }
 }
 @media (max-width: 760px) {
@@ -2420,6 +2423,33 @@ function refreshMirrorPanel(url, pushHistory) {
 }
 
 function bindMirrorPage() {
+  function setMirrorFullBleedWidth() {
+    var panel = document.querySelector(".mirror-panel");
+    if (!panel) {
+      return;
+    }
+    var left = Math.max(0, Math.round(panel.getBoundingClientRect().left));
+    panel.style.setProperty("--mirror-full-bleed-width", "calc(100vw - " + left + "px)");
+  }
+
+  function hideGeneratedMirrorTitle() {
+    var panel = document.querySelector(".mirror-panel");
+    var candidate = panel ? panel.previousElementSibling : null;
+    while (candidate && (candidate.tagName === "STYLE" || candidate.tagName === "SCRIPT")) {
+      candidate = candidate.previousElementSibling;
+    }
+    if (candidate && candidate.textContent && candidate.textContent.trim() === "Mirror") {
+      candidate.classList.add("mirror-title-strip-hidden");
+    }
+  }
+
+  hideGeneratedMirrorTitle();
+  setMirrorFullBleedWidth();
+  if (window.mirrorFullBleedResizeBound !== "1") {
+    window.mirrorFullBleedResizeBound = "1";
+    window.addEventListener("resize", setMirrorFullBleedWidth);
+  }
+
   document.querySelectorAll(".mirror-tabs a").forEach(function (link) {
     if (link.dataset.mirrorTabBound === "1") {
       return;

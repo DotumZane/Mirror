@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.18`
-- Current package: `packages/mirror-V1.00.18.txz`
+- Current version: `V1.00.19`
+- Current package: `packages/mirror-V1.00.19.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
@@ -40,7 +40,7 @@ What currently works:
 - Each route has its own conflict rule and delete behavior.
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
-- All Mirror settings tabs now use the card-style visual treatment that started on the Shares page.
+- All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
 - The latest fix hides the "No sync routes configured" empty-state card whenever a real route row exists and lets the Shares page use more available browser width.
 
 Known weak spots / likely next pain:
@@ -55,8 +55,8 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test all tabs after installing `V1.00.18` and confirm the shared visual style works in Unraid Connect.
-2. Confirm the Shares tab still hides the empty state when routes exist and uses the wider browser space.
+1. Re-test all tabs after installing `V1.00.19` and confirm the shared full-bleed visual style works in Unraid Connect.
+2. Confirm the generated "Mirror" title strip is gone and the UI reaches the available right edge.
 3. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
 4. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
 5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
@@ -65,7 +65,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.18`.
+2. On both Unraid servers, update Mirror to `V1.00.19`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.18
+V1.00.19
 ```
 
 Version source of truth:
@@ -590,6 +590,7 @@ Current release status:
 - `V1.00.16` refreshes the project notes for chat handoff.
 - `V1.00.17` hides the no-routes empty state more forcefully and widens the Shares page on large browser windows.
 - `V1.00.18` extends the Shares page visual style across all Mirror settings tabs.
+- `V1.00.19` removes the generated Mirror title strip and makes the Mirror UI full-bleed in the Unraid content area.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -807,7 +808,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.18.
+- Current version: V1.00.19.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -858,7 +859,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.18`.
+- Current version is `V1.00.19`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -868,7 +869,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.18`, confirm all Mirror tabs share the new visual style, and verify the Shares page still behaves correctly.
+- Update both Unraid servers to `V1.00.19`, confirm the generated title strip is gone, and verify all tabs use the full-bleed layout.
 
 ### Chat Handoff
 
@@ -881,11 +882,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.18`
-- Current package: `packages/mirror-V1.00.18.txz`
+- Current version: `V1.00.19`
+- Current package: `packages/mirror-V1.00.19.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
-- Next suggested task: install/update `V1.00.18`, review every tab in the Unraid Connect remote browser, and confirm the Shares route list still behaves correctly.
+- Next suggested task: install/update `V1.00.19`, review every tab in the Unraid Connect remote browser, and confirm the page no longer feels like a window inside a window.
 
 ### Tracker Update Template
 
@@ -2034,3 +2035,13 @@ Next suggested task:
 - New decisions: Keep the unified visual layer as CSS overrides for now so existing PHP workflow markup remains stable.
 - Open questions: Confirm all tabs render cleanly in the Unraid Connect remote browser at wide and narrow widths.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.18`, and review Status, LAN Setup, Shares, Config, and Log for spacing issues.
+
+#### 2026-06-27 - Full-Bleed Settings Layout
+
+- Task completed: Removed the generated Mirror title strip and made the Mirror settings surface full-bleed.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.19.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: The plugin now hides the plain Unraid-generated "Mirror" title strip above the panel, removes the outer border/radius/shadow from the Mirror shell, and dynamically sizes the shell to the remaining browser width so it reaches the available right edge.
+- New decisions: Use a small runtime layout helper for Unraid Connect because the available content width can change with the remote browser frame.
+- Open questions: Confirm `V1.00.19` removes the title strip on both local Unraid and Unraid Connect views without hiding any useful page controls.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.19`, and review the edge-to-edge layout on Status and Shares.

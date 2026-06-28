@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.18">
+  <!ENTITY version    "V1.00.19">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.18.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.19.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "aee13a3a0cc63481ce411e18f6079b91">
+  <!ENTITY md5        "4a25b8dcf7003c107e25e93d75bdee7c">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.18
+### V1.00.19
+- Removes the generated Mirror title strip and makes the Mirror UI full-bleed in the Unraid content area.
 - Extends the Shares page visual style across all Mirror settings tabs.
 - Hides the Sync Routes empty state whenever route rows exist.
 - Lets the Shares page use more of the available browser width.
