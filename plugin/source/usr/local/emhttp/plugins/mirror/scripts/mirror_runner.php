@@ -23,6 +23,16 @@ function remove_conflict_entries(array &$state, string $rel): void {
     ));
 }
 
+function state_has_conflict_path(array $state, string $rel): bool {
+    foreach (is_array($state["conflicts"] ?? null) ? $state["conflicts"] : [] as $entry) {
+        if (is_array($entry) && (string)($entry["path"] ?? "") === $rel) {
+            return true;
+        }
+    }
+    $file = $state["files"][$rel] ?? null;
+    return is_array($file) && (string)($file["status"] ?? "") === "conflict";
+}
+
 function load_config(string $path): array {
     if (!is_file($path)) {
         throw new RuntimeException("config not found: $path");
@@ -485,15 +495,30 @@ function resolve_conflict(string $configPath, string $routeKey, string $rel, str
         throw new RuntimeException("invalid conflict resolution: $resolution");
     }
     $config = load_config($configPath);
+    $routes = configured_pair_configs($config);
     $route = null;
-    foreach (configured_pair_configs($config) as $candidate) {
+    foreach ($routes as $candidate) {
         if ((string)$candidate["key"] === $routeKey) {
+            $candidateState = load_scoped_state($configPath, (string)$candidate["key"]);
+            if (state_has_conflict_path($candidateState["current"], $rel)) {
+                $route = $candidate;
+                break;
+            }
             $route = $candidate;
-            break;
+        }
+    }
+    if ($route === null || $routeKey === "" || $routeKey === "__default") {
+        foreach ($routes as $candidate) {
+            $candidateState = load_scoped_state($configPath, (string)$candidate["key"]);
+            if (state_has_conflict_path($candidateState["current"], $rel)) {
+                $route = $candidate;
+                $routeKey = (string)$candidate["key"];
+                break;
+            }
         }
     }
     if ($route === null) {
-        throw new RuntimeException("sync route not found: $routeKey");
+        throw new RuntimeException("sync route not found for conflict path: $rel");
     }
 
     $routeConfig = $route["config"];
@@ -511,6 +536,7 @@ function resolve_conflict(string $configPath, string $routeKey, string $rel, str
             if (!$local["exists"]) {
                 throw new RuntimeException("local conflict file not found: $rel");
             }
+            mark_copying_progress($configPath, $routeKey, $allState, $state, 0, 1, $rel);
             copy_local_to_remote($routeConfig, $configPath, $aRoot, $bRoot, $rel, $summary);
             record_file_states($state, $rel, $local, $local, "synced");
         } elseif ($resolution === "keep-remote") {
@@ -520,6 +546,7 @@ function resolve_conflict(string $configPath, string $routeKey, string $rel, str
             if (!$remote["exists"]) {
                 throw new RuntimeException("remote conflict file not found: $rel");
             }
+            mark_copying_progress($configPath, $routeKey, $allState, $state, 0, 1, $rel);
             copy_remote_to_local($routeConfig, $configPath, $bRoot, $aRoot, $rel, $summary);
             record_file_states($state, $rel, $remote, $remote, "synced");
         } else {
@@ -534,12 +561,14 @@ function resolve_conflict(string $configPath, string $routeKey, string $rel, str
             if (!state_for($aRoot . "/" . $rel)["exists"]) {
                 throw new RuntimeException("server-a conflict file not found: $rel");
             }
+            mark_copying_progress($configPath, $routeKey, $allState, $state, 0, 1, $rel);
             copy_file($routeConfig, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
         } elseif ($resolution === "keep-remote") {
             log_route_action($routeConfig, "resolve conflict keep server-b", $rel, "copying server-b to server-a");
             if (!state_for($bRoot . "/" . $rel)["exists"]) {
                 throw new RuntimeException("server-b conflict file not found: $rel");
             }
+            mark_copying_progress($configPath, $routeKey, $allState, $state, 0, 1, $rel);
             copy_file($routeConfig, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
         } else {
             log_route_action($routeConfig, "resolve conflict baseline", $rel, "accepting current signatures");

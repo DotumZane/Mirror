@@ -146,7 +146,6 @@ function mirror_network_interface() {
 
 function mirror_network_rates() {
   $iface = mirror_network_interface();
-  $samplePath = "/tmp/mirror-net-sample.json";
   if ($iface === "") {
     return ["upload" => "Idle", "download" => "Idle", "iface" => ""];
   }
@@ -155,18 +154,20 @@ function mirror_network_rates() {
   if (!is_file($rxPath) || !is_file($txPath)) {
     return ["upload" => "Idle", "download" => "Idle", "iface" => $iface];
   }
-  $now = microtime(true);
-  $rx = (int)trim((string)file_get_contents($rxPath));
-  $tx = (int)trim((string)file_get_contents($txPath));
-  $previous = mirror_json_file($samplePath, []);
-  $rates = ["upload" => "Measuring", "download" => "Measuring", "iface" => $iface];
-  if (($previous["iface"] ?? "") === $iface && !empty($previous["time"])) {
-    $elapsed = max(0.25, $now - (float)$previous["time"]);
-    $rates["download"] = mirror_format_rate(max(0, $rx - (int)($previous["rx"] ?? 0)) / $elapsed);
-    $rates["upload"] = mirror_format_rate(max(0, $tx - (int)($previous["tx"] ?? 0)) / $elapsed);
-  }
-  file_put_contents($samplePath, json_encode(["iface" => $iface, "time" => $now, "rx" => $rx, "tx" => $tx], JSON_UNESCAPED_SLASHES) . "\n");
-  return $rates;
+  $start = microtime(true);
+  $rxStart = (int)trim((string)file_get_contents($rxPath));
+  $txStart = (int)trim((string)file_get_contents($txPath));
+  usleep(250000);
+  clearstatcache(true, $rxPath);
+  clearstatcache(true, $txPath);
+  $elapsed = max(0.25, microtime(true) - $start);
+  $rxEnd = (int)trim((string)file_get_contents($rxPath));
+  $txEnd = (int)trim((string)file_get_contents($txPath));
+  return [
+    "upload" => mirror_format_rate(max(0, $txEnd - $txStart) / $elapsed),
+    "download" => mirror_format_rate(max(0, $rxEnd - $rxStart) / $elapsed),
+    "iface" => $iface,
+  ];
 }
 
 function mirror_peer_list($peersFile, $peerFile) {
@@ -385,7 +386,7 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
     $indexStatus .= " - " . mirror_age_label($metaUpdated);
   }
   if ($hasConflict) {
-    $mirrorStatus = $completePercent . "% complete - needs attention";
+    $mirrorStatus = "Needs attention - " . $visibleConflictCount . " conflict" . ($visibleConflictCount === 1 ? "" : "s");
   } elseif ($phase === "peer_offline") {
     $indexStatus = "Peer offline";
     if ($metaUpdated > 0) {
@@ -1855,7 +1856,7 @@ body .mirror-panel .mirror-shares-page {
                     <span class="mirror-conflict-meta">Recorded <?=mirror_value(mirror_age_label((int)$conflict["created_at"]))?></span>
                   <?php endif; ?>
                   <div class="mirror-conflict-actions">
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
                       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
@@ -1863,7 +1864,7 @@ body .mirror-panel .mirror-shares-page {
                       <input type="hidden" name="resolution" value="keep-local">
                       <button type="submit">Keep Local</button>
                     </form>
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
                       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
@@ -1871,7 +1872,7 @@ body .mirror-panel .mirror-shares-page {
                       <input type="hidden" name="resolution" value="keep-remote">
                       <button type="submit">Keep Remote</button>
                     </form>
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
                       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
@@ -2920,7 +2921,15 @@ function bindMirrorPage() {
           "X-Requested-With": "XMLHttpRequest"
         }
       }, 20000)
-        .then(function () {
+        .then(function (response) {
+          return response.json().catch(function () {
+            return { ok: response.ok, message: "" };
+          });
+        })
+        .then(function (payload) {
+          if (payload && payload.message) {
+            showMirrorClientMessage(payload.message);
+          }
           return refreshMirrorPanel();
         })
         .catch(function (error) {

@@ -1519,14 +1519,18 @@ if ($action === "resolve-conflict") {
         . " --path "
         . escapeshellarg($path)
         . " --resolution "
-        . escapeshellarg($resolution)
-        . " 2>&1";
-    exec($cmd, $output, $code);
-    $message = implode("\n", $output);
-    if ($code !== 0) {
-        $message = "Conflict resolution failed:\n" . $message;
-    }
+        . escapeshellarg($resolution);
+    exec("nohup " . $cmd . " >> /var/log/mirror.log 2>&1 & echo $!", $output, $code);
+    $pid = trim((string)($output[0] ?? ""));
+    $message = $code === 0
+        ? "Conflict resolution started: $resolution\nPath: $path" . ($pid !== "" ? "\nWorker pid: $pid" : "")
+        : "Conflict resolution failed to start.";
     mirror_write_action($message);
+    if (mirror_is_ajax()) {
+        header("Content-Type: application/json; charset=UTF-8");
+        echo json_encode(["ok" => $code === 0, "message" => $message], JSON_UNESCAPED_SLASHES) . "\n";
+        exit;
+    }
     mirror_redirect();
 }
 
