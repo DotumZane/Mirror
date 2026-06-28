@@ -1837,7 +1837,7 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                   </div>
                 <?php endforeach; ?>
               </div>
-              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:<?=$syncRouteRows ? "none" : "block"?>;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;"><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
+              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:<?=$syncRouteRows ? "none!important" : "block"?>;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;"><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
@@ -2156,11 +2156,12 @@ function bindMirrorPage() {
     if (!container) {
       return;
     }
+    var list = container.querySelector('[data-share-pair-list]');
     var empty = container.querySelector('[data-share-pair-empty]');
     if (empty) {
-      var hasRows = !!container.querySelector('[data-share-pair-row]');
+      var hasRows = !!(list && list.querySelector('[data-share-pair-row]'));
       empty.hidden = hasRows;
-      empty.style.display = hasRows ? 'none' : 'block';
+      empty.style.setProperty('display', hasRows ? 'none' : 'block', hasRows ? 'important' : '');
     }
   }
 
