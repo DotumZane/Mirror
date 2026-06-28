@@ -618,7 +618,8 @@ $shareSaveStyle = "align-items:center;background:radial-gradient(circle at 0% 0%
   opacity: 0.86;
 }
 .mirror-shares-page {
-  max-width: 1540px;
+  max-width: none;
+  width: 100%;
 }
 .mirror-shares-header {
   align-items: center;
@@ -1103,8 +1104,8 @@ body .mirror-panel .mirror-shares-page form[action="/plugins/mirror/include/acti
 body .mirror-panel .mirror-shares-page .mirror-shares-layout {
   align-items: start !important;
   display: grid !important;
-  gap: 16px !important;
-  grid-template-columns: minmax(0, 1fr) 300px !important;
+  gap: 18px !important;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
   margin: 0 !important;
 }
 body .mirror-panel .mirror-shares-page .mirror-shares-main {
@@ -1212,7 +1213,7 @@ body .mirror-panel .mirror-shares-page .mirror-share-pair-row {
   border-top: 1px solid rgba(255, 255, 255, 0.075) !important;
   display: grid !important;
   gap: 12px !important;
-  grid-template-columns: repeat(8, minmax(0, 1fr)) auto !important;
+  grid-template-columns: minmax(120px, .8fr) minmax(145px, 1fr) minmax(170px, 1.1fr) minmax(145px, 1fr) minmax(150px, 1fr) minmax(160px, 1fr) minmax(100px, .7fr) auto !important;
   padding: 14px 0 !important;
 }
 body .mirror-panel .mirror-shares-page .mirror-share-pair-row[data-editing-route="1"] {
@@ -1231,6 +1232,10 @@ body .mirror-panel .mirror-shares-page .mirror-share-pair-empty {
   max-width: 420px !important;
   padding: 22px !important;
   text-align: center !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-pair-empty[hidden],
+body .mirror-panel .mirror-shares-page .mirror-share-pair-empty.is-hidden {
+  display: none !important;
 }
 body .mirror-panel .mirror-shares-page .mirror-about-card {
   position: sticky !important;
@@ -1276,6 +1281,11 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
   }
   body .mirror-panel .mirror-shares-page .mirror-shares-layout {
     grid-template-columns: 1fr !important;
+  }
+}
+@media (min-width: 1221px) {
+  body .mirror-panel .mirror-shares-page {
+    width: calc(100vw - 180px) !important;
   }
 }
 @media (max-width: 760px) {
@@ -1837,7 +1847,7 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                   </div>
                 <?php endforeach; ?>
               </div>
-              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:<?=$syncRouteRows ? "none!important" : "block"?>;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;"><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
+              <p class="mirror-share-pair-empty <?=$syncRouteRows ? "is-hidden" : ""?>" data-share-pair-empty <?=$syncRouteRows ? "hidden" : ""?> style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:<?=$syncRouteRows ? "none!important" : "block"?>;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;"><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
@@ -2161,6 +2171,7 @@ function bindMirrorPage() {
     if (empty) {
       var hasRows = !!(list && list.querySelector('[data-share-pair-row]'));
       empty.hidden = hasRows;
+      empty.classList.toggle('is-hidden', hasRows);
       empty.style.setProperty('display', hasRows ? 'none' : 'block', hasRows ? 'important' : '');
     }
   }

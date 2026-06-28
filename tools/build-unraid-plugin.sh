@@ -44,6 +44,8 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Hides the Sync Routes empty state whenever route rows exist.
+- Lets the Shares page use more of the available browser width.
 - Adds the Mirror icon to the plugin package and settings page metadata.
 - Uses Mirror-owned SSH known_hosts for linked peers.
 - Keeps real tab URLs with soft navigation.
