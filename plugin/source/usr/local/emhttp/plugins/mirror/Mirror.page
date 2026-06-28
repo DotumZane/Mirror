@@ -364,6 +364,23 @@ foreach ($mirrorRoutes as $route) {
   $routeState = mirror_route_state($mirrorState, $route["key"]);
   $mirrorRouteSummaries[] = mirror_route_summary($route["config"], $routeState, $running);
 }
+$sharePageStyle = "background:radial-gradient(circle at 8% 0%,rgba(255,106,42,.08),transparent 28%),linear-gradient(145deg,#091017 0%,#10151b 40%,#070b0f 100%);border:1px solid rgba(255,255,255,.07);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 18px 60px rgba(0,0,0,.24);box-sizing:border-box;color:#e8edf2;margin:0;padding:26px;width:100%;max-width:1540px;";
+$shareHeaderStyle = "align-items:flex-start;display:flex;gap:18px;justify-content:space-between;margin:0 0 22px;";
+$shareTitleStyle = "align-items:center;display:flex;gap:14px;min-width:0;";
+$shareTopActionsStyle = "display:flex;gap:10px;justify-content:flex-end;";
+$shareButtonStyle = "align-items:center;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.14);border-radius:6px;color:#f3f6f8;display:inline-flex;font-size:13px;font-weight:700;gap:8px;justify-content:center;letter-spacing:0;line-height:1;min-height:38px;padding:0 16px;text-decoration:none;text-transform:none;";
+$sharePrimaryButtonStyle = "align-items:center;background:linear-gradient(180deg,#ff7b22 0%,#ff5f1f 100%);border:1px solid #ff7b22;border-radius:6px;box-shadow:0 10px 28px rgba(255,106,42,.24);color:#fff;display:inline-flex;font-size:13px;font-weight:800;gap:8px;justify-content:center;letter-spacing:0;line-height:1;min-height:42px;padding:0 22px;text-decoration:none;text-transform:none;";
+$shareStatsStyle = "display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 18px;width:100%;";
+$shareStatStyle = "align-items:center;background:radial-gradient(circle at 8% 0%,rgba(255,255,255,.055),transparent 34%),linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.09);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);display:grid;gap:15px;grid-template-columns:52px minmax(0,1fr);min-height:104px;padding:18px 20px;";
+$shareLayoutStyle = "align-items:start;display:grid;gap:16px;grid-template-columns:minmax(0,1fr) 300px;margin:0;";
+$shareMainStyle = "display:grid;gap:16px;min-width:0;";
+$shareCardStyle = "background:radial-gradient(circle at 0% 0%,rgba(255,255,255,.055),transparent 35%),linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.09);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);margin:0;padding:24px;";
+$shareModeStyle = "border:1px solid rgba(255,255,255,.09);border-radius:6px;display:grid;grid-template-columns:1fr 1fr;margin:16px 0 24px;overflow:hidden;width:100%;";
+$shareFormGridStyle = "display:grid;gap:22px 28px;grid-template-columns:repeat(3,minmax(0,1fr));";
+$shareFieldStyle = "min-width:0;";
+$shareControlStyle = "background-color:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:6px;box-shadow:none;color:#f4f7f9;font-size:14px;height:42px;margin:0;max-width:none;padding:0 12px;width:100%;";
+$shareHelpStyle = "color:rgba(232,237,242,.66);display:block;font-size:13px;line-height:1.35;margin-top:8px;";
+$shareSaveStyle = "align-items:center;background:radial-gradient(circle at 0% 0%,rgba(255,255,255,.055),transparent 35%),linear-gradient(145deg,rgba(255,255,255,.052),rgba(255,255,255,.016));border:1px solid rgba(255,255,255,.09);border-radius:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.035);display:flex;gap:16px;justify-content:space-between;margin-top:16px;padding:16px;";
 ?>
 
 <style>
@@ -1541,58 +1558,58 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
 
   <?php if ($mirrorTab === "shares"): ?>
   <?php if ($nodeRole !== "managed_remote"): ?>
-    <div class="mirror-shares-page">
-      <div class="mirror-shares-header">
-        <div class="mirror-shares-title">
-          <i class="fa fa-refresh" aria-hidden="true"></i>
+    <div class="mirror-shares-page" style="<?=mirror_value($sharePageStyle)?>">
+      <div class="mirror-shares-header" style="<?=mirror_value($shareHeaderStyle)?>">
+        <div class="mirror-shares-title" style="<?=mirror_value($shareTitleStyle)?>">
+          <i class="fa fa-refresh" aria-hidden="true" style="color:#cbd4df;font-size:34px;line-height:1;"></i>
           <div>
-            <h3>Sync Routes</h3>
-            <p>Configure how this server syncs files with remote systems.</p>
+            <h3 style="color:#fff;font-size:25px;font-weight:800;line-height:1.05;margin:0 0 4px;">Sync Routes</h3>
+            <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Configure how this server syncs files with remote systems.</p>
           </div>
         </div>
-        <div class="mirror-shares-top-actions">
+        <div class="mirror-shares-top-actions" style="<?=mirror_value($shareTopActionsStyle)?>">
           <?php if ($linkedPeers): ?>
-            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1" style="display:inline-flex;margin:0;">
               <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
               <input type="hidden" name="action" value="refresh-peer-shares">
-              <button type="submit"><i class="fa fa-refresh" aria-hidden="true"></i> Refresh</button>
+              <button type="submit" style="<?=mirror_value($shareButtonStyle)?>"><i class="fa fa-refresh" aria-hidden="true"></i> Refresh</button>
             </form>
           <?php endif; ?>
-          <a class="button" href="<?=mirror_value(mirror_tab_url("lan"))?>"><i class="fa fa-cog" aria-hidden="true"></i> Actions</a>
+          <a class="button" href="<?=mirror_value(mirror_tab_url("lan"))?>" style="<?=mirror_value($shareButtonStyle)?>"><i class="fa fa-cog" aria-hidden="true"></i> Actions</a>
         </div>
       </div>
 
-      <div class="mirror-share-status">
-        <div class="mirror-share-status-item">
-          <div class="mirror-share-status-icon"><i class="fa fa-server" aria-hidden="true"></i></div>
+      <div class="mirror-share-status" style="<?=mirror_value($shareStatsStyle)?>">
+        <div class="mirror-share-status-item" style="<?=mirror_value($shareStatStyle)?>">
+          <div class="mirror-share-status-icon" style="align-items:center;color:#ff8a00;display:flex;font-size:29px;justify-content:center;"><i class="fa fa-server" aria-hidden="true"></i></div>
           <div>
-            <strong>Current Node</strong>
-            <span class="mirror-share-status-value"><?=mirror_value($serverName)?></span>
-            <span class="mirror-share-status-sub"><?=$serverBType === "remote" ? "Remote LAN mirror" : "Local mirror"?></span>
+            <strong style="color:rgba(232,237,242,.72);display:block;font-size:12px;font-weight:700;margin:0 0 8px;text-transform:uppercase;">Current Node</strong>
+            <span class="mirror-share-status-value" style="color:#fff;display:block;font-size:20px;font-weight:800;line-height:1.1;overflow-wrap:anywhere;"><?=mirror_value($serverName)?></span>
+            <span class="mirror-share-status-sub" style="color:rgba(232,237,242,.68);display:block;margin-top:6px;"><?=$serverBType === "remote" ? "Remote LAN mirror" : "Local mirror"?></span>
           </div>
         </div>
-        <div class="mirror-share-status-item">
-          <div class="mirror-share-status-icon"><i class="fa fa-link" aria-hidden="true"></i></div>
+        <div class="mirror-share-status-item" style="<?=mirror_value($shareStatStyle)?>">
+          <div class="mirror-share-status-icon" style="align-items:center;color:#ff8a00;display:flex;font-size:29px;justify-content:center;"><i class="fa fa-link" aria-hidden="true"></i></div>
           <div>
-            <strong>Linked Peer</strong>
-            <span class="mirror-share-status-value"><?=mirror_value($linkedPeers ? (($linkedPeer["name"] ?? "Peer") . " - " . ($linkedPeer["host"] ?? "")) : "None")?></span>
-            <span class="mirror-share-status-sub"><?=$linkedPeers ? mirror_value(count($linkedPeers)) . " linked remote" . (count($linkedPeers) === 1 ? "" : "s") : "Pair on LAN Setup"?></span>
+            <strong style="color:rgba(232,237,242,.72);display:block;font-size:12px;font-weight:700;margin:0 0 8px;text-transform:uppercase;">Linked Peer</strong>
+            <span class="mirror-share-status-value" style="color:#fff;display:block;font-size:20px;font-weight:800;line-height:1.1;overflow-wrap:anywhere;"><?=mirror_value($linkedPeers ? (($linkedPeer["name"] ?? "Peer") . " - " . ($linkedPeer["host"] ?? "")) : "None")?></span>
+            <span class="mirror-share-status-sub" style="color:rgba(232,237,242,.68);display:block;margin-top:6px;"><?=$linkedPeers ? mirror_value(count($linkedPeers)) . " linked remote" . (count($linkedPeers) === 1 ? "" : "s") : "Pair on LAN Setup"?></span>
           </div>
         </div>
-        <div class="mirror-share-status-item">
-          <div class="mirror-share-status-icon"><i class="fa fa-folder-o" aria-hidden="true"></i></div>
+        <div class="mirror-share-status-item" style="<?=mirror_value($shareStatStyle)?>">
+          <div class="mirror-share-status-icon" style="align-items:center;color:#ff8a00;display:flex;font-size:29px;justify-content:center;"><i class="fa fa-folder-o" aria-hidden="true"></i></div>
           <div>
-            <strong>Remote Shares Loaded</strong>
-            <span class="mirror-share-status-value"><?=mirror_value($remoteSharesLoaded)?></span>
-            <span class="mirror-share-status-sub">From linked peers</span>
+            <strong style="color:rgba(232,237,242,.72);display:block;font-size:12px;font-weight:700;margin:0 0 8px;text-transform:uppercase;">Remote Shares Loaded</strong>
+            <span class="mirror-share-status-value" style="color:#fff;display:block;font-size:20px;font-weight:800;line-height:1.1;"><?=mirror_value($remoteSharesLoaded)?></span>
+            <span class="mirror-share-status-sub" style="color:rgba(232,237,242,.68);display:block;margin-top:6px;">From linked peers</span>
           </div>
         </div>
-        <div class="mirror-share-status-item">
-          <div class="mirror-share-status-icon"><i class="fa fa-code-fork" aria-hidden="true"></i></div>
+        <div class="mirror-share-status-item" style="<?=mirror_value($shareStatStyle)?>">
+          <div class="mirror-share-status-icon" style="align-items:center;color:#ff8a00;display:flex;font-size:29px;justify-content:center;"><i class="fa fa-code-fork" aria-hidden="true"></i></div>
           <div>
-            <strong>Configured Routes</strong>
-            <span class="mirror-share-status-value"><?=mirror_value(max(1, count($configuredSharePairs)))?></span>
-            <span class="mirror-share-status-sub">Active sync routes</span>
+            <strong style="color:rgba(232,237,242,.72);display:block;font-size:12px;font-weight:700;margin:0 0 8px;text-transform:uppercase;">Configured Routes</strong>
+            <span class="mirror-share-status-value" style="color:#fff;display:block;font-size:20px;font-weight:800;line-height:1.1;"><?=mirror_value(max(1, count($configuredSharePairs)))?></span>
+            <span class="mirror-share-status-sub" style="color:rgba(232,237,242,.68);display:block;margin-top:6px;">Active sync routes</span>
           </div>
         </div>
       </div>
@@ -1605,54 +1622,54 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
         <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
         <input type="hidden" name="action" value="save-config">
 
-        <div class="mirror-shares-layout">
-          <div class="mirror-shares-main">
-            <div class="mirror-route-config-card">
-              <h4>Sync Route Configuration</h4>
-              <p>Set up how this server mirrors files with linked peers.</p>
+        <div class="mirror-shares-layout" style="<?=mirror_value($shareLayoutStyle)?>">
+          <div class="mirror-shares-main" style="<?=mirror_value($shareMainStyle)?>">
+            <div class="mirror-route-config-card" style="<?=mirror_value($shareCardStyle)?>">
+              <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Sync Route Configuration</h4>
+              <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0 0 16px;">Set up how this server mirrors files with linked peers.</p>
 
-              <div class="mirror-mode-switch" role="group" aria-label="Mirror mode">
+              <div class="mirror-mode-switch" role="group" aria-label="Mirror mode" style="<?=mirror_value($shareModeStyle)?>">
                 <input id="mirror_mode_local" type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
-                <label for="mirror_mode_local"><i class="fa fa-desktop" aria-hidden="true"></i> Local Mirror</label>
+                <label for="mirror_mode_local" style="align-items:center;background:<?=$serverBType === "local" ? "rgba(255,106,0,.16)" : "rgba(255,255,255,.035)"?>;border:<?=$serverBType === "local" ? "1px solid #ff7b22" : "0"?>;color:<?=$serverBType === "local" ? "#ff8a00" : "#f0f3f6"?>;display:flex;font-size:14px;font-weight:700;gap:8px;justify-content:center;min-height:42px;padding:0 16px;"><i class="fa fa-desktop" aria-hidden="true"></i> Local Mirror</label>
                 <input id="mirror_mode_remote" type="radio" name="mirror_mode" value="remote" <?=$serverBType === "remote" ? "checked" : ""?>>
-                <label for="mirror_mode_remote"><i class="fa fa-sitemap" aria-hidden="true"></i> Remote LAN Mirror</label>
+                <label for="mirror_mode_remote" style="align-items:center;background:<?=$serverBType === "remote" ? "rgba(255,106,0,.16)" : "rgba(255,255,255,.035)"?>;border:<?=$serverBType === "remote" ? "1px solid #ff7b22" : "0"?>;color:<?=$serverBType === "remote" ? "#ff8a00" : "#f0f3f6"?>;display:flex;font-size:14px;font-weight:700;gap:8px;justify-content:center;min-height:42px;padding:0 16px;"><i class="fa fa-sitemap" aria-hidden="true"></i> Remote LAN Mirror</label>
               </div>
 
-              <div class="mirror-form-grid">
-                <div class="mirror-field">
-                  <label for="server_a_share">Local Share (This Server)</label>
-                  <select id="server_a_share" name="server_a_share" <?=$shares ? "" : "disabled"?>>
+              <div class="mirror-form-grid" style="<?=mirror_value($shareFormGridStyle)?>">
+                <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="server_a_share" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Local Share (This Server)</label>
+                  <select id="server_a_share" name="server_a_share" style="<?=mirror_value($shareControlStyle)?>" <?=$shares ? "" : "disabled"?>>
                     <option value="">Select a share</option>
                     <?php foreach ($shares as $share): ?>
                       <option value="<?=mirror_value($share)?>" <?=$share === $serverAShare ? "selected" : ""?>><?=mirror_value($share)?></option>
                     <?php endforeach; ?>
                   </select>
-                  <span class="mirror-help">/mnt/user/<?=mirror_value($serverAShare ?: "share")?></span>
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">/mnt/user/<?=mirror_value($serverAShare ?: "share")?></span>
                 </div>
-                <div class="mirror-field mirror-local-only">
-                  <label for="server_b_share">Second Local Share</label>
-                  <select id="server_b_share" name="server_b_share" <?=$shares ? "" : "disabled"?>>
+                <div class="mirror-field mirror-local-only" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="server_b_share" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Second Local Share</label>
+                  <select id="server_b_share" name="server_b_share" style="<?=mirror_value($shareControlStyle)?>" <?=$shares ? "" : "disabled"?>>
                     <option value="">Select a share</option>
                     <?php foreach ($shares as $share): ?>
                       <option value="<?=mirror_value($share)?>" <?=$share === $serverBShare ? "selected" : ""?>><?=mirror_value($share)?></option>
                     <?php endforeach; ?>
                   </select>
-                  <span class="mirror-help">/mnt/user/<?=mirror_value($serverBShare ?: "share")?></span>
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">/mnt/user/<?=mirror_value($serverBShare ?: "share")?></span>
                 </div>
-                <div class="mirror-field mirror-remote-only">
-                  <label for="primary_peer_id">Remote Server (Linked Peer)</label>
-                  <select id="primary_peer_id" name="primary_peer_id" <?=$linkedPeers ? "" : "disabled"?>>
+                <div class="mirror-field mirror-remote-only" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="primary_peer_id" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Remote Server (Linked Peer)</label>
+                  <select id="primary_peer_id" name="primary_peer_id" style="<?=mirror_value($shareControlStyle)?>" <?=$linkedPeers ? "" : "disabled"?>>
                     <option value="">Select a remote server</option>
                     <?php foreach ($linkedPeers as $peer): ?>
                       <option value="<?=mirror_value($peer["id"] ?? "")?>" <?=(($peer["id"] ?? "") === $primaryPeerId) ? "selected" : ""?>><?=mirror_value(($peer["name"] ?? "Mirror peer") . " - " . ($peer["host"] ?? ""))?></option>
                     <?php endforeach; ?>
                   </select>
-                  <span class="mirror-help">Select the linked remote server.</span>
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Select the linked remote server.</span>
                 </div>
-                <div class="mirror-field mirror-remote-only">
-                  <label for="remote_share">Remote Share (On Remote Server)</label>
+                <div class="mirror-field mirror-remote-only" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="remote_share" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Remote Share (On Remote Server)</label>
                   <?php if ($linkedPeers): ?>
-                    <select id="remote_share" name="remote_share">
+                    <select id="remote_share" name="remote_share" style="<?=mirror_value($shareControlStyle)?>">
                       <option value="">Select a remote share</option>
                       <?php foreach ($linkedPeers as $peer): ?>
                         <?php $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : []; ?>
@@ -1663,45 +1680,45 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                         </optgroup>
                       <?php endforeach; ?>
                     </select>
-                    <span class="mirror-help">Pick which remote share to sync.</span>
+                    <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Pick which remote share to sync.</span>
                   <?php else: ?>
-                    <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
-                    <span class="mirror-help">Pair with a remote first to choose from a dropdown.</span>
+                    <input id="remote_share" name="remote_share" type="text" style="<?=mirror_value($shareControlStyle)?>" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
+                    <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Pair with a remote first to choose from a dropdown.</span>
                   <?php endif; ?>
                 </div>
-                <div class="mirror-field">
-                  <label for="authority">Conflict Rule</label>
-                  <select id="authority" name="authority">
+                <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="authority" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Conflict Rule</label>
+                  <select id="authority" name="authority" style="<?=mirror_value($shareControlStyle)?>">
                     <option value="server_a_preferred" <?=$config["authority"] === "server_a_preferred" ? "selected" : ""?>>This server preferred</option>
                     <option value="equal_peers" <?=$config["authority"] === "equal_peers" ? "selected" : ""?>>Equal peers</option>
                   </select>
-                  <span class="mirror-help">Use local changes when conflicts occur.</span>
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use local changes when conflicts occur.</span>
                 </div>
-                <div class="mirror-field">
-                  <label for="delete_behavior">Delete Behavior</label>
-                  <select id="delete_behavior" name="delete_behavior">
+                <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="delete_behavior" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Delete Behavior</label>
+                  <select id="delete_behavior" name="delete_behavior" style="<?=mirror_value($shareControlStyle)?>">
                     <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
                     <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes (two-way)</option>
                   </select>
-                  <span class="mirror-help">Deletions are copied to trash first.</span>
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Deletions are copied to trash first.</span>
                 </div>
-                <div class="mirror-field">
-                  <label for="sync_interval">Daemon Scan Interval</label>
-                  <input id="sync_interval" name="sync_interval" type="number" min="0" max="3600" value="<?=mirror_value($config["sync_interval"])?>">
-                  <span class="mirror-help">Set to 0 to auto-detect changes.</span>
+                <div class="mirror-field" style="<?=mirror_value($shareFieldStyle)?>">
+                  <label for="sync_interval" style="color:#f5f7fa;display:block;font-size:13px;font-weight:800;letter-spacing:0;margin:0 0 8px;text-transform:none;">Daemon Scan Interval</label>
+                  <input id="sync_interval" name="sync_interval" type="number" min="0" max="3600" style="<?=mirror_value($shareControlStyle)?>" value="<?=mirror_value($config["sync_interval"])?>">
+                  <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Set to 0 to auto-detect changes.</span>
                 </div>
               </div>
             </div>
 
-            <div class="mirror-route-table-card mirror-share-pairs-extra" data-share-pairs>
-              <div class="mirror-shares-header">
+            <div class="mirror-route-table-card mirror-share-pairs-extra" data-share-pairs style="<?=mirror_value($shareCardStyle)?>">
+              <div class="mirror-shares-header" style="align-items:flex-start;display:flex;gap:16px;justify-content:space-between;margin:0 0 16px;">
                 <div>
-                  <h4>Additional Sync Routes</h4>
-                  <p>Add more routes to sync additional shares or destinations.</p>
+                  <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Additional Sync Routes</h4>
+                  <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Add more routes to sync additional shares or destinations.</p>
                 </div>
-                <button type="button" data-add-share-pair><i class="fa fa-plus" aria-hidden="true"></i> Add Sync Route</button>
+                <button type="button" data-add-share-pair style="<?=mirror_value($shareButtonStyle)?>"><i class="fa fa-plus" aria-hidden="true"></i> Add Sync Route</button>
               </div>
-              <div class="mirror-share-pair-list" data-share-pair-list>
+              <div class="mirror-share-pair-list" data-share-pair-list style="display:grid;gap:10px;margin-top:10px;">
                 <?php foreach ($additionalSharePairs as $index => $pair): ?>
                   <div class="mirror-share-pair-row" data-share-pair-row>
                     <div class="mirror-field">
@@ -1767,7 +1784,7 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                   </div>
                 <?php endforeach; ?>
               </div>
-              <p class="mirror-share-pair-empty" data-share-pair-empty <?=$additionalSharePairs ? "hidden" : ""?>><i class="fa fa-files-o" aria-hidden="true"></i><br>No additional routes configured<br><span class="mirror-help">Add another sync route to mirror more shares.</span></p>
+              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:block;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;" <?=$additionalSharePairs ? "hidden" : ""?>><i class="fa fa-files-o" aria-hidden="true"></i><br>No additional routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Add another sync route to mirror more shares.</span></p>
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
@@ -1836,25 +1853,25 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
             </div>
           </div>
 
-          <aside class="mirror-about-card">
-            <h4><i class="fa fa-info-circle" aria-hidden="true"></i> About Sync Routes</h4>
-            <p>Sync routes define how files are mirrored between this server and linked peers.</p>
-            <div class="mirror-about-list">
-              <div class="mirror-about-item">
-                <i class="fa fa-check-circle-o" aria-hidden="true"></i>
-                <div><strong>Two-way mirroring</strong><span>Changes on either side are synced.</span></div>
+          <aside class="mirror-about-card" style="<?=mirror_value($shareCardStyle)?>position:sticky;top:12px;">
+            <h4 style="color:#fff;font-size:16px;font-weight:800;line-height:1.2;margin:0 0 12px;"><i class="fa fa-info-circle" aria-hidden="true" style="color:#ff8a00;"></i> About Sync Routes</h4>
+            <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Sync routes define how files are mirrored between this server and linked peers.</p>
+            <div class="mirror-about-list" style="display:grid;gap:18px;margin-top:20px;">
+              <div class="mirror-about-item" style="display:grid;gap:10px;grid-template-columns:18px minmax(0,1fr);">
+                <i class="fa fa-check-circle-o" aria-hidden="true" style="color:#ff8a00;margin-top:2px;"></i>
+                <div><strong style="color:#fff;display:block;margin-bottom:5px;">Two-way mirroring</strong><span style="color:rgba(232,237,242,.68);">Changes on either side are synced.</span></div>
               </div>
-              <div class="mirror-about-item">
-                <i class="fa fa-check-circle-o" aria-hidden="true"></i>
-                <div><strong>Conflict resolution</strong><span>Choose how file conflicts are handled.</span></div>
+              <div class="mirror-about-item" style="display:grid;gap:10px;grid-template-columns:18px minmax(0,1fr);">
+                <i class="fa fa-check-circle-o" aria-hidden="true" style="color:#ff8a00;margin-top:2px;"></i>
+                <div><strong style="color:#fff;display:block;margin-bottom:5px;">Conflict resolution</strong><span style="color:rgba(232,237,242,.68);">Choose how file conflicts are handled.</span></div>
               </div>
-              <div class="mirror-about-item">
-                <i class="fa fa-check-circle-o" aria-hidden="true"></i>
-                <div><strong>Delete behavior</strong><span>Control how file deletions are synced.</span></div>
+              <div class="mirror-about-item" style="display:grid;gap:10px;grid-template-columns:18px minmax(0,1fr);">
+                <i class="fa fa-check-circle-o" aria-hidden="true" style="color:#ff8a00;margin-top:2px;"></i>
+                <div><strong style="color:#fff;display:block;margin-bottom:5px;">Delete behavior</strong><span style="color:rgba(232,237,242,.68);">Control how file deletions are synced.</span></div>
               </div>
-              <div class="mirror-about-item">
-                <i class="fa fa-check-circle-o" aria-hidden="true"></i>
-                <div><strong>Smart scanning</strong><span>Auto-detect changes with interval set to 0.</span></div>
+              <div class="mirror-about-item" style="display:grid;gap:10px;grid-template-columns:18px minmax(0,1fr);">
+                <i class="fa fa-check-circle-o" aria-hidden="true" style="color:#ff8a00;margin-top:2px;"></i>
+                <div><strong style="color:#fff;display:block;margin-bottom:5px;">Smart scanning</strong><span style="color:rgba(232,237,242,.68);">Auto-detect changes with interval set to 0.</span></div>
               </div>
             </div>
           </aside>
@@ -1864,14 +1881,14 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
         <input type="hidden" name="peer_user" value="<?=mirror_value($config["server_b"]["user"] ?? "root")?>">
         <input type="hidden" name="peer_port" value="<?=mirror_value($config["server_b"]["port"] ?? 22)?>">
 
-        <div class="mirror-share-save">
+        <div class="mirror-share-save" style="<?=mirror_value($shareSaveStyle)?>">
           <div>
-            <strong>Ready to sync</strong>
-            <span class="mirror-help">Review your settings and run an initial sync to start mirroring.</span>
+            <strong style="color:#fff;display:block;font-weight:800;">Ready to sync</strong>
+            <span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Review your settings and run an initial sync to start mirroring.</span>
           </div>
-          <div class="mirror-save-actions">
-            <button type="submit" name="action" value="initial-sync"><i class="fa fa-play" aria-hidden="true"></i> Run Initial Sync</button>
-            <input class="mirror-primary-button" type="submit" value="Save Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
+          <div class="mirror-save-actions" style="display:flex;gap:12px;">
+            <button type="submit" name="action" value="initial-sync" style="<?=mirror_value($shareButtonStyle)?>"><i class="fa fa-play" aria-hidden="true"></i> Run Initial Sync</button>
+            <input class="mirror-primary-button" type="submit" style="<?=mirror_value($sharePrimaryButtonStyle)?>" value="Save Settings" <?=($shares && $nodeRole !== "managed_remote") ? "" : "disabled"?>>
           </div>
         </div>
       </form>
