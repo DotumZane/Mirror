@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Makes automatic Status refresh silent so the page no longer dims every few seconds.
 - Replaces conflict forms with direct action buttons and restores honest indexed-percent wording.
 - Runs conflict copy actions in the background and replaces misleading percent/conflict and Measuring states.
 - Makes conflict buttons submit explicit resolutions and shows live interface network rates on Status.

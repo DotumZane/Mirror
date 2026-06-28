@@ -2561,13 +2561,17 @@ function showMirrorClientMessage(message) {
   existing.textContent = message;
 }
 
-function refreshMirrorPanel(url, pushHistory) {
+function refreshMirrorPanel(url, pushHistory, options) {
   var panel = document.querySelector(".mirror-panel");
   if (!panel) {
     return Promise.resolve();
   }
+  options = options || {};
+  var silent = !!options.silent;
   var targetUrl = url || window.location.href;
-  panel.classList.add("is-refreshing");
+  if (!silent) {
+    panel.classList.add("is-refreshing");
+  }
   return fetchWithTimeout(targetUrl, {
     cache: "no-store",
     credentials: "same-origin"
@@ -2588,7 +2592,7 @@ function refreshMirrorPanel(url, pushHistory) {
     })
     .finally(function () {
       var currentPanel = document.querySelector(".mirror-panel");
-      if (currentPanel) {
+      if (currentPanel && !silent) {
         currentPanel.classList.remove("is-refreshing");
       }
     });
@@ -2985,7 +2989,7 @@ if (window.mirrorStatusRefreshBound !== "1") {
     if (document.querySelector(".mirror-conflict-actions:hover")) {
       return;
     }
-    refreshMirrorPanel(window.location.href, false).catch(function () {});
+    refreshMirrorPanel(window.location.href, false, { silent: true }).catch(function () {});
   }, 3000);
 }
 <?php endif; ?>
