@@ -1868,7 +1868,10 @@ body .mirror-panel .mirror-shares-page {
     <aside class="mirror-route-sidebar" aria-label="Current mirror status">
       <div class="mirror-route-card">
         <h3>Current Mirrors</h3>
-        <span class="mirror-help">Live transfer rates show idle until a transfer reports progress.</span>
+        <span class="mirror-help">Network rates update when Status is refreshed.</span>
+        <div class="mirror-actions" style="margin-top:12px;">
+          <button type="button" data-refresh-status>Refresh Status</button>
+        </div>
       </div>
       <?php foreach ($mirrorRouteSummaries as $routeSummary): ?>
         <div class="mirror-route-card">
@@ -2668,6 +2671,18 @@ function bindMirrorPage() {
     });
   });
 
+  document.querySelectorAll("[data-refresh-status]").forEach(function (button) {
+    if (button.dataset.refreshStatusBound === "1") {
+      return;
+    }
+    button.dataset.refreshStatusBound = "1";
+    button.addEventListener("click", function () {
+      refreshMirrorPanel(window.location.href, false).catch(function () {
+        window.location.reload();
+      });
+    });
+  });
+
   function selectedMode() {
     var selected = document.querySelector('input[name="mirror_mode"]:checked');
     return selected ? selected.value : 'local';
@@ -2977,22 +2992,6 @@ function bindMirrorPage() {
 }
 
 bindMirrorPage();
-<?php if ($mirrorTab === "status"): ?>
-if (window.mirrorStatusRefreshBound !== "1") {
-  window.mirrorStatusRefreshBound = "1";
-  window.setInterval(function () {
-    var panel = document.querySelector(".mirror-panel");
-    var modal = document.getElementById("mirror_update_modal");
-    if (!panel || panel.classList.contains("is-refreshing") || (modal && modal.classList.contains("is-open"))) {
-      return;
-    }
-    if (document.querySelector(".mirror-conflict-actions:hover")) {
-      return;
-    }
-    refreshMirrorPanel(window.location.href, false, { silent: true }).catch(function () {});
-  }, 3000);
-}
-<?php endif; ?>
 window.addEventListener("popstate", function () {
   refreshMirrorPanel(window.location.href, false).catch(function () {
     window.location.reload();
