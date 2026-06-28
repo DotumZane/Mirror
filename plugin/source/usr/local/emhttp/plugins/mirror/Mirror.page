@@ -918,6 +918,334 @@ foreach ($mirrorRoutes as $route) {
   background: #262626;
   color: rgba(221, 221, 221, 0.72);
 }
+
+body .mirror-panel .mirror-shares-page {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 106, 42, 0.08), transparent 28%),
+    linear-gradient(145deg, #091017 0%, #10151b 38%, #070b0f 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 60px rgba(0, 0, 0, 0.24) !important;
+  box-sizing: border-box !important;
+  color: #e8edf2 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  padding: 26px !important;
+  width: 100% !important;
+}
+body .mirror-panel .mirror-shares-page * {
+  box-sizing: border-box !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-header {
+  align-items: flex-start !important;
+  display: flex !important;
+  gap: 18px !important;
+  justify-content: space-between !important;
+  margin: 0 0 22px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-title {
+  align-items: center !important;
+  display: flex !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-title > .fa {
+  color: #cbd4df !important;
+  flex: 0 0 auto !important;
+  font-size: 34px !important;
+  line-height: 1 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-title h3 {
+  color: #fff !important;
+  font-size: 25px !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  margin: 0 0 4px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-title p,
+body .mirror-panel .mirror-shares-page p {
+  color: rgba(232, 237, 242, 0.72) !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  margin-top: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-top-actions {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  gap: 10px !important;
+  justify-content: flex-end !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-top-actions form {
+  display: inline-flex !important;
+  margin: 0 !important;
+}
+body .mirror-panel .mirror-shares-page button,
+body .mirror-panel .mirror-shares-page .button,
+body .mirror-panel .mirror-shares-page input[type="submit"] {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 6px !important;
+  color: #f3f6f8 !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  text-transform: none !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-primary-button,
+body .mirror-panel .mirror-shares-page input.mirror-primary-button[type="submit"] {
+  background: linear-gradient(180deg, #ff7b22 0%, #ff5f1f 100%) !important;
+  border-color: #ff7b22 !important;
+  box-shadow: 0 10px 28px rgba(255, 106, 42, 0.24) !important;
+  color: #fff !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status {
+  display: grid !important;
+  gap: 14px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  margin: 0 0 18px !important;
+  width: 100% !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status-item {
+  align-items: center !important;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 255, 255, 0.055), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.018)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  display: grid !important;
+  gap: 15px !important;
+  grid-template-columns: 52px minmax(0, 1fr) !important;
+  min-height: 104px !important;
+  padding: 18px 20px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status-icon {
+  align-items: center !important;
+  color: #ff8a00 !important;
+  display: flex !important;
+  font-size: 29px !important;
+  justify-content: center !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status-item strong,
+body .mirror-panel .mirror-shares-page .mirror-share-group-title {
+  color: rgba(232, 237, 242, 0.72) !important;
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  margin: 0 0 8px !important;
+  text-transform: uppercase !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status-value {
+  color: #fff !important;
+  display: block !important;
+  font-size: 20px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+  overflow-wrap: anywhere !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-status-sub {
+  color: rgba(232, 237, 242, 0.68) !important;
+  display: block !important;
+  margin-top: 6px !important;
+}
+body .mirror-panel .mirror-shares-page form[action="/plugins/mirror/include/action.php"] {
+  margin: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-layout {
+  align-items: start !important;
+  display: grid !important;
+  gap: 16px !important;
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+  margin: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-shares-main {
+  display: grid !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-route-config-card,
+body .mirror-panel .mirror-shares-page .mirror-route-table-card,
+body .mirror-panel .mirror-shares-page .mirror-about-card,
+body .mirror-panel .mirror-shares-page .mirror-share-save {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.055), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.016)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  margin: 0 !important;
+  padding: 24px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-route-config-card h4,
+body .mirror-panel .mirror-shares-page .mirror-route-table-card h4,
+body .mirror-panel .mirror-shares-page .mirror-about-card h4 {
+  color: #fff !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  margin: 0 0 6px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-mode-switch {
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 6px !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  margin: 16px 0 24px !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-mode-switch label {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: #f0f3f6 !important;
+  display: flex !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  min-height: 42px !important;
+  padding: 0 16px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-mode-switch input:checked + label {
+  background: rgba(255, 106, 0, 0.16) !important;
+  border: 1px solid #ff7b22 !important;
+  color: #ff8a00 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-form-grid {
+  display: grid !important;
+  gap: 22px 28px !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-field {
+  min-width: 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-field label {
+  color: #f5f7fa !important;
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  margin: 0 0 8px !important;
+  text-transform: none !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-field select,
+body .mirror-panel .mirror-shares-page .mirror-field input[type="text"],
+body .mirror-panel .mirror-shares-page .mirror-field input[type="number"] {
+  appearance: auto !important;
+  background-color: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  color: #f4f7f9 !important;
+  font-size: 14px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  max-width: none !important;
+  padding: 0 12px !important;
+  width: 100% !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-field option,
+body .mirror-panel .mirror-shares-page .mirror-field optgroup {
+  background: #121820 !important;
+  color: #f4f7f9 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-help {
+  color: rgba(232, 237, 242, 0.66) !important;
+  display: block !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  margin-top: 8px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-route-table-card .mirror-shares-header {
+  margin-bottom: 16px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-pair-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.075) !important;
+  display: grid !important;
+  gap: 12px !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) auto !important;
+  padding: 14px 0 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-pair-empty {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.13) !important;
+  border-radius: 8px !important;
+  color: rgba(232, 237, 242, 0.72) !important;
+  display: block !important;
+  margin: 10px auto 0 !important;
+  max-width: 420px !important;
+  padding: 22px !important;
+  text-align: center !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-card {
+  position: sticky !important;
+  top: 12px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-card h4 .fa,
+body .mirror-panel .mirror-shares-page .mirror-about-item .fa {
+  color: #ff8a00 !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-list {
+  display: grid !important;
+  gap: 18px !important;
+  margin-top: 20px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-item {
+  display: grid !important;
+  gap: 10px !important;
+  grid-template-columns: 18px minmax(0, 1fr) !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-item strong {
+  color: #fff !important;
+  display: block !important;
+  margin-bottom: 5px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-about-item span {
+  color: rgba(232, 237, 242, 0.68) !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-share-save {
+  align-items: center !important;
+  display: flex !important;
+  gap: 16px !important;
+  justify-content: space-between !important;
+  margin-top: 16px !important;
+}
+body .mirror-panel .mirror-shares-page .mirror-save-actions {
+  display: flex !important;
+  gap: 12px !important;
+}
+@media (max-width: 1220px) {
+  body .mirror-panel .mirror-shares-page .mirror-share-status,
+  body .mirror-panel .mirror-shares-page .mirror-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  body .mirror-panel .mirror-shares-page .mirror-shares-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+@media (max-width: 760px) {
+  body .mirror-panel .mirror-shares-page {
+    padding: 16px !important;
+  }
+  body .mirror-panel .mirror-shares-page .mirror-shares-header,
+  body .mirror-panel .mirror-shares-page .mirror-share-save {
+    display: grid !important;
+  }
+  body .mirror-panel .mirror-shares-page .mirror-share-status,
+  body .mirror-panel .mirror-shares-page .mirror-form-grid,
+  body .mirror-panel .mirror-shares-page .mirror-share-pair-row {
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
 
 <div class="mirror-panel">
