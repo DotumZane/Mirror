@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.29">
+  <!ENTITY version    "V1.00.30">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.29.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.30.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "1573c2fbfbbc7e38d32eeebb94472ae5">
+  <!ENTITY md5        "f244ec23043e5ba0dc3b1a022ab0e6da">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.29
+### V1.00.30
+- Replaces conflict forms with direct action buttons and restores honest indexed-percent wording.
 - Runs conflict copy actions in the background and replaces misleading percent/conflict and Measuring states.
 - Makes conflict buttons submit explicit resolutions and shows live interface network rates on Status.
 - Adds Status-page conflict resolution actions and marks active copy work in the route cards.

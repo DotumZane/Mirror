@@ -386,7 +386,7 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
     $indexStatus .= " - " . mirror_age_label($metaUpdated);
   }
   if ($hasConflict) {
-    $mirrorStatus = "Needs attention - " . $visibleConflictCount . " conflict" . ($visibleConflictCount === 1 ? "" : "s");
+    $mirrorStatus = $completePercent . "% indexed - needs attention - " . $visibleConflictCount . " conflict" . ($visibleConflictCount === 1 ? "" : "s");
   } elseif ($phase === "peer_offline") {
     $indexStatus = "Peer offline";
     if ($metaUpdated > 0) {
@@ -606,9 +606,6 @@ $shareSaveStyle = "align-items:center;background:radial-gradient(circle at 0% 0%
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
-}
-.mirror-conflict-actions form {
-  margin: 0;
 }
 @media (max-width: 980px) {
   .mirror-status-layout {
@@ -1856,30 +1853,9 @@ body .mirror-panel .mirror-shares-page {
                     <span class="mirror-conflict-meta">Recorded <?=mirror_value(mirror_age_label((int)$conflict["created_at"]))?></span>
                   <?php endif; ?>
                   <div class="mirror-conflict-actions">
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
-                      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-                      <input type="hidden" name="action" value="resolve-conflict">
-                      <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
-                      <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <input type="hidden" name="resolution" value="keep-local">
-                      <button type="submit">Keep Local</button>
-                    </form>
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
-                      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-                      <input type="hidden" name="action" value="resolve-conflict">
-                      <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
-                      <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <input type="hidden" name="resolution" value="keep-remote">
-                      <button type="submit">Keep Remote</button>
-                    </form>
-                    <form method="post" action="/plugins/mirror/include/action.php" data-mirror-conflict-action="1">
-                      <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
-                      <input type="hidden" name="action" value="resolve-conflict">
-                      <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
-                      <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <input type="hidden" name="resolution" value="baseline">
-                      <button type="submit">Accept Baseline</button>
-                    </form>
+                    <button type="button" class="mirror-conflict-action-button" data-resolution="keep-local" data-route-key="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>" data-conflict-path="<?=mirror_value($conflict["path"] ?? "")?>" data-csrf-token="<?=mirror_value($var['csrf_token'] ?? '')?>">Keep Local</button>
+                    <button type="button" class="mirror-conflict-action-button" data-resolution="keep-remote" data-route-key="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>" data-conflict-path="<?=mirror_value($conflict["path"] ?? "")?>" data-csrf-token="<?=mirror_value($var['csrf_token'] ?? '')?>">Keep Remote</button>
+                    <button type="button" class="mirror-conflict-action-button" data-resolution="baseline" data-route-key="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>" data-conflict-path="<?=mirror_value($conflict["path"] ?? "")?>" data-csrf-token="<?=mirror_value($var['csrf_token'] ?? '')?>">Accept Baseline</button>
                   </div>
                 </div>
               <?php endforeach; ?>
@@ -2944,6 +2920,48 @@ function bindMirrorPage() {
     });
   });
 
+  document.querySelectorAll(".mirror-conflict-action-button").forEach(function (button) {
+    if (button.dataset.mirrorConflictBound === "1") {
+      return;
+    }
+    button.dataset.mirrorConflictBound = "1";
+    button.addEventListener("click", function () {
+      var data = new FormData();
+      data.set("csrf_token", button.dataset.csrfToken || "");
+      data.set("action", "resolve-conflict");
+      data.set("route_key", button.dataset.routeKey || "__default");
+      data.set("conflict_path", button.dataset.conflictPath || "");
+      data.set("resolution", button.dataset.resolution || "");
+      data.set("ajax", "1");
+
+      var originalText = button.textContent;
+      button.textContent = "Starting...";
+      button.disabled = true;
+      fetchWithTimeout("/plugins/mirror/include/action.php", {
+        method: "POST",
+        body: data,
+        credentials: "same-origin",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      }, 10000)
+        .then(function (response) {
+          return response.json().catch(function () {
+            return { ok: response.ok, message: "" };
+          });
+        })
+        .then(function (payload) {
+          showMirrorClientMessage((payload && payload.message) ? payload.message : "Conflict action sent.");
+          return refreshMirrorPanel();
+        })
+        .catch(function (error) {
+          button.disabled = false;
+          button.textContent = originalText;
+          showMirrorClientMessage("Conflict action failed in the browser: " + error.message);
+        });
+    });
+  });
+
   document.querySelectorAll('input[name="mirror_mode"]').forEach(function (input) {
     if (input.dataset.mirrorModeBound === "1") {
       return;
@@ -2964,7 +2982,7 @@ if (window.mirrorStatusRefreshBound !== "1") {
     if (!panel || panel.classList.contains("is-refreshing") || (modal && modal.classList.contains("is-open"))) {
       return;
     }
-    if (document.querySelector(".mirror-conflict-actions form:hover")) {
+    if (document.querySelector(".mirror-conflict-actions:hover")) {
       return;
     }
     refreshMirrorPanel(window.location.href, false).catch(function () {});

@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Replaces conflict forms with direct action buttons and restores honest indexed-percent wording.
 - Runs conflict copy actions in the background and replaces misleading percent/conflict and Measuring states.
 - Makes conflict buttons submit explicit resolutions and shows live interface network rates on Status.
 - Adds Status-page conflict resolution actions and marks active copy work in the route cards.

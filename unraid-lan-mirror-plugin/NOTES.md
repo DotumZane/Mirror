@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.29`
-- Current package: `packages/mirror-V1.00.29.txz`
+- Current version: `V1.00.30`
+- Current package: `packages/mirror-V1.00.30.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
@@ -42,7 +42,7 @@ What currently works:
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
 - All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
-- The latest fix runs conflict copy actions in the background and replaces misleading percent/conflict and Measuring states.
+- The latest fix replaces conflict forms with direct action buttons and restores honest indexed-percent wording.
 
 Known weak spots / likely next pain:
 
@@ -56,8 +56,8 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.29` and resolve a disposable conflict with Keep Local, Keep Remote, or Accept Baseline.
-2. Confirm large conflict copy resolution starts a worker and shows Copying/Active instead of appearing stuck.
+1. Re-test after installing `V1.00.30` and resolve a disposable conflict with Keep Local, Keep Remote, or Accept Baseline.
+2. Confirm the clicked conflict button shows `Starting...` and then a visible action message.
 3. Confirm rsync temp files such as `.filename.random` are not listed or copied back.
 4. Confirm route names still persist after Save Settings.
 5. Improve the Current Mirrors cards with per-route transfer-rate data from rsync progress.
@@ -65,7 +65,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.29`.
+2. On both Unraid servers, update Mirror to `V1.00.30`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.29
+V1.00.30
 ```
 
 Version source of truth:
@@ -601,6 +601,7 @@ Current release status:
 - `V1.00.27` adds conflict resolution buttons and active copy status.
 - `V1.00.28` hardens conflict button submits and shows live interface network rates.
 - `V1.00.29` runs conflict copy actions in the background and removes misleading Measuring/percent states.
+- `V1.00.30` replaces conflict forms with direct action buttons and restores indexed-percent conflict wording.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -818,7 +819,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.29.
+- Current version: V1.00.30.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -869,7 +870,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.29`.
+- Current version is `V1.00.30`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -879,7 +880,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.29`, test conflict resolution on disposable data, and verify Status network rates during a large transfer.
+- Update both Unraid servers to `V1.00.30`, test conflict resolution on disposable data, and verify Status network rates during a large transfer.
 
 ### Chat Handoff
 
@@ -892,11 +893,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.29`
-- Current package: `packages/mirror-V1.00.29.txz`
+- Current version: `V1.00.30`
+- Current package: `packages/mirror-V1.00.30.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
-- Next suggested task: install/update `V1.00.29`, resolve the visible conflict, and confirm it starts/copies/clears from Status.
+- Next suggested task: install/update `V1.00.30`, resolve the visible conflict, and confirm it starts/copies/clears from Status.
 
 ### Tracker Update Template
 
@@ -2155,3 +2156,13 @@ Next suggested task:
 - New decisions: Conflict copy actions should be background jobs; the UI should report that work started and let status/logs show progress.
 - Open questions: Confirm the background worker clears the visible `haos_ova-15.2.HOME--generateqcow2` conflict after the copy finishes.
 - Next suggested task: Push to GitHub, update both servers to `V1.00.29`, click Keep Local, and watch the Status/Log tabs for the background resolver.
+
+#### 2026-06-27 - Direct Conflict Buttons
+
+- Task completed: Replaced conflict mini-forms with direct JavaScript action buttons.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.30.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Conflict actions now use plain buttons with data attributes and a dedicated click handler, avoiding stuck/disabled form state. Status now says `% indexed - needs attention` so progress remains visible without implying the route is complete.
+- New decisions: Status auto-refresh pauses while hovering conflict actions so buttons are not replaced mid-click.
+- Open questions: Confirm Keep Local now changes to `Starting...`, shows a worker message, and clears after the background copy finishes.
+- Next suggested task: Push to GitHub, update both servers to `V1.00.30`, and retry Keep Local.
