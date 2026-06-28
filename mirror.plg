@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.32">
+  <!ENTITY version    "V1.00.33">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.32.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.33.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "8b39827b3a50e480721f0c993b0d4b8a">
+  <!ENTITY md5        "bf3ae1e4f1a664ca35f324aafb95b900">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.32
+### V1.00.33
+- Fully detaches conflict resolution workers so buttons return immediately.
 - Removes automatic Status refresh and adds a manual Refresh Status button.
 - Makes automatic Status refresh silent so the page no longer dims every few seconds.
 - Replaces conflict forms with direct action buttons and restores honest indexed-percent wording.

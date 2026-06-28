@@ -1520,10 +1520,10 @@ if ($action === "resolve-conflict") {
         . escapeshellarg($path)
         . " --resolution "
         . escapeshellarg($resolution);
-    exec("nohup " . $cmd . " >> /var/log/mirror.log 2>&1 & echo $!", $output, $code);
-    $pid = trim((string)($output[0] ?? ""));
+    $launch = "nohup " . $cmd . " </dev/null >> /var/log/mirror.log 2>&1 &";
+    exec("/bin/sh -c " . escapeshellarg($launch) . " >/dev/null 2>&1", $output, $code);
     $message = $code === 0
-        ? "Conflict resolution started: $resolution\nPath: $path" . ($pid !== "" ? "\nWorker pid: $pid" : "")
+        ? "Conflict resolution started: $resolution\nPath: $path\nRefresh Status or open Log to watch progress."
         : "Conflict resolution failed to start.";
     mirror_write_action($message);
     if (mirror_is_ajax()) {

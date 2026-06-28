@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Fully detaches conflict resolution workers so buttons return immediately.
 - Removes automatic Status refresh and adds a manual Refresh Status button.
 - Makes automatic Status refresh silent so the page no longer dims every few seconds.
 - Replaces conflict forms with direct action buttons and restores honest indexed-percent wording.

@@ -2963,7 +2963,7 @@ function bindMirrorPage() {
         headers: {
           "X-Requested-With": "XMLHttpRequest"
         }
-      }, 10000)
+      }, 5000)
         .then(function (response) {
           return response.json().catch(function () {
             return { ok: response.ok, message: "" };
@@ -2971,7 +2971,7 @@ function bindMirrorPage() {
         })
         .then(function (payload) {
           showMirrorClientMessage((payload && payload.message) ? payload.message : "Conflict action sent.");
-          return refreshMirrorPanel();
+          button.textContent = "Started";
         })
         .catch(function (error) {
           button.disabled = false;
