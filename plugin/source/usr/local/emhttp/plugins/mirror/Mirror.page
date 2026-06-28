@@ -290,6 +290,12 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
   }
   if ($hasConflict) {
     $mirrorStatus = $completePercent . "% complete - needs attention";
+  } elseif ($phase === "peer_offline") {
+    $indexStatus = "Peer offline";
+    if ($metaUpdated > 0) {
+      $indexStatus .= " - " . mirror_age_label($metaUpdated);
+    }
+    $mirrorStatus = "Waiting for remote responder";
   } elseif ($phase !== "" && $phase !== "complete" && $total > 0) {
     $indexStatus = "Indexing " . $processed . "/" . $total . " files";
     $mirrorStatus = $progressPercent . "% complete - " . str_replace("_", " ", $phase);

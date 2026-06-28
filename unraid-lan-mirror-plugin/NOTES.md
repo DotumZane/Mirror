@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.19`
-- Current package: `packages/mirror-V1.00.19.txz`
+- Current version: `V1.00.20`
+- Current package: `packages/mirror-V1.00.20.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
@@ -35,6 +35,7 @@ What currently works:
 - Master can start/stop the linked remote daemon.
 - Mirror-owned SSH known_hosts is used instead of `/root/.ssh/known_hosts`.
 - Automatic change detection is supported when daemon scan interval is `0`.
+- Automatic change detection now watches local paths from configured sync routes.
 - Multiple sync routes are supported.
 - Sync routes can be named, edited without being removed from the saved list, removed, and paused per route.
 - Each route has its own conflict rule and delete behavior.
@@ -55,8 +56,8 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test all tabs after installing `V1.00.19` and confirm the shared full-bleed visual style works in Unraid Connect.
-2. Confirm the generated "Mirror" title strip is gone and the UI reaches the available right edge.
+1. Re-test after installing `V1.00.20` and confirm a powered-off/offline peer shows as offline without crashing the daemon loop.
+2. Confirm automatic detection watches the local path for configured sync routes such as `/mnt/user/isos`.
 3. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
 4. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
 5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
@@ -65,7 +66,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.19`.
+2. On both Unraid servers, update Mirror to `V1.00.20`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +447,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.19
+V1.00.20
 ```
 
 Version source of truth:
@@ -591,6 +592,7 @@ Current release status:
 - `V1.00.17` hides the no-routes empty state more forcefully and widens the Shares page on large browser windows.
 - `V1.00.18` extends the Shares page visual style across all Mirror settings tabs.
 - `V1.00.19` removes the generated Mirror title strip and makes the Mirror UI full-bleed in the Unraid content area.
+- `V1.00.20` keeps the daemon running when a remote peer responder is offline and watches sync-route local paths.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -808,7 +810,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.19.
+- Current version: V1.00.20.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -859,7 +861,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.19`.
+- Current version is `V1.00.20`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -869,7 +871,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.19`, confirm the generated title strip is gone, and verify all tabs use the full-bleed layout.
+- Update both Unraid servers to `V1.00.20`, confirm offline peers no longer make the daemon exit, and verify automatic detection watches configured route paths.
 
 ### Chat Handoff
 
@@ -882,11 +884,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.19`
-- Current package: `packages/mirror-V1.00.19.txz`
+- Current version: `V1.00.20`
+- Current package: `packages/mirror-V1.00.20.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
-- Next suggested task: install/update `V1.00.19`, review every tab in the Unraid Connect remote browser, and confirm the page no longer feels like a window inside a window.
+- Next suggested task: install/update `V1.00.20`, restart the pairing responder on the remote server, and confirm the daemon stays running while the peer is unreachable.
 
 ### Tracker Update Template
 
@@ -2045,3 +2047,13 @@ Next suggested task:
 - New decisions: Use a small runtime layout helper for Unraid Connect because the available content width can change with the remote browser frame.
 - Open questions: Confirm `V1.00.19` removes the title strip on both local Unraid and Unraid Connect views without hiding any useful page controls.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.19`, and review the edge-to-edge layout on Status and Shares.
+
+#### 2026-06-27 - Offline Peer Daemon Handling
+
+- Task completed: Stopped offline remote peers from crashing the daemon loop and fixed automatic detection watch paths for sync routes.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.20.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Remote responder connection failures are now treated as a peer-offline route state instead of a fatal sync exception. The daemon continues running and the Status cards can show the route as waiting for the remote responder. Automatic file detection now watches local roots from `share_pairs` instead of only the legacy top-level config roots.
+- New decisions: A remote server being powered off or having its responder stopped should pause that route, not stop the master daemon.
+- Open questions: Confirm that starting/restarting the pairing responder on the remote clears the peer-offline state and resumes syncing.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.20`, restart the remote pairing responder, and confirm the log no longer repeats `run-once exited with code 1` for an offline peer.

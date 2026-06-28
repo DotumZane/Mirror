@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+class MirrorPeerUnavailable extends RuntimeException {}
+
 function usage(): int {
     fwrite(STDERR, "Usage: mirror_runner.php {interval|run-once|initial-sync|daemon|test-peer} --config <path> [--interval <seconds>]\n");
     return 2;
@@ -243,7 +245,11 @@ function ensure_remote_ssh_ready(array $config, string $configPath): void {
     try {
         $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", $payload, 4.0, true);
     } catch (Throwable $postError) {
-        $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", $payload + ["transport" => "query"], 4.0, false);
+        try {
+            $response = http_json("http://" . $host . ":23891/?action=ensure-ssh", $payload + ["transport" => "query"], 4.0, false);
+        } catch (Throwable $queryError) {
+            throw new MirrorPeerUnavailable("peer setup responder unavailable at {$host}:23891; check that Mirror is installed/running on the remote server and LAN pairing responder is started");
+        }
     }
     if (($response["status"] ?? "") !== "ok") {
         throw new RuntimeException("peer SSH setup failed: " . json_encode($response, JSON_UNESCAPED_SLASHES));
@@ -801,12 +807,26 @@ function sync_once(string $configPath): array {
             log_event("route " . route_label($pairConfig["config"]) . ": paused, skipping sync");
             continue;
         }
-        $pairSummary = endpoint_is_remote($pairConfig["config"])
-            ? sync_once_remote($configPath, $pairConfig["config"], $pairConfig["key"])
-            : sync_once_pair($configPath, $pairConfig["config"], $pairConfig["key"]);
+        try {
+            $pairSummary = endpoint_is_remote($pairConfig["config"])
+                ? sync_once_remote($configPath, $pairConfig["config"], $pairConfig["key"])
+                : sync_once_pair($configPath, $pairConfig["config"], $pairConfig["key"]);
+        } catch (MirrorPeerUnavailable $peerError) {
+            mark_route_offline($configPath, $pairConfig["key"], $pairConfig["config"], $peerError->getMessage());
+            continue;
+        }
         add_summary($summary, $pairSummary);
     }
     return $summary;
+}
+
+function mark_route_offline(string $configPath, string $stateKey, array $config, string $message): void {
+    $stateScope = load_scoped_state($configPath, $stateKey);
+    $allState = $stateScope["all"];
+    $state = $stateScope["current"];
+    mark_progress($state, "peer_offline", 0, 0, $message);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
+    log_event("route " . route_label($config) . ": peer offline, skipping sync - " . $message);
 }
 
 function sync_once_remote(string $configPath, array $config, string $stateKey = "__default"): array {

@@ -139,13 +139,33 @@ sync_watch_paths() {
     if (!is_array($config)) {
       exit;
     }
-    foreach (["server_a", "server_b"] as $key) {
-      $server=$config[$key] ?? [];
-      $root=(string)($server["root"] ?? "");
-      $type=(string)($server["type"] ?? "local");
+    $paths=[];
+    $add=function ($root, $type="local") use (&$paths) {
+      $root=rtrim((string)$root, "/");
+      $type=(string)$type;
       if ($root !== "" && $type !== "remote" && is_dir($root)) {
-        echo $root . "\n";
+        $paths[$root]=true;
       }
+    };
+    $pairs=is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
+    if ($pairs) {
+      foreach ($pairs as $pair) {
+        if (!is_array($pair) || !empty($pair["paused"])) {
+          continue;
+        }
+        $serverA=is_array($pair["server_a"] ?? null) ? $pair["server_a"] : [];
+        $serverB=is_array($pair["server_b"] ?? null) ? $pair["server_b"] : [];
+        $add($serverA["root"] ?? "", $serverA["type"] ?? "local");
+        $add($serverB["root"] ?? "", $serverB["type"] ?? "local");
+      }
+    } else {
+      foreach (["server_a", "server_b"] as $key) {
+        $server=$config[$key] ?? [];
+        $add($server["root"] ?? "", $server["type"] ?? "local");
+      }
+    }
+    foreach (array_keys($paths) as $watchPath) {
+      echo $watchPath . "\n";
     }
   ' "$CONFIG" 2>/dev/null
 }
