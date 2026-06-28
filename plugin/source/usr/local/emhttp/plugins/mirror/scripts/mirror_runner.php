@@ -604,7 +604,8 @@ function mark_progress(array &$state, string $phase, int $processed, int $total,
 function pair_key(array $pair): string {
     $a = (string)($pair["server_a"]["root"] ?? "");
     $b = (string)($pair["server_b"]["root"] ?? "");
-    return substr(hash("sha256", $a . "|" . $b), 0, 16);
+    $peer = (string)($pair["server_b"]["peer_id"] ?? $pair["server_b"]["host"] ?? "");
+    return substr(hash("sha256", $a . "|" . $peer . "|" . $b), 0, 16);
 }
 
 function configured_pair_configs(array $config): array {

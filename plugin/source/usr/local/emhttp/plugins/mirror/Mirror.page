@@ -12,6 +12,7 @@ $logFile = "/var/log/$plugin.log";
 $discoveryFile = "/boot/config/plugins/$plugin/discovered-peers.json";
 $pendingInvitesFile = "/boot/config/plugins/$plugin/pending-invites.json";
 $peerFile = "/boot/config/plugins/$plugin/peer.json";
+$peersFile = "/boot/config/plugins/$plugin/peers.json";
 
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
@@ -97,6 +98,34 @@ function mirror_json_file($path, $default = []) {
   return is_array($decoded) ? $decoded : $default;
 }
 
+function mirror_peer_list($peersFile, $peerFile) {
+  $data = mirror_json_file($peersFile, ["peers" => []]);
+  $peers = is_array($data["peers"] ?? null) ? $data["peers"] : [];
+  if (!$peers) {
+    $legacy = mirror_json_file($peerFile, []);
+    if (!empty($legacy["host"])) {
+      $id = (string)($legacy["id"] ?? substr(hash("sha256", "host:" . strtolower((string)$legacy["host"])), 0, 16));
+      $legacy["id"] = $id;
+      $peers[$id] = $legacy;
+    }
+  }
+  foreach ($peers as $id => $peer) {
+    if (!is_array($peer)) {
+      unset($peers[$id]);
+      continue;
+    }
+    $peer["id"] = (string)($peer["id"] ?? $id);
+    $peer["host"] = trim((string)($peer["host"] ?? ""));
+    $peer["name"] = (string)($peer["name"] ?? ($peer["host"] ?: "Mirror peer"));
+    $peer["shares"] = is_array($peer["shares"] ?? null) ? array_values($peer["shares"]) : [];
+    $peers[$peer["id"]] = $peer;
+    if ($peer["id"] !== (string)$id) {
+      unset($peers[$id]);
+    }
+  }
+  return $peers;
+}
+
 function mirror_primary_ip() {
   $output = trim((string)shell_exec("ip -o -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if (\$i==\"src\") {print \$(i+1); exit}}'"));
   if (filter_var($output, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
@@ -126,7 +155,8 @@ function mirror_state_path() {
 function mirror_route_key($routeConfig) {
   $a = (string)($routeConfig["server_a"]["root"] ?? "");
   $b = (string)($routeConfig["server_b"]["root"] ?? "");
-  return substr(hash("sha256", $a . "|" . $b), 0, 16);
+  $peer = (string)($routeConfig["server_b"]["peer_id"] ?? $routeConfig["server_b"]["host"] ?? "");
+  return substr(hash("sha256", $a . "|" . $peer . "|" . $b), 0, 16);
 }
 
 function mirror_configured_routes($config) {
@@ -157,10 +187,15 @@ function mirror_configured_routes($config) {
 function mirror_route_label($routeConfig) {
   $a = mirror_share_name_from_path((string)($routeConfig["server_a"]["root"] ?? ""));
   $b = (string)($routeConfig["server_b"]["share"] ?? mirror_share_name_from_path((string)($routeConfig["server_b"]["root"] ?? "")));
+  $peer = (string)($routeConfig["server_b"]["name"] ?? "");
   if ($a === "" && $b === "") {
     return "Unconfigured route";
   }
-  return ($a !== "" ? $a : "This server") . " -> " . ($b !== "" ? $b : "Other share");
+  $target = $b !== "" ? $b : "Other share";
+  if (($routeConfig["server_b"]["type"] ?? "local") === "remote" && $peer !== "") {
+    $target = $peer . " / " . $target;
+  }
+  return ($a !== "" ? $a : "This server") . " -> " . $target;
 }
 
 function mirror_route_state($allState, $routeKey) {
@@ -272,6 +307,7 @@ foreach (array_slice($configuredSharePairs, 1) as $pair) {
     $additionalSharePairs[] = [
       "local" => $pairAShare,
       "other" => $pairBShare,
+      "peer_id" => (string)($pair["server_b"]["peer_id"] ?? ""),
       "authority" => $pairAuthority,
       "delete_behavior" => $pairDeleteBehavior,
     ];
@@ -299,8 +335,10 @@ $discoveryStatus = (string)($discovery["scan_status"] ?? "");
 $discoveryDirectHost = (string)($discovery["direct_host"] ?? "");
 $pendingInviteData = mirror_json_file($pendingInvitesFile, ["invites" => []]);
 $pendingInvites = is_array($pendingInviteData["invites"] ?? null) ? $pendingInviteData["invites"] : [];
-$linkedPeer = mirror_json_file($peerFile, []);
+$linkedPeers = mirror_peer_list($peersFile, $peerFile);
+$linkedPeer = $linkedPeers ? reset($linkedPeers) : mirror_json_file($peerFile, []);
 $linkedPeerShares = is_array($linkedPeer["shares"] ?? null) ? $linkedPeer["shares"] : [];
+$primaryPeerId = (string)($config["server_b"]["peer_id"] ?? ($linkedPeer["id"] ?? ""));
 $mirrorState = mirror_json_file(mirror_state_path(), ["files" => [], "conflicts" => [], "pairs" => []]);
 $mirrorRoutes = mirror_configured_routes($config);
 $mirrorRouteSummaries = [];
@@ -765,8 +803,8 @@ foreach ($mirrorRoutes as $route) {
         </div>
         <div class="mirror-stat">
           <strong>Peer Link</strong>
-          <?php if (!empty($linkedPeer["host"])): ?>
-            Connected to <?=mirror_value($linkedPeer["name"] ?? "peer")?>
+          <?php if ($linkedPeers): ?>
+            <?=mirror_value(count($linkedPeers))?> linked remote<?=count($linkedPeers) === 1 ? "" : "s"?>
           <?php elseif (count($pendingInvites) > 0): ?>
             Pending invite
           <?php else: ?>
@@ -868,8 +906,8 @@ foreach ($mirrorRoutes as $route) {
         <span><?=$nodeRole === "managed_remote" ? "Managed remote" : "Master"?></span>
       </div>
       <div class="mirror-lan-card">
-        <strong>Peer link</strong>
-        <span><?=!empty($linkedPeer["host"]) ? mirror_value(($linkedPeer["name"] ?? "Peer") . " at " . $linkedPeer["host"]) : "Not linked"?></span>
+        <strong>Linked remotes</strong>
+        <span><?=$linkedPeers ? mirror_value(count($linkedPeers)) . " linked" : "Not linked"?></span>
       </div>
       <div class="mirror-lan-card">
         <strong>Pairing responder</strong>
@@ -921,12 +959,28 @@ foreach ($mirrorRoutes as $route) {
       <h4>Connect To Peer</h4>
       <div class="mirror-help">Enter the other server's LAN IP, then send an invite. Accept the invite on the other server to finish linking.</div>
     </div>
-    <?php if (!empty($linkedPeer["host"])): ?>
-      <div class="mirror-success">
-        Connected to <?=mirror_value($linkedPeer["name"] ?? "Mirror peer")?> at <?=mirror_value($linkedPeer["host"])?>.
-        <?php if (!empty($linkedPeer["version"])): ?>
-          <span class="mirror-help">Peer Mirror version: <?=mirror_value($linkedPeer["version"])?></span>
-        <?php endif; ?>
+    <?php if ($linkedPeers): ?>
+      <div class="mirror-peer-list">
+        <?php foreach ($linkedPeers as $peer): ?>
+          <div class="mirror-peer-card">
+            <strong><?=mirror_value($peer["name"] ?? "Mirror peer")?></strong>
+            <div class="mirror-peer-meta">
+              <?=mirror_value($peer["host"] ?? "")?>
+              <?php if (!empty($peer["version"])): ?>
+                &middot; Mirror <?=mirror_value($peer["version"])?>
+              <?php endif; ?>
+              &middot; <?=mirror_value(count(is_array($peer["shares"] ?? null) ? $peer["shares"] : []))?> shares
+            </div>
+            <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
+              <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
+              <input type="hidden" name="action" value="refresh-peer-shares">
+              <input type="hidden" name="peer_id" value="<?=mirror_value($peer["id"] ?? "")?>">
+              <div class="mirror-actions">
+                <button type="submit">Refresh Shares</button>
+              </div>
+            </form>
+          </div>
+        <?php endforeach; ?>
       </div>
     <?php endif; ?>
       <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
@@ -935,7 +989,7 @@ foreach ($mirrorRoutes as $route) {
         <div class="mirror-form-grid">
           <div class="mirror-field">
             <label for="peer_host">Other server IP address</label>
-            <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($linkedPeer["host"] ?? $discoveryDirectHost)?>">
+            <input id="peer_host" name="peer_host" type="text" value="<?=mirror_value($discoveryDirectHost)?>">
             <span class="mirror-help">Use the other Unraid server's LAN IP. Mirror listens on TCP port 23891.</span>
           </div>
         </div>
@@ -1008,11 +1062,11 @@ foreach ($mirrorRoutes as $route) {
         </div>
         <div class="mirror-share-status-item">
           <strong>Linked peer</strong>
-          <span><?=!empty($linkedPeer["host"]) ? mirror_value(($linkedPeer["name"] ?? "Peer") . " at " . $linkedPeer["host"]) : "No linked peer yet"?></span>
+          <span><?=$linkedPeers ? mirror_value(count($linkedPeers)) . " linked remote" . (count($linkedPeers) === 1 ? "" : "s") : "No linked peer yet"?></span>
         </div>
         <div class="mirror-share-status-item">
           <strong>Remote shares loaded</strong>
-          <span><?=mirror_value(count($linkedPeerShares))?></span>
+          <span><?=mirror_value(array_sum(array_map(function ($peer) { return count(is_array($peer["shares"] ?? null) ? $peer["shares"] : []); }, $linkedPeers)))?></span>
         </div>
         <div class="mirror-share-status-item">
           <strong>Configured routes</strong>
@@ -1020,7 +1074,7 @@ foreach ($mirrorRoutes as $route) {
         </div>
       </div>
 
-      <?php if (!empty($linkedPeer["host"])): ?>
+      <?php if ($linkedPeers): ?>
         <form method="post" action="/plugins/mirror/include/action.php">
           <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
           <input type="hidden" name="action" value="use-linked-peer">
@@ -1032,10 +1086,10 @@ foreach ($mirrorRoutes as $route) {
           <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
           <input type="hidden" name="action" value="refresh-peer-shares">
           <div class="mirror-actions">
-            <button type="submit">Refresh Remote Shares</button>
+            <button type="submit">Refresh All Remote Shares</button>
           </div>
         </form>
-        <span class="mirror-help">Use Linked Peer switches this setup to the paired server. Refresh Remote Shares updates the remote share dropdown.</span>
+        <span class="mirror-help">Choose the remote server per sync route below. Refresh updates remote share dropdowns.</span>
       <?php else: ?>
         <div class="mirror-warning">Pair with another server on the LAN Setup tab before choosing a remote share.</div>
       <?php endif; ?>
@@ -1079,18 +1133,33 @@ foreach ($mirrorRoutes as $route) {
               <span class="mirror-help">Mirror path: <?=mirror_value($config["server_b"]["root"])?></span>
             </div>
             <div class="mirror-field mirror-remote-only">
+              <label for="primary_peer_id">Remote server</label>
+              <select id="primary_peer_id" name="primary_peer_id" <?=$linkedPeers ? "" : "disabled"?>>
+                <option value="">Select a remote server</option>
+                <?php foreach ($linkedPeers as $peer): ?>
+                  <option value="<?=mirror_value($peer["id"] ?? "")?>" <?=(($peer["id"] ?? "") === $primaryPeerId) ? "selected" : ""?>><?=mirror_value(($peer["name"] ?? "Mirror peer") . " - " . ($peer["host"] ?? ""))?></option>
+                <?php endforeach; ?>
+              </select>
+              <span class="mirror-help">Pick which linked remote this route uses.</span>
+            </div>
+            <div class="mirror-field mirror-remote-only">
               <label for="remote_share">Remote server share</label>
-              <?php if ($linkedPeerShares): ?>
+              <?php if ($linkedPeers): ?>
                 <select id="remote_share" name="remote_share">
                   <option value="">Select a remote share</option>
-                  <?php foreach ($linkedPeerShares as $share): ?>
-                    <option value="<?=mirror_value($share)?>" <?=$share === ($config["server_b"]["share"] ?? $serverBShare) ? "selected" : ""?>><?=mirror_value($share)?></option>
+                  <?php foreach ($linkedPeers as $peer): ?>
+                    <?php $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : []; ?>
+                    <optgroup label="<?=mirror_value($peer["name"] ?? $peer["host"] ?? "Remote")?>">
+                      <?php foreach ($peerShares as $share): ?>
+                        <option value="<?=mirror_value($share)?>" data-peer-id="<?=mirror_value($peer["id"] ?? "")?>" <?=$share === ($config["server_b"]["share"] ?? $serverBShare) && (($peer["id"] ?? "") === $primaryPeerId || count($linkedPeers) === 1) ? "selected" : ""?>><?=mirror_value($share)?></option>
+                      <?php endforeach; ?>
+                    </optgroup>
                   <?php endforeach; ?>
                 </select>
-                <span class="mirror-help">Loaded from <?=mirror_value($linkedPeer["name"] ?? "linked peer")?>.</span>
+                <span class="mirror-help">Loaded from linked remotes.</span>
               <?php else: ?>
                 <input id="remote_share" name="remote_share" type="text" value="<?=mirror_value($config["server_b"]["share"] ?? $serverBShare)?>">
-                <span class="mirror-help">Refresh Remote Shares after pairing to choose from a dropdown.</span>
+                <span class="mirror-help">Pair with a remote first to choose from a dropdown.</span>
               <?php endif; ?>
             </div>
           </div>
@@ -1119,12 +1188,26 @@ foreach ($mirrorRoutes as $route) {
                     </select>
                   </div>
                   <div class="mirror-field mirror-remote-only">
+                    <label for="additional_pair_peer_<?=mirror_value($index)?>">Remote server</label>
+                    <select id="additional_pair_peer_<?=mirror_value($index)?>" name="additional_pair_peer_id[]" <?=$linkedPeers ? "" : "disabled"?>>
+                      <option value="">Select a remote server</option>
+                      <?php foreach ($linkedPeers as $peer): ?>
+                        <option value="<?=mirror_value($peer["id"] ?? "")?>" <?=(($peer["id"] ?? "") === ($pair["peer_id"] ?? "")) ? "selected" : ""?>><?=mirror_value(($peer["name"] ?? "Mirror peer") . " - " . ($peer["host"] ?? ""))?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="mirror-field mirror-remote-only">
                     <label for="additional_pair_other_remote_<?=mirror_value($index)?>">Remote server share</label>
-                    <?php if ($linkedPeerShares): ?>
+                    <?php if ($linkedPeers): ?>
                       <select id="additional_pair_other_remote_<?=mirror_value($index)?>" name="additional_pair_other_remote[]">
                         <option value="">Select a remote share</option>
-                        <?php foreach ($linkedPeerShares as $share): ?>
-                          <option value="<?=mirror_value($share)?>" <?=$share === $pair["other"] ? "selected" : ""?>><?=mirror_value($share)?></option>
+                        <?php foreach ($linkedPeers as $peer): ?>
+                          <?php $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : []; ?>
+                          <optgroup label="<?=mirror_value($peer["name"] ?? $peer["host"] ?? "Remote")?>">
+                            <?php foreach ($peerShares as $share): ?>
+                              <option value="<?=mirror_value($share)?>" data-peer-id="<?=mirror_value($peer["id"] ?? "")?>" <?=$share === $pair["other"] && (($peer["id"] ?? "") === ($pair["peer_id"] ?? "") || count($linkedPeers) === 1) ? "selected" : ""?>><?=mirror_value($share)?></option>
+                            <?php endforeach; ?>
+                          </optgroup>
                         <?php endforeach; ?>
                       </select>
                     <?php else: ?>
@@ -1175,12 +1258,26 @@ foreach ($mirrorRoutes as $route) {
                   </select>
                 </div>
                 <div class="mirror-field mirror-remote-only">
+                  <label>Remote server</label>
+                  <select name="additional_pair_peer_id[]" <?=$linkedPeers ? "" : "disabled"?>>
+                    <option value="">Select a remote server</option>
+                    <?php foreach ($linkedPeers as $peer): ?>
+                      <option value="<?=mirror_value($peer["id"] ?? "")?>"><?=mirror_value(($peer["name"] ?? "Mirror peer") . " - " . ($peer["host"] ?? ""))?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="mirror-field mirror-remote-only">
                   <label>Remote server share</label>
-                  <?php if ($linkedPeerShares): ?>
+                  <?php if ($linkedPeers): ?>
                     <select name="additional_pair_other_remote[]">
                       <option value="">Select a remote share</option>
-                      <?php foreach ($linkedPeerShares as $share): ?>
-                        <option value="<?=mirror_value($share)?>"><?=mirror_value($share)?></option>
+                      <?php foreach ($linkedPeers as $peer): ?>
+                        <?php $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : []; ?>
+                        <optgroup label="<?=mirror_value($peer["name"] ?? $peer["host"] ?? "Remote")?>">
+                          <?php foreach ($peerShares as $share): ?>
+                            <option value="<?=mirror_value($share)?>" data-peer-id="<?=mirror_value($peer["id"] ?? "")?>"><?=mirror_value($share)?></option>
+                          <?php endforeach; ?>
+                        </optgroup>
                       <?php endforeach; ?>
                     </select>
                   <?php else: ?>

@@ -6,6 +6,7 @@ $actionFile = "$configDir/last-action.txt";
 $discoveryFile = "$configDir/discovered-peers.json";
 $pendingInvitesFile = "$configDir/pending-invites.json";
 $peerFile = "$configDir/peer.json";
+$peersFile = "$configDir/peers.json";
 $versionFile = "/usr/local/emhttp/plugins/$plugin/VERSION";
 $defaultConfigFile = "/usr/local/emhttp/plugins/$plugin/default-config.json";
 $sshDir = "$configDir/ssh";
@@ -198,6 +199,73 @@ function mirror_write_json_file($path, $data) {
         mkdir(dirname($path), 0777, true);
     }
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+}
+
+function mirror_peer_id($host, $name = "") {
+    $host = trim((string)$host);
+    $name = trim((string)$name);
+    if ($host !== "") {
+        return substr(hash("sha256", "host:" . strtolower($host)), 0, 16);
+    }
+    return substr(hash("sha256", "name:" . strtolower($name) . "|" . time()), 0, 16);
+}
+
+function mirror_peer_list() {
+    global $peersFile, $peerFile;
+    $data = mirror_json_file($peersFile, ["peers" => []]);
+    $peers = is_array($data["peers"] ?? null) ? $data["peers"] : [];
+    if (!$peers) {
+        $legacy = mirror_json_file($peerFile, []);
+        if (!empty($legacy["host"])) {
+            $id = (string)($legacy["id"] ?? mirror_peer_id($legacy["host"], $legacy["name"] ?? ""));
+            $legacy["id"] = $id;
+            $peers[$id] = $legacy;
+        }
+    }
+    foreach ($peers as $id => $peer) {
+        if (!is_array($peer)) {
+            unset($peers[$id]);
+            continue;
+        }
+        $peer["id"] = (string)($peer["id"] ?? $id);
+        $peer["host"] = trim((string)($peer["host"] ?? ""));
+        $peer["name"] = (string)($peer["name"] ?? ($peer["host"] ?: "Mirror peer"));
+        $peer["user"] = (string)($peer["user"] ?? "root");
+        $peer["port"] = max(1, min(65535, (int)($peer["port"] ?? 22)));
+        $peer["shares"] = is_array($peer["shares"] ?? null) ? array_values($peer["shares"]) : [];
+        $peers[$peer["id"]] = $peer;
+        if ($peer["id"] !== (string)$id) {
+            unset($peers[$id]);
+        }
+    }
+    return $peers;
+}
+
+function mirror_write_peer_list($peers) {
+    global $peersFile, $peerFile;
+    mirror_write_json_file($peersFile, ["peers" => $peers]);
+    if ($peers) {
+        $first = reset($peers);
+        if (is_array($first)) {
+            mirror_write_json_file($peerFile, $first);
+        }
+    }
+}
+
+function mirror_upsert_peer($peer) {
+    $peers = mirror_peer_list();
+    $id = (string)($peer["id"] ?? mirror_peer_id($peer["host"] ?? "", $peer["name"] ?? ""));
+    $existing = is_array($peers[$id] ?? null) ? $peers[$id] : [];
+    $peer = array_replace($existing, $peer);
+    $peer["id"] = $id;
+    $peer["host"] = trim((string)($peer["host"] ?? ""));
+    $peer["name"] = (string)($peer["name"] ?? ($peer["host"] ?: "Mirror peer"));
+    $peer["user"] = (string)($peer["user"] ?? "root");
+    $peer["port"] = max(1, min(65535, (int)($peer["port"] ?? 22)));
+    $peer["shares"] = is_array($peer["shares"] ?? null) ? array_values($peer["shares"]) : [];
+    $peers[$id] = $peer;
+    mirror_write_peer_list($peers);
+    return $peer;
 }
 
 function mirror_ensure_key() {
@@ -532,9 +600,8 @@ function mirror_configure_remote_peer($localShare, $peerHost, $peerShare, $autho
 }
 
 function mirror_write_peer_profile($peer) {
-    global $peerFile;
     $peer["linked_at"] = time();
-    mirror_write_json_file($peerFile, $peer);
+    mirror_upsert_peer($peer);
 }
 
 function mirror_preserve_mode_from_post() {
@@ -560,6 +627,8 @@ function mirror_apply_linked_peer_to_config($peer) {
     $config = mirror_existing_config();
     $config["server_b"] = is_array($config["server_b"] ?? null) ? $config["server_b"] : [];
     $config["server_b"]["type"] = "remote";
+    $config["server_b"]["peer_id"] = (string)($peer["id"] ?? mirror_peer_id($peerHost, $peer["name"] ?? ""));
+    $config["server_b"]["name"] = (string)($peer["name"] ?? "server-b");
     $config["server_b"]["host"] = $peerHost;
     $config["server_b"]["user"] = (string)($config["server_b"]["user"] ?? "root");
     $config["server_b"]["port"] = (int)($config["server_b"]["port"] ?? 22);
@@ -576,7 +645,7 @@ function mirror_normalize_delete_behavior($deleteBehavior) {
     return in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true) ? $deleteBehavior : "restore_missing";
 }
 
-function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority = "server_a_preferred", $deleteBehavior = "restore_missing") {
+function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority = "server_a_preferred", $deleteBehavior = "restore_missing", $peerId = "", $peerName = "server-b") {
     $deleteBehavior = mirror_normalize_delete_behavior($deleteBehavior);
     return [
         "server_a" => [
@@ -585,7 +654,8 @@ function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerH
             "share" => $localShare,
         ],
         "server_b" => [
-            "name" => "server-b",
+            "name" => $peerName !== "" ? $peerName : "server-b",
+            "peer_id" => $peerId,
             "type" => $serverBType,
             "root" => "/mnt/user/" . $otherShare,
             "share" => $otherShare,
@@ -615,11 +685,12 @@ function mirror_parse_additional_pairs($text) {
     return $pairs;
 }
 
-function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $authorityRows, $deleteBehaviorRows, $serverBType, $fallbackText) {
+function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $peerIdRows, $authorityRows, $deleteBehaviorRows, $serverBType, $fallbackText) {
     $locals = is_array($localRows) ? array_values($localRows) : [];
     $localOthers = is_array($localOtherRows) ? array_values($localOtherRows) : [];
     $remoteOthers = is_array($remoteOtherRows) ? array_values($remoteOtherRows) : [];
     $authorities = is_array($authorityRows) ? array_values($authorityRows) : [];
+    $peerIds = is_array($peerIdRows) ? array_values($peerIdRows) : [];
     $deleteBehaviors = is_array($deleteBehaviorRows) ? array_values($deleteBehaviorRows) : [];
     $others = $serverBType === "remote" ? $remoteOthers : $localOthers;
     $rowCount = max(count($locals), count($others));
@@ -637,6 +708,7 @@ function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteO
         $pairs[] = [
             $localShare,
             $otherShare,
+            trim((string)($peerIds[$index] ?? "")),
             mirror_normalize_authority($authorities[$index] ?? "server_a_preferred"),
             mirror_normalize_delete_behavior($deleteBehaviors[$index] ?? "restore_missing"),
         ];
@@ -644,7 +716,7 @@ function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteO
 
     if (!$pairs && trim((string)$fallbackText) !== "") {
         return array_map(function ($pair) {
-            return [$pair[0], $pair[1], "server_a_preferred", "restore_missing"];
+            return [$pair[0], $pair[1], "", "server_a_preferred", "restore_missing"];
         }, mirror_parse_additional_pairs($fallbackText));
     }
     return $pairs;
@@ -662,6 +734,23 @@ function mirror_linked_peer_host() {
     return mirror_is_private_ip($configHost) ? $configHost : "";
 }
 
+function mirror_linked_peer_hosts() {
+    $hosts = [];
+    foreach (mirror_peer_list() as $peer) {
+        $host = trim((string)($peer["host"] ?? ""));
+        if ($host !== "" && mirror_is_private_ip($host)) {
+            $hosts[$host] = $peer;
+        }
+    }
+    if (!$hosts) {
+        $host = mirror_linked_peer_host();
+        if ($host !== "") {
+            $hosts[$host] = ["host" => $host, "name" => $host];
+        }
+    }
+    return $hosts;
+}
+
 function mirror_control_linked_peer($command) {
     if (!in_array($command, ["start", "stop"], true)) {
         return "";
@@ -670,43 +759,48 @@ function mirror_control_linked_peer($command) {
     if (($config["node_role"] ?? "master") !== "master") {
         return "";
     }
-    $peerHost = mirror_linked_peer_host();
-    if ($peerHost === "") {
-        return "\nRemote peer $command skipped: no linked private LAN peer.";
+    $peers = mirror_linked_peer_hosts();
+    if (!$peers) {
+        return "\nRemote peers $command skipped: no linked private LAN peers.";
     }
-    $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "control"]), 6.0, [
-        "command" => $command,
-    ]);
-    if (!is_array($response) || ($response["status"] ?? "") !== "ok") {
-        $response = mirror_http_json(mirror_remote_url($peerHost, [
-            "action" => "control",
+    $messages = [];
+    foreach ($peers as $peerHost => $peer) {
+        $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "control"]), 6.0, [
             "command" => $command,
-            "transport" => "query",
-        ]), 6.0);
-    }
-    if (!is_array($response)) {
-        return "\nRemote peer $command failed: no response.";
-    }
-    $name = (string)($response["name"] ?? $peerHost);
-    $code = (string)($response["code"] ?? "unknown");
-    $output = trim((string)($response["output"] ?? ""));
-    $statusAfter = trim((string)($response["status_after"] ?? ""));
-    if (($response["status"] ?? "") === "ok") {
-        $message = "\nRemote peer $command sent to $name. Code: $code.";
-    } else {
-        $error = (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES));
-        $message = "\nRemote peer $command failed on $name: $error";
-        if ($code !== "unknown") {
-            $message .= " Code: $code.";
+        ]);
+        if (!is_array($response) || ($response["status"] ?? "") !== "ok") {
+            $response = mirror_http_json(mirror_remote_url($peerHost, [
+                "action" => "control",
+                "command" => $command,
+                "transport" => "query",
+            ]), 6.0);
         }
+        if (!is_array($response)) {
+            $messages[] = "\nRemote peer $command failed on $peerHost: no response.";
+            continue;
+        }
+        $name = (string)($response["name"] ?? ($peer["name"] ?? $peerHost));
+        $code = (string)($response["code"] ?? "unknown");
+        $output = trim((string)($response["output"] ?? ""));
+        $statusAfter = trim((string)($response["status_after"] ?? ""));
+        if (($response["status"] ?? "") === "ok") {
+            $message = "\nRemote peer $command sent to $name. Code: $code.";
+        } else {
+            $error = (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES));
+            $message = "\nRemote peer $command failed on $name: $error";
+            if ($code !== "unknown") {
+                $message .= " Code: $code.";
+            }
+        }
+        if ($output !== "") {
+            $message .= "\nRemote output:\n" . $output;
+        }
+        if ($statusAfter !== "") {
+            $message .= "\nRemote status after $command:\n" . $statusAfter;
+        }
+        $messages[] = $message;
     }
-    if ($output !== "") {
-        $message .= "\nRemote output:\n" . $output;
-    }
-    if ($statusAfter !== "") {
-        $message .= "\nRemote status after $command:\n" . $statusAfter;
-    }
-    return $message;
+    return implode("", $messages);
 }
 
 $action = $_POST["action"] ?? "status";
@@ -923,12 +1017,16 @@ if ($action === "invite-peer") {
         }
         $peerVersion = (string)($response["version"] ?? "unknown");
         mirror_accept_public_key((string)($response["public_key"] ?? ""));
+        $peerId = mirror_peer_id($peerHost, (string)($response["name"] ?? ""));
         mirror_write_peer_profile([
+            "id" => $peerId,
             "name" => (string)($response["name"] ?? $peerHost),
             "host" => $peerHost,
             "version" => $peerVersion,
             "shares" => is_array($response["shares"] ?? null) ? $response["shares"] : [],
             "public_key" => (string)($response["public_key"] ?? ""),
+            "user" => "root",
+            "port" => 22,
             "status" => "invite_sent",
         ]);
         mirror_write_action(
@@ -961,12 +1059,17 @@ if ($action === "accept-invite") {
         }
         $invite = $invites[$inviteId];
         mirror_accept_public_key((string)($invite["public_key"] ?? ""));
+        $peerHost = (string)($invite["from_host"] ?? "");
+        $peerId = mirror_peer_id($peerHost, (string)($invite["from_name"] ?? ""));
         mirror_write_peer_profile([
+            "id" => $peerId,
             "name" => (string)($invite["from_name"] ?? $invite["from_host"] ?? "Mirror peer"),
-            "host" => (string)($invite["from_host"] ?? ""),
+            "host" => $peerHost,
             "version" => "unknown",
             "shares" => [],
             "public_key" => (string)($invite["public_key"] ?? ""),
+            "user" => "root",
+            "port" => 22,
             "status" => "linked",
         ]);
         unset($invites[$inviteId]);
@@ -1003,9 +1106,10 @@ if ($action === "check-invites") {
 }
 
 if ($action === "use-linked-peer") {
-    global $peerFile;
-    $peer = mirror_json_file($peerFile, []);
-    if (empty($peer["host"])) {
+    $peers = mirror_peer_list();
+    $peerId = trim((string)($_POST["peer_id"] ?? ""));
+    $peer = $peerId !== "" && isset($peers[$peerId]) ? $peers[$peerId] : reset($peers);
+    if (!is_array($peer) || empty($peer["host"])) {
         mirror_write_action("No linked peer found. Invite and accept a peer first.");
         mirror_redirect();
     }
@@ -1015,26 +1119,40 @@ if ($action === "use-linked-peer") {
 }
 
 if ($action === "refresh-peer-shares") {
-    global $peerFile;
     try {
-        $peer = mirror_json_file($peerFile, []);
-        $peerHost = trim((string)($peer["host"] ?? ""));
-        if ($peerHost === "" || !mirror_is_private_ip($peerHost)) {
-            throw new RuntimeException("No linked private LAN peer was found.");
+        $peers = mirror_peer_list();
+        $peerId = trim((string)($_POST["peer_id"] ?? ""));
+        if ($peerId !== "" && isset($peers[$peerId])) {
+            $refreshPeers = [$peerId => $peers[$peerId]];
+        } else {
+            $refreshPeers = $peers;
         }
-        $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "hello", "shares" => time()]), 3.0);
-        if (!is_array($response) || ($response["service"] ?? "") !== "mirror") {
-            $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
-            throw new RuntimeException("Peer did not return its share list: $peerError");
+        if (!$refreshPeers) {
+            throw new RuntimeException("No linked peers were found.");
         }
-        $shares = is_array($response["shares"] ?? null) ? array_values($response["shares"]) : [];
-        $peer["name"] = (string)($response["name"] ?? ($peer["name"] ?? $peerHost));
-        $peer["version"] = (string)($response["version"] ?? ($peer["version"] ?? "unknown"));
-        $peer["shares"] = $shares;
-        $peer["shares_refreshed_at"] = time();
-        mirror_write_peer_profile($peer);
-        mirror_apply_linked_peer_to_config($peer);
-        mirror_write_action("Remote shares refreshed from " . ($peer["name"] ?? $peerHost) . ". Found " . count($shares) . " share" . (count($shares) === 1 ? "." : "s.") . "\nRemote LAN mirror mode selected.");
+        $messages = [];
+        foreach ($refreshPeers as $id => $peer) {
+            $peerHost = trim((string)($peer["host"] ?? ""));
+            if ($peerHost === "" || !mirror_is_private_ip($peerHost)) {
+                $messages[] = ($peer["name"] ?? $id) . ": skipped, no private LAN host.";
+                continue;
+            }
+            $response = mirror_http_json(mirror_remote_url($peerHost, ["action" => "hello", "shares" => time()]), 3.0);
+            if (!is_array($response) || ($response["service"] ?? "") !== "mirror") {
+                $peerError = is_array($response) ? (string)($response["error"] ?? json_encode($response, JSON_UNESCAPED_SLASHES)) : "no response";
+                $messages[] = ($peer["name"] ?? $peerHost) . ": failed, $peerError";
+                continue;
+            }
+            $shares = is_array($response["shares"] ?? null) ? array_values($response["shares"]) : [];
+            $peer["id"] = (string)($peer["id"] ?? $id);
+            $peer["name"] = (string)($response["name"] ?? ($peer["name"] ?? $peerHost));
+            $peer["version"] = (string)($response["version"] ?? ($peer["version"] ?? "unknown"));
+            $peer["shares"] = $shares;
+            $peer["shares_refreshed_at"] = time();
+            mirror_upsert_peer($peer);
+            $messages[] = $peer["name"] . ": found " . count($shares) . " share" . (count($shares) === 1 ? "." : "s.");
+        }
+        mirror_write_action("Remote shares refreshed.\n" . implode("\n", $messages));
     } catch (Throwable $error) {
         mirror_write_action("Remote shares not refreshed:\n" . $error->getMessage());
     }
@@ -1057,8 +1175,10 @@ if ($action === "save-config") {
     $additionalPairLocalRows = $_POST["additional_pair_local"] ?? [];
     $additionalPairOtherLocalRows = $_POST["additional_pair_other_local"] ?? [];
     $additionalPairOtherRemoteRows = $_POST["additional_pair_other_remote"] ?? [];
+    $additionalPairPeerRows = $_POST["additional_pair_peer_id"] ?? [];
     $additionalPairAuthorityRows = $_POST["additional_pair_authority"] ?? [];
     $additionalPairDeleteBehaviorRows = $_POST["additional_pair_delete_behavior"] ?? [];
+    $primaryPeerId = trim((string)($_POST["primary_peer_id"] ?? ""));
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
     $peerPort = max(1, min(65535, (int)($_POST["peer_port"] ?? 22)));
@@ -1067,6 +1187,7 @@ if ($action === "save-config") {
     $interval = max(0, min(3600, (int)($_POST["sync_interval"] ?? 10)));
     $deletePropagation = $deleteBehavior === "mirror_deletes";
     $shares = mirror_current_shares();
+    $linkedPeers = mirror_peer_list();
 
     $errors = [];
     if (!in_array($serverBType, ["local", "remote"], true)) {
@@ -1088,9 +1209,16 @@ if ($action === "save-config") {
         if ($remoteShare !== "" && preg_match("#[\\x00/]+#", $remoteShare)) {
             $errors[] = "Remote peer share name must be a single share name, not a path.";
         }
-        $peer = mirror_json_file($peerFile, []);
+        $peer = $primaryPeerId !== "" && isset($linkedPeers[$primaryPeerId]) ? $linkedPeers[$primaryPeerId] : [];
+        if (!$peer && count($linkedPeers) === 1) {
+            $peer = reset($linkedPeers);
+            $primaryPeerId = (string)($peer["id"] ?? "");
+        }
         $peerShares = is_array($peer["shares"] ?? null) ? $peer["shares"] : [];
         $linkedPeerHost = trim((string)($peer["host"] ?? ""));
+        if ($primaryPeerId === "" || !$peer) {
+            $errors[] = "Choose a linked remote server for the primary route.";
+        }
         if ($remoteShare !== "" && $peerShares && !in_array($remoteShare, $peerShares, true)) {
             $errors[] = "Remote peer share must be selected from the linked peer's current shares.";
         }
@@ -1100,6 +1228,8 @@ if ($action === "save-config") {
         if ($linkedPeerHost !== "") {
             $peerHost = $linkedPeerHost;
         }
+        $peerUser = (string)($peer["user"] ?? $peerUser);
+        $peerPort = max(1, min(65535, (int)($peer["port"] ?? $peerPort)));
         if ($peerHost === "") {
             $peerHost = (string)($existingConfig["server_b"]["host"] ?? "");
         }
@@ -1114,11 +1244,12 @@ if ($action === "save-config") {
     }
     $sharePairs = [];
     if (!$errors) {
-        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior);
+        $primaryPeerName = $serverBType === "remote" && is_array($peer ?? null) ? (string)($peer["name"] ?? "server-b") : "server-b";
+        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName);
         try {
             $seenLocalShares = [$serverAShare => true];
-            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText) as $pair) {
-                [$localShare, $otherShare, $pairAuthority, $pairDeleteBehavior] = $pair;
+            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText) as $pair) {
+                [$localShare, $otherShare, $pairPeerId, $pairAuthority, $pairDeleteBehavior] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
                     $errors[] = "Additional sync routes must use share names, not paths.";
                     continue;
@@ -1140,12 +1271,29 @@ if ($action === "save-config") {
                         $errors[] = "Additional pair cannot mirror a share to itself: $localShare";
                         continue;
                     }
-                } elseif ($peerShares && !in_array($otherShare, $peerShares, true)) {
-                    $errors[] = "Additional remote share must be selected from the linked peer's current shares: $otherShare";
-                    continue;
+                } else {
+                    if ($pairPeerId === "" && count($linkedPeers) === 1) {
+                        $onlyPeer = reset($linkedPeers);
+                        $pairPeerId = (string)($onlyPeer["id"] ?? "");
+                    }
+                    $pairPeer = $pairPeerId !== "" && isset($linkedPeers[$pairPeerId]) ? $linkedPeers[$pairPeerId] : null;
+                    if (!$pairPeer) {
+                        $errors[] = "Additional sync route needs a linked remote selected for $localShare.";
+                        continue;
+                    }
+                    $pairPeerShares = is_array($pairPeer["shares"] ?? null) ? $pairPeer["shares"] : [];
+                    if ($pairPeerShares && !in_array($otherShare, $pairPeerShares, true)) {
+                        $errors[] = "Additional remote share must be selected from " . ($pairPeer["name"] ?? "the linked peer") . ": $otherShare";
+                        continue;
+                    }
                 }
                 $seenLocalShares[$localShare] = true;
-                $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $pairAuthority, $pairDeleteBehavior);
+                if ($serverBType === "remote") {
+                    $pairPeer = $linkedPeers[$pairPeerId];
+                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, (string)$pairPeer["host"], (string)($pairPeer["user"] ?? "root"), (int)($pairPeer["port"] ?? 22), $pairAuthority, $pairDeleteBehavior, $pairPeerId, (string)($pairPeer["name"] ?? "server-b"));
+                } else {
+                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $pairAuthority, $pairDeleteBehavior);
+                }
             }
         } catch (Throwable $pairError) {
             $errors[] = $pairError->getMessage();
@@ -1162,7 +1310,8 @@ if ($action === "save-config") {
     $config = [
         "server_a" => ["name" => "server-a", "root" => $serverARoot],
         "server_b" => [
-            "name" => "server-b",
+            "name" => $serverBType === "remote" ? $primaryPeerName : "server-b",
+            "peer_id" => $serverBType === "remote" ? $primaryPeerId : "",
             "type" => $serverBType,
             "root" => $serverBRoot,
             "share" => $serverBConfiguredShare,
@@ -1198,7 +1347,7 @@ if ($action === "save-config") {
 }
 
 if ($action === "factory-reset") {
-    global $configDir, $configFile, $defaultConfigFile, $discoveryFile, $pendingInvitesFile, $peerFile, $sshDir;
+    global $configDir, $configFile, $defaultConfigFile, $discoveryFile, $pendingInvitesFile, $peerFile, $peersFile, $sshDir;
     if (empty($_POST["confirm_factory_reset"])) {
         mirror_write_action("Factory reset not run. Check Confirm factory reset first.");
         mirror_redirect();
@@ -1210,6 +1359,7 @@ if ($action === "factory-reset") {
         $discoveryFile,
         $pendingInvitesFile,
         $peerFile,
+        $peersFile,
         "$configDir/last-action.txt",
         "/var/log/mirror.log",
         "/var/log/mirror-pairing.log",
