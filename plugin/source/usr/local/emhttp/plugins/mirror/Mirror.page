@@ -14,12 +14,14 @@ $discoveryFile = "/boot/config/plugins/$plugin/discovered-peers.json";
 $pendingInvitesFile = "/boot/config/plugins/$plugin/pending-invites.json";
 $peerFile = "/boot/config/plugins/$plugin/peer.json";
 $peersFile = "/boot/config/plugins/$plugin/peers.json";
+$actionFile = "/boot/config/plugins/$plugin/last-action.txt";
 
 $version = is_file($versionFile) ? trim(file_get_contents($versionFile)) : "unknown";
 $installed = is_file("/usr/local/sbin/mirrorctl");
 $running = is_file($pidFile) && posix_kill((int)trim(file_get_contents($pidFile)), 0);
 $pairingRunning = is_file($pairPidFile) && posix_kill((int)trim(file_get_contents($pairPidFile)), 0);
 $logTail = is_file($logFile) ? shell_exec("tail -n 160 " . escapeshellarg($logFile)) : "";
+$lastAction = is_file($actionFile) ? trim((string)file_get_contents($actionFile)) : "";
 
 $defaultConfig = [
   "server_a" => ["name" => "server-a", "root" => "/mnt/user/mirror-test-a"],
@@ -111,6 +113,60 @@ function mirror_json_file($path, $default = []) {
   }
   $decoded = json_decode(file_get_contents($path), true);
   return is_array($decoded) ? $decoded : $default;
+}
+
+function mirror_format_rate($bytesPerSecond) {
+  $bytesPerSecond = max(0.0, (float)$bytesPerSecond);
+  if ($bytesPerSecond <= 0.1) {
+    return "Idle";
+  }
+  $mbps = ($bytesPerSecond * 8) / 1000000;
+  if ($mbps >= 10) {
+    return number_format($mbps, 0) . " Mbps";
+  }
+  if ($mbps >= 1) {
+    return number_format($mbps, 1) . " Mbps";
+  }
+  return number_format($mbps * 1000, 0) . " Kbps";
+}
+
+function mirror_network_interface() {
+  $iface = trim((string)shell_exec("ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if (\$i==\"dev\") {print \$(i+1); exit}}'"));
+  if ($iface !== "" && preg_match('/^[A-Za-z0-9_.:-]+$/', $iface)) {
+    return $iface;
+  }
+  foreach (glob("/sys/class/net/*") ?: [] as $path) {
+    $name = basename($path);
+    if ($name !== "lo") {
+      return $name;
+    }
+  }
+  return "";
+}
+
+function mirror_network_rates() {
+  $iface = mirror_network_interface();
+  $samplePath = "/tmp/mirror-net-sample.json";
+  if ($iface === "") {
+    return ["upload" => "Idle", "download" => "Idle", "iface" => ""];
+  }
+  $rxPath = "/sys/class/net/$iface/statistics/rx_bytes";
+  $txPath = "/sys/class/net/$iface/statistics/tx_bytes";
+  if (!is_file($rxPath) || !is_file($txPath)) {
+    return ["upload" => "Idle", "download" => "Idle", "iface" => $iface];
+  }
+  $now = microtime(true);
+  $rx = (int)trim((string)file_get_contents($rxPath));
+  $tx = (int)trim((string)file_get_contents($txPath));
+  $previous = mirror_json_file($samplePath, []);
+  $rates = ["upload" => "Measuring", "download" => "Measuring", "iface" => $iface];
+  if (($previous["iface"] ?? "") === $iface && !empty($previous["time"])) {
+    $elapsed = max(0.25, $now - (float)$previous["time"]);
+    $rates["download"] = mirror_format_rate(max(0, $rx - (int)($previous["rx"] ?? 0)) / $elapsed);
+    $rates["upload"] = mirror_format_rate(max(0, $tx - (int)($previous["tx"] ?? 0)) / $elapsed);
+  }
+  file_put_contents($samplePath, json_encode(["iface" => $iface, "time" => $now, "rx" => $rx, "tx" => $tx], JSON_UNESCAPED_SLASHES) . "\n");
+  return $rates;
 }
 
 function mirror_peer_list($peersFile, $peerFile) {
@@ -249,6 +305,7 @@ function mirror_route_state($allState, $routeKey) {
 }
 
 function mirror_route_summary($routeConfig, $routeState, $running) {
+  global $mirrorNetworkRates;
   if (!empty($routeConfig["paused"])) {
     return [
       "label" => mirror_route_label($routeConfig),
@@ -356,8 +413,8 @@ function mirror_route_summary($routeConfig, $routeState, $running) {
     "status" => $mirrorStatus,
     "last_file" => $lastPath !== "" ? $lastPath : ((string)($meta["current_path"] ?? "") ?: "No indexed files yet"),
     "last_status" => $lastStatus !== "" ? $lastStatus : ($phase !== "" ? str_replace("_", " ", $phase) : "none"),
-    "upload_rate" => $phase === "copying" ? "Active" : "Idle",
-    "download_rate" => $phase === "copying" ? "Active" : "Idle",
+    "upload_rate" => ($mirrorNetworkRates["upload"] ?? "Idle") !== "Idle" ? $mirrorNetworkRates["upload"] : ($phase === "copying" ? "Active" : "Idle"),
+    "download_rate" => ($mirrorNetworkRates["download"] ?? "Idle") !== "Idle" ? $mirrorNetworkRates["download"] : ($phase === "copying" ? "Active" : "Idle"),
     "conflicts" => $visibleConflictCount,
     "route_key" => "",
     "conflict_items" => array_slice(array_values($conflictItems), 0, 12),
@@ -429,6 +486,7 @@ $remoteSharesLoaded = array_sum(array_map(function ($peer) {
 $serverName = mirror_server_name();
 $mirrorState = mirror_json_file(mirror_state_path(), ["files" => [], "conflicts" => [], "pairs" => []]);
 $mirrorRoutes = mirror_configured_routes($config);
+$mirrorNetworkRates = mirror_network_rates();
 $mirrorRouteSummaries = [];
 foreach ($mirrorRoutes as $route) {
   $routeState = mirror_route_state($mirrorState, $route["key"]);
@@ -1740,6 +1798,10 @@ body .mirror-panel .mirror-shares-page {
         Early test build. Use disposable test shares only.
       </div>
 
+      <?php if ($lastAction !== ""): ?>
+        <div class="mirror-client-message"><?=mirror_value($lastAction)?></div>
+      <?php endif; ?>
+
       <div class="mirror-section">
         <h3>Control</h3>
         <?php if ($nodeRole === "managed_remote"): ?>
@@ -1798,21 +1860,24 @@ body .mirror-panel .mirror-shares-page {
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
                       <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <button type="submit" name="resolution" value="keep-local">Keep Local</button>
+                      <input type="hidden" name="resolution" value="keep-local">
+                      <button type="submit">Keep Local</button>
                     </form>
                     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
                       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
                       <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <button type="submit" name="resolution" value="keep-remote">Keep Remote</button>
+                      <input type="hidden" name="resolution" value="keep-remote">
+                      <button type="submit">Keep Remote</button>
                     </form>
                     <form method="post" action="/plugins/mirror/include/action.php" data-mirror-full-submit="1">
                       <input type="hidden" name="csrf_token" value="<?=mirror_value($var['csrf_token'] ?? '')?>">
                       <input type="hidden" name="action" value="resolve-conflict">
                       <input type="hidden" name="route_key" value="<?=mirror_value($routeSummary["route_key"] ?? "__default")?>">
                       <input type="hidden" name="conflict_path" value="<?=mirror_value($conflict["path"] ?? "")?>">
-                      <button type="submit" name="resolution" value="baseline">Accept Baseline</button>
+                      <input type="hidden" name="resolution" value="baseline">
+                      <button type="submit">Accept Baseline</button>
                     </form>
                   </div>
                 </div>
@@ -2881,6 +2946,22 @@ function bindMirrorPage() {
 }
 
 bindMirrorPage();
+<?php if ($mirrorTab === "status"): ?>
+if (window.mirrorStatusRefreshBound !== "1") {
+  window.mirrorStatusRefreshBound = "1";
+  window.setInterval(function () {
+    var panel = document.querySelector(".mirror-panel");
+    var modal = document.getElementById("mirror_update_modal");
+    if (!panel || panel.classList.contains("is-refreshing") || (modal && modal.classList.contains("is-open"))) {
+      return;
+    }
+    if (document.querySelector(".mirror-conflict-actions form:hover")) {
+      return;
+    }
+    refreshMirrorPanel(window.location.href, false).catch(function () {});
+  }, 3000);
+}
+<?php endif; ?>
 window.addEventListener("popstate", function () {
   refreshMirrorPanel(window.location.href, false).catch(function () {
     window.location.reload();

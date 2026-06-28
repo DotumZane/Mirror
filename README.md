@@ -8,7 +8,7 @@ Mirror is an early test Unraid plugin for pairing two Unraid servers on a local 
 
 Current status: planning and specification.
 
-Current version: `V1.00.27`
+Current version: `V1.00.28`
 
 ## Test Install On Unraid
 
