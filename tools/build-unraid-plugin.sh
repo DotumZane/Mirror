@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Removes viewport-width layout math that caused horizontal scrolling in Unraid Connect.
 - Keeps the daemon running when a remote peer responder is offline and watches sync-route local paths.
 - Removes the generated Mirror title strip and makes the Mirror UI full-bleed in the Unraid content area.
 - Extends the Shares page visual style across all Mirror settings tabs.
