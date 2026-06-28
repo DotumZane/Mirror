@@ -280,6 +280,11 @@ case "${1:-status}" in
     cd "$EMHTTP_DIR"
     "$PHP_BIN" "$RUNNER" test-peer --config "$CONFIG" | tee -a "$LOG"
     ;;
+  resolve-conflict)
+    ensure_config
+    cd "$EMHTTP_DIR"
+    "$PHP_BIN" "$RUNNER" resolve-conflict --config "$CONFIG" "${@:2}" | tee -a "$LOG"
+    ;;
   start)
     ensure_config
     if [ "$(node_role)" = "managed_remote" ]; then
@@ -362,7 +367,7 @@ case "${1:-status}" in
     echo "Mirror pairing responder restarted with pid $(cat "$PAIR_PID") on port $PAIR_PORT"
     ;;
   *)
-    echo "Usage: mirrorctl {status|run-once|initial-sync|start|stop|restart|test-peer|pair-start|pair-stop|pair-restart}" >&2
+    echo "Usage: mirrorctl {status|run-once|initial-sync|start|stop|restart|test-peer|resolve-conflict|pair-start|pair-stop|pair-restart}" >&2
     exit 2
     ;;
 esac

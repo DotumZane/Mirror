@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.26`
-- Current package: `packages/mirror-V1.00.26.txz`
+- Current version: `V1.00.27`
+- Current package: `packages/mirror-V1.00.27.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
@@ -42,7 +42,7 @@ What currently works:
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
 - All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
-- The latest fix shows sync conflicts directly on the Status page with route, path, reason, and recorded age.
+- The latest fix adds Status-page conflict resolution actions and marks active copy work in the route cards.
 
 Known weak spots / likely next pain:
 
@@ -56,16 +56,16 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.26` and confirm the Status page shows any conflict path and reason.
-2. Confirm rsync temp files such as `.filename.random` are not listed or copied back.
-3. Confirm route names still persist after Save Settings.
-4. Add conflict resolution controls once the conflict display is confirmed.
-5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
+1. Re-test after installing `V1.00.27` and resolve a disposable conflict with Keep Local, Keep Remote, or Accept Baseline.
+2. Confirm active copy work shows as copying/Active in the Status route card during a long transfer.
+3. Confirm rsync temp files such as `.filename.random` are not listed or copied back.
+4. Confirm route names still persist after Save Settings.
+5. Improve the Current Mirrors cards with real Mbps transfer-rate data from rsync progress or interface counters.
 
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.26`.
+2. On both Unraid servers, update Mirror to `V1.00.27`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.26
+V1.00.27
 ```
 
 Version source of truth:
@@ -598,6 +598,7 @@ Current release status:
 - `V1.00.24` speeds up large-share indexing with native local scans and batched progress checkpoints.
 - `V1.00.25` ignores Mirror internals and rsync receiver temp files during indexing.
 - `V1.00.26` shows conflict details directly on the Status page.
+- `V1.00.27` adds conflict resolution buttons and active copy status.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -815,7 +816,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.26.
+- Current version: V1.00.27.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -866,7 +867,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.26`.
+- Current version is `V1.00.27`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -876,7 +877,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.26`, confirm the Status page shows conflict details, and decide the first conflict resolution action.
+- Update both Unraid servers to `V1.00.27`, test conflict resolution on disposable data, and verify active copy status during a large transfer.
 
 ### Chat Handoff
 
@@ -889,11 +890,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.26`
-- Current package: `packages/mirror-V1.00.26.txz`
+- Current version: `V1.00.27`
+- Current package: `packages/mirror-V1.00.27.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
-- Next suggested task: install/update `V1.00.26`, open Status, and confirm conflict details are visible without using the log.
+- Next suggested task: install/update `V1.00.27`, resolve the visible conflict, and confirm it clears from Status.
 
 ### Tracker Update Template
 
@@ -2122,3 +2123,13 @@ Next suggested task:
 - New decisions: Conflict visibility comes before conflict resolution controls; Mirror should show what needs attention before offering destructive or winner-picking actions.
 - Open questions: Confirm the conflict shown on the Current Mirrors card appears in the new Conflicts section after updating.
 - Next suggested task: Add explicit conflict actions: keep local, keep remote, ignore/rebaseline, or open folder/log context.
+
+#### 2026-06-27 - Conflict Resolution Actions
+
+- Task completed: Added UI and runner support for resolving visible conflicts.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.27.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `plugin/source/usr/local/emhttp/plugins/mirror/include/action.php`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `plugin/source/usr/local/sbin/mirrorctl`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Each conflict now offers Keep Local, Keep Remote, and Accept Baseline actions. The runner can resolve a scoped route conflict, update state, and copy the chosen side when needed. Route cards now mark long copy work as Active/Copying instead of leaving the transfer fields as Idle.
+- New decisions: Baseline acceptance is allowed for disposable/test cases where both copies intentionally differ and the user wants Mirror to stop warning without copying either side.
+- Open questions: Real Mbps telemetry still needs a separate implementation using rsync progress parsing or interface counter sampling.
+- Next suggested task: Push to GitHub, update both servers to `V1.00.27`, resolve the `haos_ova-15.2.HOME--generateqcow2` conflict, and verify it clears.

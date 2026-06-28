@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Adds Status-page conflict resolution actions and marks active copy work in the route cards.
 - Shows sync conflicts directly on the Status page with path, route, and reason.
 - Ignores Mirror internals and rsync receiver temp files during indexing.
 - Speeds up indexing with native local file scans and batched progress checkpoints.

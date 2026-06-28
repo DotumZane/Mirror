@@ -1503,6 +1503,33 @@ if ($action === "update-plugin") {
     mirror_redirect();
 }
 
+if ($action === "resolve-conflict") {
+    $routeKey = trim((string)($_POST["route_key"] ?? "__default"));
+    $path = trim((string)($_POST["conflict_path"] ?? ""));
+    $resolution = trim((string)($_POST["resolution"] ?? ""));
+    if ($routeKey === "") {
+        $routeKey = "__default";
+    }
+    if ($path === "" || !in_array($resolution, ["keep-local", "keep-remote", "baseline"], true)) {
+        mirror_write_action("Conflict resolution failed: missing path or invalid resolution.");
+        mirror_redirect();
+    }
+    $cmd = "/usr/local/sbin/mirrorctl resolve-conflict --route-key "
+        . escapeshellarg($routeKey)
+        . " --path "
+        . escapeshellarg($path)
+        . " --resolution "
+        . escapeshellarg($resolution)
+        . " 2>&1";
+    exec($cmd, $output, $code);
+    $message = implode("\n", $output);
+    if ($code !== 0) {
+        $message = "Conflict resolution failed:\n" . $message;
+    }
+    mirror_write_action($message);
+    mirror_redirect();
+}
+
 $allowed = ["status", "run-once", "initial-sync", "start", "stop", "test-peer"];
 if (!in_array($action, $allowed, true)) {
     $action = "status";

@@ -4,7 +4,7 @@ declare(strict_types=1);
 class MirrorPeerUnavailable extends RuntimeException {}
 
 function usage(): int {
-    fwrite(STDERR, "Usage: mirror_runner.php {interval|run-once|initial-sync|daemon|test-peer} --config <path> [--interval <seconds>]\n");
+    fwrite(STDERR, "Usage: mirror_runner.php {interval|run-once|initial-sync|daemon|test-peer|resolve-conflict} --config <path> [--interval <seconds>] [--route-key <key>] [--path <relative-path>] [--resolution keep-local|keep-remote|baseline]\n");
     return 2;
 }
 
@@ -14,6 +14,13 @@ function option_value(array $args, string $name, ?string $default = null): ?stri
         return $default;
     }
     return $args[$index + 1];
+}
+
+function remove_conflict_entries(array &$state, string $rel): void {
+    $state["conflicts"] = array_values(array_filter(
+        is_array($state["conflicts"] ?? null) ? $state["conflicts"] : [],
+        fn($entry) => !is_array($entry) || (string)($entry["path"] ?? "") !== $rel
+    ));
 }
 
 function load_config(string $path): array {
@@ -469,6 +476,83 @@ function copy_remote_to_local(array $config, string $configPath, string $sourceR
     $summary["copied"]++;
 }
 
+function resolve_conflict(string $configPath, string $routeKey, string $rel, string $resolution): string {
+    $rel = trim($rel, "/");
+    if ($rel === "" || is_ignored_sync_path($rel)) {
+        throw new RuntimeException("invalid conflict path");
+    }
+    if (!in_array($resolution, ["keep-local", "keep-remote", "baseline"], true)) {
+        throw new RuntimeException("invalid conflict resolution: $resolution");
+    }
+    $config = load_config($configPath);
+    $route = null;
+    foreach (configured_pair_configs($config) as $candidate) {
+        if ((string)$candidate["key"] === $routeKey) {
+            $route = $candidate;
+            break;
+        }
+    }
+    if ($route === null) {
+        throw new RuntimeException("sync route not found: $routeKey");
+    }
+
+    $routeConfig = $route["config"];
+    $stateScope = load_scoped_state($configPath, $routeKey);
+    $allState = $stateScope["all"];
+    $state = $stateScope["current"];
+    $aRoot = rtrim((string)$routeConfig["server_a"]["root"], "/");
+    $bRoot = rtrim((string)$routeConfig["server_b"]["root"], "/");
+    $summary = empty_summary();
+
+    if (endpoint_is_remote($routeConfig)) {
+        if ($resolution === "keep-local") {
+            log_route_action($routeConfig, "resolve conflict keep local", $rel, "copying local to remote");
+            $local = state_for($aRoot . "/" . $rel);
+            if (!$local["exists"]) {
+                throw new RuntimeException("local conflict file not found: $rel");
+            }
+            copy_local_to_remote($routeConfig, $configPath, $aRoot, $bRoot, $rel, $summary);
+            record_file_states($state, $rel, $local, $local, "synced");
+        } elseif ($resolution === "keep-remote") {
+            log_route_action($routeConfig, "resolve conflict keep remote", $rel, "copying remote to local");
+            $remoteScan = scan_remote_files($routeConfig, $configPath, $bRoot);
+            $remote = remote_state_for($remoteScan, $rel);
+            if (!$remote["exists"]) {
+                throw new RuntimeException("remote conflict file not found: $rel");
+            }
+            copy_remote_to_local($routeConfig, $configPath, $bRoot, $aRoot, $rel, $summary);
+            record_file_states($state, $rel, $remote, $remote, "synced");
+        } else {
+            log_route_action($routeConfig, "resolve conflict baseline", $rel, "accepting current signatures");
+            $local = state_for($aRoot . "/" . $rel);
+            $remote = remote_state_for(scan_remote_files($routeConfig, $configPath, $bRoot), $rel);
+            record_file_states($state, $rel, $local, $remote, "synced");
+        }
+    } else {
+        if ($resolution === "keep-local") {
+            log_route_action($routeConfig, "resolve conflict keep server-a", $rel, "copying server-a to server-b");
+            if (!state_for($aRoot . "/" . $rel)["exists"]) {
+                throw new RuntimeException("server-a conflict file not found: $rel");
+            }
+            copy_file($routeConfig, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
+        } elseif ($resolution === "keep-remote") {
+            log_route_action($routeConfig, "resolve conflict keep server-b", $rel, "copying server-b to server-a");
+            if (!state_for($bRoot . "/" . $rel)["exists"]) {
+                throw new RuntimeException("server-b conflict file not found: $rel");
+            }
+            copy_file($routeConfig, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
+        } else {
+            log_route_action($routeConfig, "resolve conflict baseline", $rel, "accepting current signatures");
+        }
+        record_file($state, $rel, $aRoot, $bRoot, "synced");
+    }
+
+    remove_conflict_entries($state, $rel);
+    mark_progress($state, "complete", count($state["files"]), count($state["files"]), $rel);
+    save_scoped_state($configPath, $routeKey, $allState, $state);
+    return "resolved conflict: $rel using $resolution";
+}
+
 function initial_sync(string $configPath): array {
     $config = load_config($configPath);
     if (node_is_managed_remote($config)) {
@@ -665,6 +749,11 @@ function should_checkpoint_progress(int $processed, int $total, float &$lastChec
     return false;
 }
 
+function mark_copying_progress(string $configPath, string $stateKey, array &$allState, array &$state, int $processed, int $total, string $rel): void {
+    mark_progress($state, "copying", $processed, $total, $rel);
+    save_scoped_state($configPath, $stateKey, $allState, $state);
+}
+
 function pair_key(array $pair): string {
     $a = (string)($pair["server_a"]["root"] ?? "");
     $b = (string)($pair["server_b"]["root"] ?? "");
@@ -776,10 +865,12 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
             if (!$prev) {
                 if ($a["exists"] && !$b["exists"]) {
                     log_route_action($config, "copy server-a to server-b", $rel, "new on server-a");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($b["exists"] && !$a["exists"]) {
                     log_route_action($config, "copy server-b to server-a", $rel, "new on server-b");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($a["exists"] && $b["exists"]) {
@@ -791,10 +882,12 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
             if ($a["exists"] && $b["exists"]) {
                 if ($aChanged && !$bChanged) {
                     log_route_action($config, "copy server-a to server-b", $rel, "server-a changed");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($bChanged && !$aChanged) {
                     log_route_action($config, "copy server-b to server-a", $rel, "server-b changed");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 } elseif ($aChanged && $bChanged) {
@@ -811,6 +904,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
                     record_file($state, $rel, $aRoot, $bRoot, "deleted");
                 } else {
                     log_route_action($config, "copy server-a to server-b", $rel, "missing on server-b");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-a", $aRoot, "server-b", $bRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 }
@@ -824,6 +918,7 @@ function sync_once_pair(string $configPath, array $config, string $stateKey): ar
                     record_file($state, $rel, $aRoot, $bRoot, "deleted");
                 } else {
                     log_route_action($config, "copy server-b to server-a", $rel, "missing on server-a");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_file($config, "server-b", $bRoot, "server-a", $aRoot, $rel, $summary);
                     record_file($state, $rel, $aRoot, $bRoot, "synced");
                 }
@@ -923,10 +1018,12 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
             if (!$prev) {
                 if ($a["exists"] && !$b["exists"]) {
                     log_route_action($config, "copy local to remote", $rel, "new locally");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 } elseif ($b["exists"] && !$a["exists"]) {
                     log_route_action($config, "copy remote to local", $rel, "new remotely");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 } elseif ($a["exists"] && $b["exists"]) {
@@ -938,11 +1035,13 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
             if ($a["exists"] && $b["exists"]) {
                 if ($aChanged && !$bChanged) {
                     log_route_action($config, "copy local to remote", $rel, "local changed");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     trash_remote_file($config, $configPath, $bRoot, $rel, "overwritten", $summary);
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 } elseif ($bChanged && !$aChanged) {
                     log_route_action($config, "copy remote to local", $rel, "remote changed");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 } elseif ($aChanged && $bChanged) {
@@ -959,6 +1058,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
                     record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
                 } else {
                     log_route_action($config, "copy local to remote", $rel, "missing remotely");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_local_to_remote($config, $configPath, $aRoot, $bRoot, $rel, $summary);
                     record_file_states($state, $rel, $a, $a, "synced");
                 }
@@ -972,6 +1072,7 @@ function sync_once_remote(string $configPath, array $config, string $stateKey = 
                     record_file_states($state, $rel, ["exists" => false, "sig" => null], ["exists" => false, "sig" => null], "deleted");
                 } else {
                     log_route_action($config, "copy remote to local", $rel, "missing locally");
+                    mark_copying_progress($configPath, $stateKey, $allState, $state, $processedPaths, $totalPaths, $rel);
                     copy_remote_to_local($config, $configPath, $bRoot, $aRoot, $rel, $summary);
                     record_file_states($state, $rel, $b, $b, "synced");
                 }
@@ -1031,6 +1132,13 @@ try {
     }
     if ($command === "test-peer") {
         echo test_peer((string)$configPath) . "\n";
+        exit(0);
+    }
+    if ($command === "resolve-conflict") {
+        $routeKey = (string)option_value($args, "--route-key", "__default");
+        $rel = (string)option_value($args, "--path", "");
+        $resolution = (string)option_value($args, "--resolution", "");
+        echo resolve_conflict((string)$configPath, $routeKey, $rel, $resolution) . "\n";
         exit(0);
     }
     if ($command === "daemon") {
