@@ -1178,6 +1178,7 @@ if ($action === "save-config") {
     $additionalPairPeerRows = $_POST["additional_pair_peer_id"] ?? [];
     $additionalPairAuthorityRows = $_POST["additional_pair_authority"] ?? [];
     $additionalPairDeleteBehaviorRows = $_POST["additional_pair_delete_behavior"] ?? [];
+    $routesFromList = (string)($_POST["routes_from_list"] ?? "") === "1";
     $primaryPeerId = trim((string)($_POST["primary_peer_id"] ?? ""));
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
     $peerUser = trim((string)($_POST["peer_user"] ?? "root"));
@@ -1245,30 +1246,39 @@ if ($action === "save-config") {
     $sharePairs = [];
     if (!$errors) {
         $primaryPeerName = $serverBType === "remote" && is_array($peer ?? null) ? (string)($peer["name"] ?? "server-b") : "server-b";
-        $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName);
         try {
-            $seenLocalShares = [$serverAShare => true];
-            foreach (mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText) as $pair) {
+            $rowPairs = mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText);
+            if (!$routesFromList || !$rowPairs) {
+                $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName);
+            }
+            $seenLocalShares = [];
+            foreach ($sharePairs as $existingPair) {
+                $existingLocalShare = (string)($existingPair["server_a"]["share"] ?? "");
+                if ($existingLocalShare !== "") {
+                    $seenLocalShares[$existingLocalShare] = true;
+                }
+            }
+            foreach ($rowPairs as $pair) {
                 [$localShare, $otherShare, $pairPeerId, $pairAuthority, $pairDeleteBehavior] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
-                    $errors[] = "Additional sync routes must use share names, not paths.";
+                    $errors[] = "Sync routes must use share names, not paths.";
                     continue;
                 }
                 if (!isset($shares[$localShare])) {
-                    $errors[] = "Additional local share does not exist: $localShare";
+                    $errors[] = "Sync route local share does not exist: $localShare";
                     continue;
                 }
                 if (isset($seenLocalShares[$localShare])) {
-                    $errors[] = "Additional sync route repeats local share: $localShare";
+                    $errors[] = "Sync route repeats local share: $localShare";
                     continue;
                 }
                 if ($serverBType === "local") {
                     if (!isset($shares[$otherShare])) {
-                        $errors[] = "Additional second local share does not exist: $otherShare";
+                        $errors[] = "Sync route second local share does not exist: $otherShare";
                         continue;
                     }
                     if ($localShare === $otherShare) {
-                        $errors[] = "Additional pair cannot mirror a share to itself: $localShare";
+                        $errors[] = "Sync route cannot mirror a share to itself: $localShare";
                         continue;
                     }
                 } else {
@@ -1278,12 +1288,12 @@ if ($action === "save-config") {
                     }
                     $pairPeer = $pairPeerId !== "" && isset($linkedPeers[$pairPeerId]) ? $linkedPeers[$pairPeerId] : null;
                     if (!$pairPeer) {
-                        $errors[] = "Additional sync route needs a linked remote selected for $localShare.";
+                        $errors[] = "Sync route needs a linked remote selected for $localShare.";
                         continue;
                     }
                     $pairPeerShares = is_array($pairPeer["shares"] ?? null) ? $pairPeer["shares"] : [];
                     if ($pairPeerShares && !in_array($otherShare, $pairPeerShares, true)) {
-                        $errors[] = "Additional remote share must be selected from " . ($pairPeer["name"] ?? "the linked peer") . ": $otherShare";
+                        $errors[] = "Sync route remote share must be selected from " . ($pairPeer["name"] ?? "the linked peer") . ": $otherShare";
                         continue;
                     }
                 }
@@ -1303,6 +1313,21 @@ if ($action === "save-config") {
     if ($errors) {
         mirror_write_action("Settings not saved:\n" . implode("\n", $errors));
         mirror_redirect();
+    }
+
+    if ($routesFromList && $sharePairs) {
+        $firstPair = $sharePairs[0];
+        $serverAShare = (string)($firstPair["server_a"]["share"] ?? $serverAShare);
+        $serverBConfiguredShare = (string)($firstPair["server_b"]["share"] ?? $serverBConfiguredShare);
+        $serverBRoot = (string)($firstPair["server_b"]["root"] ?? $serverBRoot);
+        $peerHost = (string)($firstPair["server_b"]["host"] ?? $peerHost);
+        $peerUser = (string)($firstPair["server_b"]["user"] ?? $peerUser);
+        $peerPort = max(1, min(65535, (int)($firstPair["server_b"]["port"] ?? $peerPort)));
+        $primaryPeerId = (string)($firstPair["server_b"]["peer_id"] ?? $primaryPeerId);
+        $primaryPeerName = (string)($firstPair["server_b"]["name"] ?? $primaryPeerName);
+        $authority = (string)($firstPair["authority"] ?? $authority);
+        $deleteBehavior = (string)($firstPair["delete_behavior"] ?? $deleteBehavior);
+        $deletePropagation = $deleteBehavior === "mirror_deletes";
     }
 
     $serverARoot = "/mnt/user/" . $serverAShare;

@@ -1,5 +1,6 @@
 Menu="Utilities"
 Title="Mirror"
+Icon="icon.png"
 Tag="sync"
 ---
 <?php
@@ -302,8 +303,8 @@ $serverBShare = mirror_share_name_from_path($config["server_b"]["root"]);
 $serverBType = $config["server_b"]["type"] ?? "local";
 $deleteBehavior = $config["delete_behavior"] ?? (!empty($config["delete_propagation"]) ? "mirror_deletes" : "restore_missing");
 $configuredSharePairs = is_array($config["share_pairs"] ?? null) ? array_values($config["share_pairs"]) : [];
-$additionalSharePairs = [];
-foreach (array_slice($configuredSharePairs, 1) as $pair) {
+$syncRouteRows = [];
+foreach ($configuredSharePairs as $pair) {
   if (!is_array($pair)) {
     continue;
   }
@@ -318,7 +319,7 @@ foreach (array_slice($configuredSharePairs, 1) as $pair) {
     if (!in_array($pairDeleteBehavior, ["restore_missing", "mirror_deletes"], true)) {
       $pairDeleteBehavior = "restore_missing";
     }
-    $additionalSharePairs[] = [
+    $syncRouteRows[] = [
       "local" => $pairAShare,
       "other" => $pairBShare,
       "peer_id" => (string)($pair["server_b"]["peer_id"] ?? ""),
@@ -1625,8 +1626,13 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
         <div class="mirror-shares-layout" style="<?=mirror_value($shareLayoutStyle)?>">
           <div class="mirror-shares-main" style="<?=mirror_value($shareMainStyle)?>">
             <div class="mirror-route-config-card" style="<?=mirror_value($shareCardStyle)?>">
-              <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Sync Route Configuration</h4>
-              <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0 0 16px;">Set up how this server mirrors files with linked peers.</p>
+              <div style="align-items:flex-start;display:flex;gap:16px;justify-content:space-between;margin:0 0 16px;">
+                <div>
+                  <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Sync Route Configuration</h4>
+                  <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Set up a route, then add it to the Sync Routes list below.</p>
+                </div>
+                <button type="button" data-add-share-pair style="<?=mirror_value($sharePrimaryButtonStyle)?>"><i class="fa fa-plus" aria-hidden="true"></i> Add Sync Route</button>
+              </div>
 
               <div class="mirror-mode-switch" role="group" aria-label="Mirror mode" style="<?=mirror_value($shareModeStyle)?>">
                 <input id="mirror_mode_local" type="radio" name="mirror_mode" value="local" <?=$serverBType === "local" ? "checked" : ""?>>
@@ -1713,13 +1719,13 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
             <div class="mirror-route-table-card mirror-share-pairs-extra" data-share-pairs style="<?=mirror_value($shareCardStyle)?>">
               <div class="mirror-shares-header" style="align-items:flex-start;display:flex;gap:16px;justify-content:space-between;margin:0 0 16px;">
                 <div>
-                  <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Additional Sync Routes</h4>
-                  <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Add more routes to sync additional shares or destinations.</p>
+                  <h4 style="color:#fff;font-size:18px;font-weight:800;line-height:1.2;margin:0 0 6px;">Sync Routes</h4>
+                  <p style="color:rgba(232,237,242,.72);font-size:13px;line-height:1.45;margin:0;">Routes in this list are saved when you click Save Settings.</p>
                 </div>
-                <button type="button" data-add-share-pair style="<?=mirror_value($shareButtonStyle)?>"><i class="fa fa-plus" aria-hidden="true"></i> Add Sync Route</button>
               </div>
+              <input type="hidden" name="routes_from_list" value="1">
               <div class="mirror-share-pair-list" data-share-pair-list style="display:grid;gap:10px;margin-top:10px;">
-                <?php foreach ($additionalSharePairs as $index => $pair): ?>
+                <?php foreach ($syncRouteRows as $index => $pair): ?>
                   <div class="mirror-share-pair-row" data-share-pair-row>
                     <div class="mirror-field">
                       <label for="additional_pair_local_<?=mirror_value($index)?>">Local Share</label>
@@ -1780,11 +1786,14 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                         <option value="mirror_deletes" <?=$pair["delete_behavior"] === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
                       </select>
                     </div>
-                    <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
+                    <div style="display:flex;gap:8px;align-items:end;">
+                      <button class="mirror-share-pair-edit" type="button" data-edit-share-pair style="<?=mirror_value($shareButtonStyle)?>">Edit</button>
+                      <button class="mirror-share-pair-remove" type="button" data-remove-share-pair style="<?=mirror_value($shareButtonStyle)?>">Remove</button>
+                    </div>
                   </div>
                 <?php endforeach; ?>
               </div>
-              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:block;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;" <?=$additionalSharePairs ? "hidden" : ""?>><i class="fa fa-files-o" aria-hidden="true"></i><br>No additional routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Add another sync route to mirror more shares.</span></p>
+              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:block;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;" <?=$syncRouteRows ? "hidden" : ""?>><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
@@ -1847,7 +1856,10 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                       <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
                     </select>
                   </div>
-                  <button class="mirror-share-pair-remove" type="button" data-remove-share-pair>Remove</button>
+                  <div style="display:flex;gap:8px;align-items:end;">
+                    <button class="mirror-share-pair-edit" type="button" data-edit-share-pair style="<?=mirror_value($shareButtonStyle)?>">Edit</button>
+                    <button class="mirror-share-pair-remove" type="button" data-remove-share-pair style="<?=mirror_value($shareButtonStyle)?>">Remove</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2102,9 +2114,44 @@ function bindMirrorPage() {
     container.dataset.sharePairsBound = "1";
     var list = container.querySelector('[data-share-pair-list]');
     var template = container.querySelector('[data-share-pair-template]');
-    var addButton = container.querySelector('[data-add-share-pair]');
+    var addButton = document.querySelector('[data-add-share-pair]');
+    function setControlValue(selector, value) {
+      var control = document.querySelector(selector);
+      if (control) {
+        control.value = value || '';
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    function rowControl(row, name) {
+      return row.querySelector('[name="' + name + '"]');
+    }
+    function setRowControl(row, name, value) {
+      var control = rowControl(row, name);
+      if (control) {
+        control.value = value || '';
+      }
+    }
+    function controlValue(selector) {
+      var control = document.querySelector(selector);
+      return control ? control.value : '';
+    }
+    function rowValue(row, name) {
+      var control = rowControl(row, name);
+      return control ? control.value : '';
+    }
     if (addButton && list && template) {
       addButton.addEventListener('click', function () {
+        var remote = selectedMode() === 'remote';
+        var localShare = controlValue('#server_a_share');
+        var otherShare = remote ? controlValue('#remote_share') : controlValue('#server_b_share');
+        if (!localShare || !otherShare) {
+          alert('Choose both sides of the sync route before adding it.');
+          return;
+        }
+        if (remote && !controlValue('#primary_peer_id')) {
+          alert('Choose the linked remote server before adding this route.');
+          return;
+        }
         var row = template.cloneNode(true);
         row.removeAttribute('data-share-pair-template');
         row.setAttribute('data-share-pair-row', '1');
@@ -2114,12 +2161,48 @@ function bindMirrorPage() {
         row.querySelectorAll('input[type="text"]').forEach(function (input) {
           input.value = '';
         });
+        setRowControl(row, 'additional_pair_local[]', localShare);
+        setRowControl(row, 'additional_pair_other_local[]', remote ? '' : otherShare);
+        setRowControl(row, 'additional_pair_peer_id[]', remote ? controlValue('#primary_peer_id') : '');
+        setRowControl(row, 'additional_pair_other_remote[]', remote ? otherShare : '');
+        setRowControl(row, 'additional_pair_authority[]', controlValue('#authority'));
+        setRowControl(row, 'additional_pair_delete_behavior[]', controlValue('#delete_behavior'));
         list.appendChild(row);
         syncModeVisibility();
         syncSharePairEmptyState(container);
       });
     }
     container.addEventListener('click', function (event) {
+      var editButton = event.target.closest('[data-edit-share-pair]');
+      if (editButton) {
+        var editRow = editButton.closest('[data-share-pair-row]');
+        if (!editRow) {
+          return;
+        }
+        var peerId = rowValue(editRow, 'additional_pair_peer_id[]');
+        var remoteShareValue = rowValue(editRow, 'additional_pair_other_remote[]');
+        var localOtherValue = rowValue(editRow, 'additional_pair_other_local[]');
+        var remote = !!(peerId || remoteShareValue);
+        setControlValue('input[name="mirror_mode"][value="' + (remote ? 'remote' : 'local') + '"]', remote ? 'remote' : 'local');
+        var modeInput = document.querySelector('input[name="mirror_mode"][value="' + (remote ? 'remote' : 'local') + '"]');
+        if (modeInput) {
+          modeInput.checked = true;
+        }
+        setControlValue('#server_a_share', rowValue(editRow, 'additional_pair_local[]'));
+        setControlValue('#server_b_share', localOtherValue);
+        setControlValue('#primary_peer_id', peerId);
+        setControlValue('#remote_share', remoteShareValue);
+        setControlValue('#authority', rowValue(editRow, 'additional_pair_authority[]'));
+        setControlValue('#delete_behavior', rowValue(editRow, 'additional_pair_delete_behavior[]'));
+        editRow.remove();
+        syncModeVisibility();
+        syncSharePairEmptyState(container);
+        var editor = document.querySelector('.mirror-route-config-card');
+        if (editor && editor.scrollIntoView) {
+          editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        return;
+      }
       var removeButton = event.target.closest('[data-remove-share-pair]');
       if (!removeButton) {
         return;

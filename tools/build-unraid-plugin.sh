@@ -40,10 +40,11 @@ cat > "${ROOT}/mirror.plg" <<PLG
   <!ENTITY md5        "${MD5}">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
-        launch="Settings/Mirror" pluginURL="&pluginURL;"
+        launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Adds the Mirror icon to the plugin package and settings page metadata.
 - Uses Mirror-owned SSH known_hosts for linked peers.
 - Keeps real tab URLs with soft navigation.
 - Not safe for important shares yet.
