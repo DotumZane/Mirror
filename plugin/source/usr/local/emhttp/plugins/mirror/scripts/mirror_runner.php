@@ -436,6 +436,10 @@ function initial_sync(string $configPath): array {
     }
     $summary = empty_summary();
     foreach (configured_pair_configs($config) as $pairConfig) {
+        if (!empty($pairConfig["config"]["paused"])) {
+            log_event("route " . route_label($pairConfig["config"]) . ": paused, skipping initial sync");
+            continue;
+        }
         $pairSummary = initial_sync_pair($configPath, $pairConfig["config"], $pairConfig["key"]);
         add_summary($summary, $pairSummary);
     }
@@ -630,6 +634,7 @@ function configured_pair_configs(array $config): array {
         } elseif (isset($pair["delete_propagation"])) {
             $pairConfig["delete_propagation"] = !empty($pair["delete_propagation"]);
         }
+        $pairConfig["paused"] = !empty($pair["paused"]);
         $configs[] = ["key" => pair_key($pairConfig), "config" => $pairConfig];
     }
     return $configs ?: [["key" => "__default", "config" => $config]];
@@ -785,6 +790,10 @@ function sync_once(string $configPath): array {
     }
     $summary = empty_summary();
     foreach (configured_pair_configs($config) as $pairConfig) {
+        if (!empty($pairConfig["config"]["paused"])) {
+            log_event("route " . route_label($pairConfig["config"]) . ": paused, skipping sync");
+            continue;
+        }
         $pairSummary = endpoint_is_remote($pairConfig["config"])
             ? sync_once_remote($configPath, $pairConfig["config"], $pairConfig["key"])
             : sync_once_pair($configPath, $pairConfig["config"], $pairConfig["key"]);

@@ -194,6 +194,7 @@ function mirror_configured_routes($config) {
       $routeConfig["delete_behavior"] = $pair["delete_behavior"];
       $routeConfig["delete_propagation"] = $pair["delete_behavior"] === "mirror_deletes";
     }
+    $routeConfig["paused"] = !empty($pair["paused"]);
     $routes[] = ["key" => mirror_route_key($routeConfig), "config" => $routeConfig];
   }
   return $routes ?: [["key" => "__default", "config" => $config]];
@@ -230,6 +231,18 @@ function mirror_route_state($allState, $routeKey) {
 }
 
 function mirror_route_summary($routeConfig, $routeState, $running) {
+  if (!empty($routeConfig["paused"])) {
+    return [
+      "label" => mirror_route_label($routeConfig),
+      "index" => "Paused",
+      "status" => "Paused",
+      "last_file" => "Route is paused",
+      "last_status" => "paused",
+      "upload_rate" => "Paused",
+      "download_rate" => "Paused",
+      "conflicts" => 0,
+    ];
+  }
   $files = is_array($routeState["files"] ?? null) ? $routeState["files"] : [];
   $conflicts = is_array($routeState["conflicts"] ?? null) ? $routeState["conflicts"] : [];
   $meta = is_array($routeState["_meta"] ?? null) ? $routeState["_meta"] : [];
@@ -325,6 +338,7 @@ foreach ($configuredSharePairs as $pair) {
       "peer_id" => (string)($pair["server_b"]["peer_id"] ?? ""),
       "authority" => $pairAuthority,
       "delete_behavior" => $pairDeleteBehavior,
+      "paused" => !empty($pair["paused"]),
     ];
   }
 }
@@ -1786,6 +1800,13 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                         <option value="mirror_deletes" <?=$pair["delete_behavior"] === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
                       </select>
                     </div>
+                    <div class="mirror-field">
+                      <label for="additional_pair_paused_<?=mirror_value($index)?>">Status</label>
+                      <select id="additional_pair_paused_<?=mirror_value($index)?>" name="additional_pair_paused[]">
+                        <option value="0" <?=empty($pair["paused"]) ? "selected" : ""?>>Active</option>
+                        <option value="1" <?=!empty($pair["paused"]) ? "selected" : ""?>>Paused</option>
+                      </select>
+                    </div>
                     <div style="display:flex;gap:8px;align-items:end;">
                       <button class="mirror-share-pair-edit" type="button" data-edit-share-pair style="<?=mirror_value($shareButtonStyle)?>">Edit</button>
                       <button class="mirror-share-pair-remove" type="button" data-remove-share-pair style="<?=mirror_value($shareButtonStyle)?>">Remove</button>
@@ -1793,7 +1814,7 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                   </div>
                 <?php endforeach; ?>
               </div>
-              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:block;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;" <?=$syncRouteRows ? "hidden" : ""?>><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
+              <p class="mirror-share-pair-empty" data-share-pair-empty style="background:rgba(255,255,255,.025);border:1px dashed rgba(255,255,255,.13);border-radius:8px;color:rgba(232,237,242,.72);display:<?=$syncRouteRows ? "none" : "block"?>;margin:10px auto 0;max-width:420px;padding:22px;text-align:center;"><i class="fa fa-files-o" aria-hidden="true"></i><br>No sync routes configured<br><span class="mirror-help" style="<?=mirror_value($shareHelpStyle)?>">Use the configuration above, then click Add Sync Route.</span></p>
 
               <div hidden>
                 <div class="mirror-share-pair-row" data-share-pair-template>
@@ -1854,6 +1875,13 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
                     <select name="additional_pair_delete_behavior[]">
                       <option value="restore_missing" <?=$deleteBehavior === "restore_missing" ? "selected" : ""?>>Restore missing files</option>
                       <option value="mirror_deletes" <?=$deleteBehavior === "mirror_deletes" ? "selected" : ""?>>Mirror deletes after trash</option>
+                    </select>
+                  </div>
+                  <div class="mirror-field">
+                    <label>Status</label>
+                    <select name="additional_pair_paused[]">
+                      <option value="0" selected>Active</option>
+                      <option value="1">Paused</option>
                     </select>
                   </div>
                   <div style="display:flex;gap:8px;align-items:end;">
@@ -2103,7 +2131,9 @@ function bindMirrorPage() {
     }
     var empty = container.querySelector('[data-share-pair-empty]');
     if (empty) {
-      empty.hidden = !!container.querySelector('[data-share-pair-row]');
+      var hasRows = !!container.querySelector('[data-share-pair-row]');
+      empty.hidden = hasRows;
+      empty.style.display = hasRows ? 'none' : 'block';
     }
   }
 
@@ -2167,6 +2197,7 @@ function bindMirrorPage() {
         setRowControl(row, 'additional_pair_other_remote[]', remote ? otherShare : '');
         setRowControl(row, 'additional_pair_authority[]', controlValue('#authority'));
         setRowControl(row, 'additional_pair_delete_behavior[]', controlValue('#delete_behavior'));
+        setRowControl(row, 'additional_pair_paused[]', '0');
         list.appendChild(row);
         syncModeVisibility();
         syncSharePairEmptyState(container);

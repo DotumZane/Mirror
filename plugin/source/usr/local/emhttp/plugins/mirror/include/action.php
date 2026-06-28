@@ -645,7 +645,7 @@ function mirror_normalize_delete_behavior($deleteBehavior) {
     return in_array($deleteBehavior, ["restore_missing", "mirror_deletes"], true) ? $deleteBehavior : "restore_missing";
 }
 
-function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority = "server_a_preferred", $deleteBehavior = "restore_missing", $peerId = "", $peerName = "server-b") {
+function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority = "server_a_preferred", $deleteBehavior = "restore_missing", $peerId = "", $peerName = "server-b", $paused = false) {
     $deleteBehavior = mirror_normalize_delete_behavior($deleteBehavior);
     return [
         "server_a" => [
@@ -666,6 +666,7 @@ function mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerH
         "authority" => mirror_normalize_authority($authority),
         "delete_behavior" => $deleteBehavior,
         "delete_propagation" => $deleteBehavior === "mirror_deletes",
+        "paused" => !empty($paused),
     ];
 }
 
@@ -685,13 +686,14 @@ function mirror_parse_additional_pairs($text) {
     return $pairs;
 }
 
-function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $peerIdRows, $authorityRows, $deleteBehaviorRows, $serverBType, $fallbackText) {
+function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteOtherRows, $peerIdRows, $authorityRows, $deleteBehaviorRows, $pausedRows, $serverBType, $fallbackText) {
     $locals = is_array($localRows) ? array_values($localRows) : [];
     $localOthers = is_array($localOtherRows) ? array_values($localOtherRows) : [];
     $remoteOthers = is_array($remoteOtherRows) ? array_values($remoteOtherRows) : [];
     $authorities = is_array($authorityRows) ? array_values($authorityRows) : [];
     $peerIds = is_array($peerIdRows) ? array_values($peerIdRows) : [];
     $deleteBehaviors = is_array($deleteBehaviorRows) ? array_values($deleteBehaviorRows) : [];
+    $pausedValues = is_array($pausedRows) ? array_values($pausedRows) : [];
     $others = $serverBType === "remote" ? $remoteOthers : $localOthers;
     $rowCount = max(count($locals), count($others));
     $pairs = [];
@@ -711,12 +713,13 @@ function mirror_parse_additional_pair_rows($localRows, $localOtherRows, $remoteO
             trim((string)($peerIds[$index] ?? "")),
             mirror_normalize_authority($authorities[$index] ?? "server_a_preferred"),
             mirror_normalize_delete_behavior($deleteBehaviors[$index] ?? "restore_missing"),
+            !empty($pausedValues[$index]),
         ];
     }
 
     if (!$pairs && trim((string)$fallbackText) !== "") {
         return array_map(function ($pair) {
-            return [$pair[0], $pair[1], "", "server_a_preferred", "restore_missing"];
+            return [$pair[0], $pair[1], "", "server_a_preferred", "restore_missing", false];
         }, mirror_parse_additional_pairs($fallbackText));
     }
     return $pairs;
@@ -1178,6 +1181,7 @@ if ($action === "save-config") {
     $additionalPairPeerRows = $_POST["additional_pair_peer_id"] ?? [];
     $additionalPairAuthorityRows = $_POST["additional_pair_authority"] ?? [];
     $additionalPairDeleteBehaviorRows = $_POST["additional_pair_delete_behavior"] ?? [];
+    $additionalPairPausedRows = $_POST["additional_pair_paused"] ?? [];
     $routesFromList = (string)($_POST["routes_from_list"] ?? "") === "1";
     $primaryPeerId = trim((string)($_POST["primary_peer_id"] ?? ""));
     $peerHost = trim((string)($_POST["peer_host"] ?? ""));
@@ -1247,9 +1251,9 @@ if ($action === "save-config") {
     if (!$errors) {
         $primaryPeerName = $serverBType === "remote" && is_array($peer ?? null) ? (string)($peer["name"] ?? "server-b") : "server-b";
         try {
-            $rowPairs = mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $serverBType, $additionalPairsText);
+            $rowPairs = mirror_parse_additional_pair_rows($additionalPairLocalRows, $additionalPairOtherLocalRows, $additionalPairOtherRemoteRows, $additionalPairPeerRows, $additionalPairAuthorityRows, $additionalPairDeleteBehaviorRows, $additionalPairPausedRows, $serverBType, $additionalPairsText);
             if (!$routesFromList || !$rowPairs) {
-                $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName);
+                $sharePairs[] = mirror_share_pair_config($serverAShare, $serverBConfiguredShare, $serverBType, $peerHost, $peerUser, $peerPort, $authority, $deleteBehavior, $serverBType === "remote" ? $primaryPeerId : "", $primaryPeerName, false);
             }
             $seenLocalShares = [];
             foreach ($sharePairs as $existingPair) {
@@ -1259,7 +1263,7 @@ if ($action === "save-config") {
                 }
             }
             foreach ($rowPairs as $pair) {
-                [$localShare, $otherShare, $pairPeerId, $pairAuthority, $pairDeleteBehavior] = $pair;
+                [$localShare, $otherShare, $pairPeerId, $pairAuthority, $pairDeleteBehavior, $pairPaused] = $pair;
                 if (preg_match("#[\\x00/]+#", $localShare) || preg_match("#[\\x00/]+#", $otherShare)) {
                     $errors[] = "Sync routes must use share names, not paths.";
                     continue;
@@ -1300,9 +1304,9 @@ if ($action === "save-config") {
                 $seenLocalShares[$localShare] = true;
                 if ($serverBType === "remote") {
                     $pairPeer = $linkedPeers[$pairPeerId];
-                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, (string)$pairPeer["host"], (string)($pairPeer["user"] ?? "root"), (int)($pairPeer["port"] ?? 22), $pairAuthority, $pairDeleteBehavior, $pairPeerId, (string)($pairPeer["name"] ?? "server-b"));
+                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, (string)$pairPeer["host"], (string)($pairPeer["user"] ?? "root"), (int)($pairPeer["port"] ?? 22), $pairAuthority, $pairDeleteBehavior, $pairPeerId, (string)($pairPeer["name"] ?? "server-b"), $pairPaused);
                 } else {
-                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $pairAuthority, $pairDeleteBehavior);
+                    $sharePairs[] = mirror_share_pair_config($localShare, $otherShare, $serverBType, $peerHost, $peerUser, $peerPort, $pairAuthority, $pairDeleteBehavior, "", "server-b", $pairPaused);
                 }
             }
         } catch (Throwable $pairError) {
