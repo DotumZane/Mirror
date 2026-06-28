@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.17">
+  <!ENTITY version    "V1.00.18">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.17.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.18.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "ed2ca73a7f7fd4a6ffd3c1030d44d4f4">
+  <!ENTITY md5        "aee13a3a0cc63481ce411e18f6079b91">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.17
+### V1.00.18
+- Extends the Shares page visual style across all Mirror settings tabs.
 - Hides the Sync Routes empty state whenever route rows exist.
 - Lets the Shares page use more of the available browser width.
 - Adds the Mirror icon to the plugin package and settings page metadata.

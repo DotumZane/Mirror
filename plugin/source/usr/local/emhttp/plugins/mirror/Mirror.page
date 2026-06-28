@@ -1302,6 +1302,295 @@ body .mirror-panel .mirror-shares-page .mirror-save-actions {
     grid-template-columns: 1fr !important;
   }
 }
+
+body .mirror-panel {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 106, 42, 0.08), transparent 28%),
+    linear-gradient(145deg, #091017 0%, #10151b 40%, #070b0f 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 60px rgba(0, 0, 0, 0.24) !important;
+  box-sizing: border-box !important;
+  color: #e8edf2 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  padding: 26px !important;
+  width: 100% !important;
+}
+body .mirror-panel,
+body .mirror-panel * {
+  box-sizing: border-box !important;
+}
+body .mirror-panel h3,
+body .mirror-panel h4 {
+  color: #fff !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+}
+body .mirror-panel h3 {
+  font-size: 20px !important;
+  line-height: 1.15 !important;
+  margin: 0 0 12px !important;
+}
+body .mirror-panel h4 {
+  font-size: 16px !important;
+  line-height: 1.2 !important;
+}
+body .mirror-panel p {
+  color: rgba(232, 237, 242, 0.72) !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+body .mirror-panel .mirror-tabs {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  gap: 6px !important;
+  margin: 0 0 22px !important;
+  padding: 6px !important;
+}
+body .mirror-panel .mirror-tab {
+  align-items: center !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px !important;
+  color: rgba(232, 237, 242, 0.68) !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+}
+body .mirror-panel .mirror-tab:hover {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #f3f6f8 !important;
+}
+body .mirror-panel .mirror-tab.is-active {
+  background: rgba(255, 106, 0, 0.16) !important;
+  border-color: #ff7b22 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 24px rgba(255, 106, 42, 0.12) !important;
+  color: #ff8a00 !important;
+}
+body .mirror-panel .mirror-tab .fa {
+  color: currentColor !important;
+  font-size: 13px !important;
+}
+body .mirror-panel .mirror-grid,
+body .mirror-panel .mirror-lan-summary {
+  gap: 14px !important;
+}
+body .mirror-panel .mirror-status-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px) !important;
+  justify-content: stretch !important;
+}
+body .mirror-panel .mirror-section,
+body .mirror-panel .mirror-stat,
+body .mirror-panel .mirror-route-card,
+body .mirror-panel .mirror-lan-card,
+body .mirror-panel .mirror-peer-card,
+body .mirror-panel .mirror-about-card,
+body .mirror-panel .mirror-route-config-card,
+body .mirror-panel .mirror-route-table-card,
+body .mirror-panel .mirror-share-save {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.055), transparent 35%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.052), rgba(255, 255, 255, 0.016)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 8px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  color: #e8edf2 !important;
+}
+body .mirror-panel .mirror-section {
+  margin: 0 0 16px !important;
+  padding: 24px !important;
+}
+body .mirror-panel .mirror-stat,
+body .mirror-panel .mirror-lan-card,
+body .mirror-panel .mirror-route-card,
+body .mirror-panel .mirror-peer-card {
+  padding: 18px 20px !important;
+}
+body .mirror-panel .mirror-stat {
+  height: auto !important;
+  min-height: 92px !important;
+}
+body .mirror-panel .mirror-stat strong,
+body .mirror-panel .mirror-lan-card strong,
+body .mirror-panel .mirror-route-metric strong,
+body .mirror-panel .mirror-route-title {
+  color: rgba(232, 237, 242, 0.72) !important;
+  display: block !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+  margin: 0 0 8px !important;
+  text-transform: uppercase !important;
+}
+body .mirror-panel .mirror-stat,
+body .mirror-panel .mirror-lan-card span,
+body .mirror-panel .mirror-peer-meta,
+body .mirror-panel .mirror-route-metric span {
+  color: #f4f7f9 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+}
+body .mirror-panel button,
+body .mirror-panel .button,
+body .mirror-panel input[type="submit"] {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 6px !important;
+  color: #f3f6f8 !important;
+  display: inline-flex !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  letter-spacing: 0 !important;
+  line-height: 1 !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+}
+body .mirror-panel button:hover,
+body .mirror-panel .button:hover,
+body .mirror-panel input[type="submit"]:hover {
+  background: rgba(255, 255, 255, 0.075) !important;
+}
+body .mirror-panel .mirror-primary-button,
+body .mirror-panel input.mirror-primary-button[type="submit"] {
+  background: linear-gradient(180deg, #ff7b22 0%, #ff5f1f 100%) !important;
+  border-color: #ff7b22 !important;
+  box-shadow: 0 10px 28px rgba(255, 106, 42, 0.24) !important;
+  color: #fff !important;
+}
+body .mirror-panel .mirror-field label,
+body .mirror-panel .mirror-check {
+  color: #f5f7fa !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+body .mirror-panel input[type="text"],
+body .mirror-panel input[type="number"],
+body .mirror-panel select,
+body .mirror-panel textarea {
+  appearance: auto !important;
+  background-color: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  color: #f4f7f9 !important;
+  font-size: 14px !important;
+  margin: 0 !important;
+  max-width: none !important;
+  padding: 0 12px !important;
+  width: 100% !important;
+}
+body .mirror-panel input[type="text"],
+body .mirror-panel input[type="number"],
+body .mirror-panel select {
+  height: 42px !important;
+}
+body .mirror-panel textarea,
+body .mirror-panel .mirror-code,
+body .mirror-panel .mirror-log {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 8px !important;
+  color: #f4f7f9 !important;
+}
+body .mirror-panel .mirror-code,
+body .mirror-panel .mirror-log {
+  padding: 16px !important;
+}
+body .mirror-panel option,
+body .mirror-panel optgroup {
+  background: #121820 !important;
+  color: #f4f7f9 !important;
+}
+body .mirror-panel .mirror-help {
+  color: rgba(232, 237, 242, 0.66) !important;
+  opacity: 1 !important;
+}
+body .mirror-panel .mirror-warning,
+body .mirror-panel .mirror-success,
+body .mirror-panel .mirror-client-message {
+  border-radius: 8px !important;
+  color: #f4f7f9 !important;
+  padding: 12px 14px !important;
+}
+body .mirror-panel .mirror-warning,
+body .mirror-panel .mirror-client-message {
+  background: rgba(255, 138, 0, 0.12) !important;
+  border: 1px solid rgba(255, 138, 0, 0.42) !important;
+}
+body .mirror-panel .mirror-success {
+  background: rgba(46, 160, 67, 0.14) !important;
+  border: 1px solid rgba(46, 160, 67, 0.48) !important;
+}
+body .mirror-panel .mirror-mode-switch {
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 6px !important;
+  width: 100% !important;
+}
+body .mirror-panel .mirror-mode-switch label {
+  align-items: center !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: #f0f3f6 !important;
+  display: flex !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  gap: 8px !important;
+  justify-content: center !important;
+  min-height: 42px !important;
+  padding: 0 16px !important;
+}
+body .mirror-panel .mirror-mode-switch input:checked + label {
+  background: rgba(255, 106, 0, 0.16) !important;
+  border: 1px solid #ff7b22 !important;
+  color: #ff8a00 !important;
+}
+body .mirror-panel .mirror-diagnostics {
+  border-top: 1px solid rgba(255, 255, 255, 0.09) !important;
+}
+body .mirror-panel .mirror-diagnostics summary {
+  color: #f5f7fa !important;
+}
+body .mirror-panel .mirror-shares-page {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: 100% !important;
+}
+@media (min-width: 1221px) {
+  body .mirror-panel {
+    width: calc(100vw - 180px) !important;
+  }
+}
+@media (max-width: 760px) {
+  body .mirror-panel {
+    padding: 16px !important;
+  }
+  body .mirror-panel .mirror-tabs {
+    align-items: stretch !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+}
 </style>
 
 <div class="mirror-panel">

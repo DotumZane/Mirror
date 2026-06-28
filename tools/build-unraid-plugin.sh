@@ -44,6 +44,7 @@ cat > "${ROOT}/mirror.plg" <<PLG
         min="6.12.0" support="https://github.com/${REPO_OWNER}/${REPO_NAME}">
   <CHANGES>
 ### ${VERSION}
+- Extends the Shares page visual style across all Mirror settings tabs.
 - Hides the Sync Routes empty state whenever route rows exist.
 - Lets the Shares page use more of the available browser width.
 - Adds the Mirror icon to the plugin package and settings page metadata.

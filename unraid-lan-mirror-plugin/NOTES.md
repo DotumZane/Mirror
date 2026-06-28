@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.17`
-- Current package: `packages/mirror-V1.00.17.txz`
+- Current version: `V1.00.18`
+- Current package: `packages/mirror-V1.00.18.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
@@ -40,7 +40,7 @@ What currently works:
 - Each route has its own conflict rule and delete behavior.
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
-- Shares page has the current card-style Sync Routes layout.
+- All Mirror settings tabs now use the card-style visual treatment that started on the Shares page.
 - The latest fix hides the "No sync routes configured" empty-state card whenever a real route row exists and lets the Shares page use more available browser width.
 
 Known weak spots / likely next pain:
@@ -55,17 +55,17 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test the Shares page after installing `V1.00.17` and confirm the empty state is gone when routes exist.
-2. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
-3. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
-4. Continue widening/polishing the Shares page so it uses the full available browser width without losing the Unraid-native feel.
+1. Re-test all tabs after installing `V1.00.18` and confirm the shared visual style works in Unraid Connect.
+2. Confirm the Shares tab still hides the empty state when routes exist and uses the wider browser space.
+3. Add a visible Route Name field to the configuration card if it is not clearly visible in the Unraid browser.
+4. Keep the saved route row visible while editing, and show an "Editing: route name" indicator near the Add/Update button.
 5. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
 6. Improve index progress for very large shares with explicit scan state, current path, indexed count, and total/estimated count when available.
 
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.17`.
+2. On both Unraid servers, update Mirror to `V1.00.18`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.17
+V1.00.18
 ```
 
 Version source of truth:
@@ -589,6 +589,7 @@ Current release status:
 - `V1.00.15` hides the no-routes empty state whenever sync routes exist.
 - `V1.00.16` refreshes the project notes for chat handoff.
 - `V1.00.17` hides the no-routes empty state more forcefully and widens the Shares page on large browser windows.
+- `V1.00.18` extends the Shares page visual style across all Mirror settings tabs.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -806,7 +807,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.17.
+- Current version: V1.00.18.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -857,7 +858,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.17`.
+- Current version is `V1.00.18`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -867,7 +868,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.17`, confirm the Sync Routes empty-state box hides when a route exists, and verify the Shares page uses the wider browser space.
+- Update both Unraid servers to `V1.00.18`, confirm all Mirror tabs share the new visual style, and verify the Shares page still behaves correctly.
 
 ### Chat Handoff
 
@@ -880,11 +881,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.17`
-- Current package: `packages/mirror-V1.00.17.txz`
+- Current version: `V1.00.18`
+- Current package: `packages/mirror-V1.00.18.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `aa05547 Hide sync route empty state when routes exist`
-- Next suggested task: install/update `V1.00.17`, confirm the Sync Routes empty-state placeholder is gone when routes exist, and verify the Shares page width in the Unraid Connect remote browser.
+- Next suggested task: install/update `V1.00.18`, review every tab in the Unraid Connect remote browser, and confirm the Shares route list still behaves correctly.
 
 ### Tracker Update Template
 
@@ -2023,3 +2024,13 @@ Next suggested task:
 - New decisions: Use a new package version for UI-only Unraid browser fixes so installed servers get a clear update.
 - Open questions: Confirm `V1.00.17` in Unraid Connect hides the empty-state card when a route exists and fills the wider browser window without horizontal scrolling.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.17`, and re-check the Shares tab in the wide Unraid Connect view.
+
+#### 2026-06-27 - Full Settings Visual Refresh
+
+- Task completed: Extended the Shares page visual style across the whole Mirror settings UI.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.18.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/Mirror.page`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: Added a shared Mirror shell, refreshed the tab strip, and applied the same dark card, control, warning, log, status, LAN setup, config, and modal styling across the settings page. The Shares page now sits inside the shared shell instead of carrying the visual treatment by itself.
+- New decisions: Keep the unified visual layer as CSS overrides for now so existing PHP workflow markup remains stable.
+- Open questions: Confirm all tabs render cleanly in the Unraid Connect remote browser at wide and narrow widths.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.18`, and review Status, LAN Setup, Shares, Config, and Log for spacing issues.
