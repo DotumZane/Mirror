@@ -2,18 +2,19 @@
 <!DOCTYPE PLUGIN [
   <!ENTITY name       "mirror">
   <!ENTITY author     "DotumZane">
-  <!ENTITY version    "V1.00.24">
+  <!ENTITY version    "V1.00.25">
   <!ENTITY plugin     "/boot/config/plugins/&name;">
   <!ENTITY emhttp     "/usr/local/emhttp/plugins/&name;">
-  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.24.txz">
+  <!ENTITY packageURL "https://raw.githubusercontent.com/DotumZane/Mirror/main/packages/mirror-V1.00.25.txz">
   <!ENTITY pluginURL  "https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg">
-  <!ENTITY md5        "46a714cbe1eb392c0505c753788e4066">
+  <!ENTITY md5        "8757627f6dde266b37a0a56ea375c009">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;"
         launch="Settings/Mirror" pluginURL="&pluginURL;" icon="/plugins/&name;/icon.png"
         min="6.12.0" support="https://github.com/DotumZane/Mirror">
   <CHANGES>
-### V1.00.24
+### V1.00.25
+- Ignores Mirror internals and rsync receiver temp files during indexing.
 - Speeds up indexing with native local file scans and batched progress checkpoints.
 - Preserves the Route Name field when saving sync routes.
 - Fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.

@@ -9,8 +9,8 @@ Current repo state:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.24`
-- Current package: `packages/mirror-V1.00.24.txz`
+- Current version: `V1.00.25`
+- Current package: `packages/mirror-V1.00.25.txz`
 - Current branch: `main`
 - Current branch state: run `git status --short --branch`; after this notes commit it may be ahead until pushed.
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
@@ -42,7 +42,7 @@ What currently works:
 - Current Mirrors cards show route status, index status, last changed file, and completeness percent on the Status page.
 - Log page is taller and runner logging is more detailed.
 - All Mirror settings tabs now use the visual treatment that started on the Shares page, without the generated Mirror title strip or outer window frame.
-- The latest fix speeds up indexing by using native `find` scans on Unraid and batching progress checkpoints during large sync/index runs.
+- The latest fix ignores Mirror internals and rsync receiver temp files during indexing so interrupted transfer artifacts are not mirrored back as real files.
 
 Known weak spots / likely next pain:
 
@@ -56,7 +56,7 @@ Known weak spots / likely next pain:
 
 Recommended next implementation:
 
-1. Re-test after installing `V1.00.24` and confirm large-folder indexing advances faster without new sync errors.
+1. Re-test after installing `V1.00.25` and confirm rsync temp files such as `.filename.random` are not listed or copied back.
 2. Confirm route names still persist after Save Settings.
 3. Confirm the Mirror page reaches the wider Unraid content edges without a horizontal scrollbar.
 4. Improve the Current Mirrors cards with real live transfer-rate data from the runner.
@@ -65,7 +65,7 @@ Recommended next implementation:
 Recommended test flow:
 
 1. Confirm `git status --short --branch` is clean and not ahead of `origin/main`.
-2. On both Unraid servers, update Mirror to `V1.00.24`.
+2. On both Unraid servers, update Mirror to `V1.00.25`.
 3. Use disposable shares only.
 4. Create one named sync route, save settings, and confirm the "No sync routes configured" placeholder disappears.
 5. Edit that route and confirm it stays in the saved route list while the editor loads its values.
@@ -446,7 +446,7 @@ Use semantic versioning-style numbers from the beginning.
 Current version:
 
 ```text
-V1.00.24
+V1.00.25
 ```
 
 Version source of truth:
@@ -596,6 +596,7 @@ Current release status:
 - `V1.00.22` fits the Mirror panel to the wider Unraid content ancestor without creating horizontal scroll.
 - `V1.00.23` preserves route names when saving sync routes from the configuration editor.
 - `V1.00.24` speeds up large-share indexing with native local scans and batched progress checkpoints.
+- `V1.00.25` ignores Mirror internals and rsync receiver temp files during indexing.
 - It now includes the first installable Unraid plugin scaffold.
 - It should not be used on real shares.
 
@@ -813,7 +814,7 @@ This section should be updated at the end of every project task so the notes alw
 
 - Status: Two-server LAN prototype.
 - Current phase: Phase 3 - Two-Server LAN Prototype.
-- Current version: V1.00.24.
+- Current version: V1.00.25.
 - Code started: Yes.
 - Plugin package started: Yes.
 - Daemon started: PHP-based Unraid prototype.
@@ -864,7 +865,7 @@ This section should be updated at the end of every project task so the notes alw
 - GitHub Releases should eventually provide the preferred stable test install URL.
 - GitHub repository target: `https://github.com/DotumZane/Mirror`
 - Version numbers should be tracked from the beginning.
-- Current version is `V1.00.24`.
+- Current version is `V1.00.25`.
 - The root `VERSION` file is the source of truth for the current version.
 - Future release tags should use the format `vX.Y.Z`, for example `v0.0.2`.
 - The Python sync engine remains for local development tests only.
@@ -874,7 +875,7 @@ This section should be updated at the end of every project task so the notes alw
 
 ### Next Suggested Task
 
-- Update both Unraid servers to `V1.00.24`, run Initial Sync on a larger disposable share, and confirm indexing finishes faster without new sync errors.
+- Update both Unraid servers to `V1.00.25`, run Initial Sync on a larger disposable share, and confirm rsync temp files are ignored.
 
 ### Chat Handoff
 
@@ -887,11 +888,11 @@ Quick snapshot:
 - Workspace: `/Users/zane/Documents/Unraid`
 - GitHub repository: `https://github.com/DotumZane/Mirror`
 - Install URL: `https://raw.githubusercontent.com/DotumZane/Mirror/main/mirror.plg`
-- Current version: `V1.00.24`
-- Current package: `packages/mirror-V1.00.24.txz`
+- Current version: `V1.00.25`
+- Current package: `packages/mirror-V1.00.25.txz`
 - Current branch: `main`
 - Latest plugin behavior commit before this notes refresh: `e0bacf1 Preserve route names on save`
-- Next suggested task: install/update `V1.00.24`, run Initial Sync on a larger disposable share, and confirm indexing finishes faster without new sync errors.
+- Next suggested task: install/update `V1.00.25`, run Initial Sync on a larger disposable share, and confirm rsync temp files are ignored.
 
 ### Tracker Update Template
 
@@ -2100,3 +2101,13 @@ Next suggested task:
 - New decisions: Progress updates should be batched enough to avoid slowing large runs, but still frequent enough that the UI shows steady movement and interrupted runs can resume safely.
 - Open questions: Confirm indexing speed on a large disposable share and watch for filenames with unusual control characters.
 - Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.24`, and run Initial Sync on a larger disposable share.
+
+#### 2026-06-27 - Ignore Transfer Temp Files
+
+- Task completed: Prevented rsync receiver temp files from being indexed as normal sync content.
+- Files changed: `README.md`, `VERSION`, `mirror.plg`, `packages/mirror-V1.00.25.txz`, `plugin/source/usr/local/emhttp/plugins/mirror/VERSION`, `plugin/source/usr/local/emhttp/plugins/mirror/scripts/mirror_runner.php`, `tools/build-unraid-plugin.sh`, `unraid-lan-mirror-plugin/NOTES.md`
+- Current phase: Phase 3 - Two-Server LAN Prototype.
+- What changed: File scans now prune the Mirror metadata directory and skip rsync-style temporary receiver files like `.filename.A1b2C3`, including stale temp files left by interrupted transfers.
+- New decisions: Transfer artifacts are never part of the sync dataset and should be invisible to conflict detection and copy decisions.
+- Open questions: Confirm the stale `.R720XD Firmware Update OS.iso.GQx5Je` file is ignored after updating both servers.
+- Next suggested task: Push to GitHub, update both Unraid servers to `V1.00.25`, and run another sync pass on the ISO test route.

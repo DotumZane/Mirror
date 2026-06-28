@@ -270,6 +270,20 @@ function remote_spec(array $config, string $path): string {
     return ssh_target($config) . ":" . $path;
 }
 
+function is_ignored_sync_path(string $rel): bool {
+    $rel = trim($rel, "/");
+    if ($rel === "") {
+        return true;
+    }
+    foreach (explode("/", $rel) as $segment) {
+        if ($segment === ".mirror") {
+            return true;
+        }
+    }
+    $base = basename($rel);
+    return (bool)preg_match('/^\..+\.[A-Za-z0-9]{6}$/', $base);
+}
+
 function parse_find_listing(string $output): array {
     $files = [];
     foreach (explode("\n", rtrim($output, "\r\n")) as $line) {
@@ -277,7 +291,7 @@ function parse_find_listing(string $output): array {
             continue;
         }
         $parts = explode("\t", $line);
-        if (count($parts) < 3 || $parts[0] === "" || strpos($parts[0], ".mirror") === 0) {
+        if (count($parts) < 3 || is_ignored_sync_path($parts[0])) {
             continue;
         }
         $files[$parts[0]] = [
@@ -302,7 +316,7 @@ function scan_files_php(string $root): array {
         }
         $path = $file->getPathname();
         $rel = ltrim(substr($path, strlen(rtrim($root, "/"))), "/");
-        if ($rel === "" || strpos($rel, ".mirror") === 0) {
+        if (is_ignored_sync_path($rel)) {
             continue;
         }
         $files[$rel] = [
@@ -320,7 +334,7 @@ function scan_files(string $root): array {
     $find = trim((string)shell_exec("command -v find 2>/dev/null"));
     if ($find !== "") {
         try {
-            $output = run_command([$find, $root, "-type", "f", "-printf", "%P\t%s\t%T@\n"]);
+            $output = run_command([$find, $root, "-path", rtrim($root, "/") . "/.mirror", "-prune", "-o", "-type", "f", "-printf", "%P\t%s\t%T@\n"]);
             return parse_find_listing($output);
         } catch (Throwable $findError) {
             log_event("local find scan unavailable, falling back to PHP scanner: " . $findError->getMessage());
@@ -332,7 +346,7 @@ function scan_files(string $root): array {
 function scan_remote_files(array $config, string $configPath, string $root): array {
     $ssh = ssh_base_args($config, $configPath);
     $target = ssh_target($config);
-    $script = "[ -d " . escapeshellarg($root) . " ] && find " . escapeshellarg($root) . " -type f -printf '%P\\t%s\\t%T@\\n' || true";
+    $script = "[ -d " . escapeshellarg($root) . " ] && find " . escapeshellarg($root) . " -path " . escapeshellarg(rtrim($root, "/") . "/.mirror") . " -prune -o -type f -printf '%P\\t%s\\t%T@\\n' || true";
     $output = run_command(array_merge($ssh, [$target, $script]));
     return parse_find_listing($output);
 }
